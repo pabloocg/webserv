@@ -44,6 +44,7 @@ At this point, connection is established between client and server, and they are
 #include <sstream>
 #include <string>
 #include <algorithm>
+#include "Connection.hpp"
 
 #define TRUE 1
 #define FALSE 0
@@ -52,13 +53,13 @@ At this point, connection is established between client and server, and they are
 
 std::vector<std::string> split(std::string str, char delimiter)
 {
-  std::vector<std::string>  internal;
-  std::stringstream         ss(str);
-  std::string               tok;
+	std::vector<std::string> internal;
+	std::stringstream ss(str);
+	std::string tok;
 
-  while(std::getline(ss, tok, delimiter))
-    internal.push_back(tok);
-  return (internal);
+	while (std::getline(ss, tok, delimiter))
+		internal.push_back(tok);
+	return (internal);
 }
 
 char *read_file(std::string file_request)
@@ -122,9 +123,8 @@ char *parse_headers(std::string header)
 	return (NULL);
 }
 
-int main(int argc, char *argv[])
+int main(/*int argc, char *argv[]*/)
 {
-	int opt = TRUE;
 	int master_socket, addrlen, new_socket, client_socket[30],
 		max_clients = 30, activity, i, valread, sd;
 	int max_sd;
@@ -143,35 +143,11 @@ int main(int argc, char *argv[])
 		client_socket[i] = 0;
 	}
 
-	if ((master_socket = socket(AF_INET, SOCK_STREAM, 0)) == 0)
-	{
-		perror("socket failed");
-		exit(EXIT_FAILURE);
-	}
+	Connection connection(PORT);
 
-	if (setsockopt(master_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt,
-				   sizeof(opt)) < 0)
-	{
-		perror("setsockopt");
-		exit(EXIT_FAILURE);
-	}
-	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = INADDR_ANY;
-	address.sin_port = htons(PORT);
-
-	if (bind(master_socket, (struct sockaddr *)&address, sizeof(address)) < 0)
-	{
-		perror("bind failed");
-		exit(EXIT_FAILURE);
-	}
-	printf("Listener on port %d \n", PORT);
-	if (listen(master_socket, 3) < 0)
-	{
-		perror("listen");
-		exit(EXIT_FAILURE);
-	}
-	addrlen = sizeof(address);
-	puts("Waiting for connections ...");
+	master_socket = connection.getSocket();
+	addrlen = connection.getAddrlen();
+	address = connection.getAddress();
 
 	while (TRUE)
 	{
@@ -209,7 +185,7 @@ int main(int argc, char *argv[])
 				perror("some error occured");
 				exit(EXIT_FAILURE);
 			}
-			if (send(new_socket, message, strlen(message), 0) != strlen(message))
+			if (send(new_socket, message, strlen(message), 0) != (ssize_t)strlen(message))
 			{
 				perror("send");
 			}
@@ -244,7 +220,7 @@ int main(int argc, char *argv[])
 						perror("some error occured");
 						exit(EXIT_FAILURE);
 					}
-					if (send(new_socket, message, strlen(message), 0) != strlen(message))
+					if (send(new_socket, message, strlen(message), 0) != (ssize_t)strlen(message))
 					{
 						perror("send");
 					}
