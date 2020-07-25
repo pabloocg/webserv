@@ -1,10 +1,6 @@
 /*
-
                         SERVER
-
-
     int sockfd = socket(domain, type, protocol)
-
 sockfd: socket descriptor, an integer (like a file-handle)
 domain: integer, communication domain e.g., AF_INET (IPv4 protocol) , AF_INET6 (IPv6 protocol)
 type: communication type
@@ -12,218 +8,252 @@ type: communication type
     SOCK_DGRAM: UDP(unreliable, connectionless)
 protocol: Protocol value for Internet Protocol(IP), which is 0.
     This is the same number which appears on protocol field in the IP header of a packet.(man protocols for more details)
-
-
     int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen);
-
 This helps in manipulating options for the socket referred by the file descriptor sockfd.
 This is completely optional, but it helps in reuse of address and port.
 Prevents error such as: “address already in use
-
-
     int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
-
 After creation of the socket, bind function binds the socket to the address and port number specified in addr(custom data structure).
 In the example code, we bind the server to the localhost, hence we use INADDR_ANY to specify the IP address.
-
-
     int listen(int sockfd, int backlog);
-
 It puts the server socket in a passive mode, where it waits for the client to approach the server to make a connection.
 The backlog, defines the maximum length to which the queue of pending connections for sockfd may grow.
 If a connection request arrives when the queue is full, the client may receive an error with an indication of ECONNREFUSED.
-
-
     int new_socket= accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
-
 It extracts the first connection request on the queue of pending connections for the listening socket, sockfd,
 creates a new connected socket, and returns a new file descriptor referring to that socket.
 At this point, connection is established between client and server, and they are ready to transfer data.
-
 */
 
-// Server side C/C++ program to demonstrate Socket programming 
-//Example code: A simple server side code, which echos back the received message. 
-//Handle multiple socket connections with select and fd_set on Linux 
-#include <stdio.h> 
-#include <string.h> //strlen 
-#include <stdlib.h> 
-#include <errno.h> 
-#include <unistd.h> //close 
-#include <arpa/inet.h> //close 
-#include <sys/types.h> 
-#include <sys/socket.h> 
-#include <netinet/in.h> 
-#include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros 
-	
-#define TRUE 1 
-#define FALSE 0 
-#define PORT 8080
-	
-int main(int argc , char *argv[]) 
-{ 
-	int opt = TRUE; 
-	int master_socket , addrlen , new_socket , client_socket[30] , 
-		max_clients = 30 , activity, i , valread , sd; 
-	int max_sd; 
-	struct sockaddr_in address; 
-		
-	char buffer[1025]; //data buffer of 1K 
-		
-	//set of socket descriptors 
-	fd_set readfds; 
-		
-	//a message 
-	char *message = "ECHO Daemon v1.0 \r\n"; 
-	
-	//initialise all client_socket[] to 0 so not checked 
-	for (i = 0; i < max_clients; i++) 
-	{ 
-		client_socket[i] = 0; 
-	} 
-		
-	//create a master socket 
-	if( (master_socket = socket(AF_INET , SOCK_STREAM , 0)) == 0) 
-	{ 
-		perror("socket failed"); 
-		exit(EXIT_FAILURE); 
-	} 
-	
-	//set master socket to allow multiple connections , 
-	//this is just a good habit, it will work without this 
-	if( setsockopt(master_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, 
-		sizeof(opt)) < 0 ) 
-	{ 
-		perror("setsockopt"); 
-		exit(EXIT_FAILURE); 
-	} 
-	
-	//type of socket created 
-	address.sin_family = AF_INET; 
-	address.sin_addr.s_addr = INADDR_ANY; 
-	address.sin_port = htons( PORT ); 
-		
-	//bind the socket to localhost port 8888 
-	if (bind(master_socket, (struct sockaddr *)&address, sizeof(address))<0) 
-	{ 
-		perror("bind failed"); 
-		exit(EXIT_FAILURE); 
-	} 
-	printf("Listener on port %d \n", PORT); 
-		
-	//try to specify maximum of 3 pending connections for the master socket 
-	if (listen(master_socket, 3) < 0) 
-	{ 
-		perror("listen"); 
-		exit(EXIT_FAILURE); 
-	} 
-		
-	//accept the incoming connection 
-	addrlen = sizeof(address); 
-	puts("Waiting for connections ..."); 
-		
-	while(TRUE) 
-	{ 
-		//clear the socket set 
-		FD_ZERO(&readfds); 
-	
-		//add master socket to set 
-		FD_SET(master_socket, &readfds); 
-		max_sd = master_socket; 
-			
-		//add child sockets to set 
-		for ( i = 0 ; i < max_clients ; i++) 
-		{ 
-			//socket descriptor 
-			sd = client_socket[i]; 
-				
-			//if valid socket descriptor then add to read list 
-			if(sd > 0) 
-				FD_SET( sd , &readfds); 
-				
-			//highest file descriptor number, need it for the select function 
-			if(sd > max_sd) 
-				max_sd = sd; 
-		} 
-	
-		//wait for an activity on one of the sockets , timeout is NULL , 
-		//so wait indefinitely 
-		activity = select( max_sd + 1 , &readfds , NULL , NULL , NULL); 
-	
-		if ((activity < 0) && (errno!=EINTR)) 
-		{ 
-			printf("select error"); 
-		} 
-			
-		//If something happened on the master socket , 
-		//then its an incoming connection 
-		if (FD_ISSET(master_socket, &readfds)) 
-		{ 
-			if ((new_socket = accept(master_socket, 
-					(struct sockaddr *)&address, (socklen_t*)&addrlen))<0) 
-			{ 
-				perror("accept"); 
-				exit(EXIT_FAILURE); 
-			} 
-			
-			//inform user of socket number - used in send and receive commands 
-			printf("New connection , socket fd is %d , ip is : %s , port : %d \n" , new_socket , inet_ntoa(address.sin_addr) , ntohs 
-				(address.sin_port));
+// Server side C/C++ program to demonstrate Socket programming
+//Example code: A simple server side code, which echos back the received message.
+//Handle multiple socket connections with select and fd_set on Linux
+#include <stdio.h>
+#include <vector>
+#include <string.h> //strlen
+#include <stdlib.h>
+#include <errno.h>
+#include <iostream>
+#include <unistd.h>	   //close
+#include <arpa/inet.h> //close
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <algorithm>
 
-			//send new connection greeting message 
-			if( send(new_socket, message, strlen(message), 0) != strlen(message) ) 
-			{ 
-				perror("send"); 
-			} 
-				
-			puts("Welcome message sent successfully"); 
-				
-			//add new socket to array of sockets 
-			for (i = 0; i < max_clients; i++) 
-			{ 
-				//if position is empty 
-				if( client_socket[i] == 0 ) 
-				{ 
-					client_socket[i] = new_socket; 
-					printf("Adding to list of sockets as %d\n" , i); 
-						
-					break; 
-				} 
-			} 
-		} 
-			
-		//else its some IO operation on some other socket 
-		for (i = 0; i < max_clients; i++) 
-		{ 
-			sd = client_socket[i]; 
-				
-			if (FD_ISSET( sd , &readfds)) 
-			{ 
-				//Check if it was for closing , and also read the 
-				//incoming message 
-				if ((valread = read( sd , buffer, 1024)) == 0) 
-				{ 
-					//Somebody disconnected , get his details and print 
-					getpeername(sd , (struct sockaddr*)&address , (socklen_t*)&addrlen); 
-					printf("Host disconnected , ip %s , port %d \n" , 
-						inet_ntoa(address.sin_addr) , ntohs(address.sin_port)); 
-						
-					//Close the socket and mark as 0 in list for reuse 
-					close( sd ); 
-					client_socket[i] = 0; 
-				} 
-					
-				//Echo back the message that came in 
+#define TRUE 1
+#define FALSE 0
+#define PORT 8080
+#define ROOT_DIR "dir"
+
+std::vector<std::string> split(std::string str, char delimiter)
+{
+  std::vector<std::string>  internal;
+  std::stringstream         ss(str);
+  std::string               tok;
+
+  while(std::getline(ss, tok, delimiter))
+    internal.push_back(tok);
+  return (internal);
+}
+
+char *read_file(std::string file_request)
+{
+	std::ifstream file;
+	std::stringstream content_file;
+	std::string buf;
+	char *res;
+	int status;
+	std::string message_status;
+	std::string file_type;
+
+	//Read the file requested
+	//file_request = file_request.substr(1, file_request.size());
+	file_type = file_request.substr(file_request.find(".") + 1, file_request.size());
+	if (file_request == file_type)
+		file_type = "html";
+	std::cout << file_type << std::endl;
+	std::cout << "******" << file_request << "*******" << std::endl;
+	if (file_request == "dir/")
+		file_request = "dir/index.html";
+	file.open(file_request);
+	if (file.is_open())
+	{
+		status = 200;
+		message_status = "OK";
+	}
+	//Read the error page 404
+	else
+	{
+		file.open("dir/404.html");
+		status = 404;
+		message_status = "Not Found";
+	}
+	//Should also do one if the client not have permissions to read the file page 403
+	while (std::getline(file, buf))
+		content_file << buf << "\n";
+	buf = content_file.str();
+	content_file.str("");
+	content_file.clear();
+	file.close();
+	content_file << "HTTP/1.1 " << status << " " << message_status << "\nContent-Type: text/" << file_type << "\ncharset=utf-8\nContent-Length: " << buf.length() << "\n\n"
+				 << buf;
+	buf = content_file.str();
+	if (!(res = (char *)malloc(sizeof(char) * (buf.size() + 1))))
+		return (NULL);
+	std::copy(buf.begin(), buf.end(), res);
+	res[buf.size()] = '\0';
+	return (res);
+}
+
+char *parse_headers(std::string header)
+{
+	std::vector<std::string> sheader;
+	std::vector<std::string> request;
+
+	sheader = split(header, '\n');
+	request = split(sheader[0], ' ');
+	if (request[0] == "GET")
+		return (read_file(ROOT_DIR + request[1]));
+	return (NULL);
+}
+
+int main(int argc, char *argv[])
+{
+	int opt = TRUE;
+	int master_socket, addrlen, new_socket, client_socket[30],
+		max_clients = 30, activity, i, valread, sd;
+	int max_sd;
+	struct sockaddr_in address;
+
+	char buffer[30000] = {0}; //data buffer of 1K
+
+	//set of socket descriptors
+	fd_set readfds;
+
+	//a message
+	char *message;
+
+	for (i = 0; i < max_clients; i++)
+	{
+		client_socket[i] = 0;
+	}
+
+	if ((master_socket = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+	{
+		perror("socket failed");
+		exit(EXIT_FAILURE);
+	}
+
+	if (setsockopt(master_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt,
+				   sizeof(opt)) < 0)
+	{
+		perror("setsockopt");
+		exit(EXIT_FAILURE);
+	}
+	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = INADDR_ANY;
+	address.sin_port = htons(PORT);
+
+	if (bind(master_socket, (struct sockaddr *)&address, sizeof(address)) < 0)
+	{
+		perror("bind failed");
+		exit(EXIT_FAILURE);
+	}
+	printf("Listener on port %d \n", PORT);
+	if (listen(master_socket, 3) < 0)
+	{
+		perror("listen");
+		exit(EXIT_FAILURE);
+	}
+	addrlen = sizeof(address);
+	puts("Waiting for connections ...");
+
+	while (TRUE)
+	{
+		FD_ZERO(&readfds);
+		FD_SET(master_socket, &readfds);
+		max_sd = master_socket;
+		for (i = 0; i < max_clients; i++)
+		{
+			sd = client_socket[i];
+			if (sd > 0)
+				FD_SET(sd, &readfds);
+			if (sd > max_sd)
+				max_sd = sd;
+		}
+		activity = select(max_sd + 1, &readfds, NULL, NULL, NULL);
+		if ((activity < 0) && (errno != EINTR))
+		{
+			printf("select error");
+		}
+		std::cout << "select " << activity << std::endl;
+		if (FD_ISSET(master_socket, &readfds)) //nueva conexion entrante
+		{
+			if ((new_socket = accept(master_socket,
+									 (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
+			{
+				perror("accept");
+				exit(EXIT_FAILURE);
+			}
+			valread = read(new_socket, buffer, 30000);
+
+			printf("New connection , socket fd is %d\n", new_socket);
+			message = parse_headers(buffer);
+			if (!message)
+			{
+				perror("some error occured");
+				exit(EXIT_FAILURE);
+			}
+			if (send(new_socket, message, strlen(message), 0) != strlen(message))
+			{
+				perror("send");
+			}
+			free(message);
+			puts("Message sent");
+			for (i = 0; i < max_clients; i++)
+			{
+				if (client_socket[i] == 0)
+				{
+					client_socket[i] = new_socket;
+					printf("Adding fd %d to list of sockets as %d\n", new_socket, i);
+					break;
+				}
+			}
+		}
+		for (i = 0; i < max_clients; i++)
+		{
+			sd = client_socket[i];
+			if (FD_ISSET(sd, &readfds))
+			{
+				if ((valread = read(sd, buffer, 30000)) == 0)
+				{
+					printf("Host disconnected with fd = %d\n", sd);
+					close(sd);
+					client_socket[i] = 0;
+				}
 				else
-				{ 
-					//set the string terminating NULL byte on the end 
-					//of the data read 
-					buffer[valread] = '\0'; 
-					send(sd , buffer , strlen(buffer) , 0 ); 
-				} 
-			} 
-		} 
-	} 
-		
-	return 0; 
-} 
+				{
+					message = parse_headers(buffer);
+					if (!message)
+					{
+						perror("some error occured");
+						exit(EXIT_FAILURE);
+					}
+					if (send(new_socket, message, strlen(message), 0) != strlen(message))
+					{
+						perror("send");
+					}
+					free(message);
+					puts("Message sent");
+				}
+			}
+		}
+	}
+
+	return 0;
+}
