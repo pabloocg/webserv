@@ -73,7 +73,7 @@ static char *read_file(std::string file_request)
 	return (res);
 }
 
-char *parse_headers(std::string header)
+inline char *parse_headers(std::string header)
 {
 	std::vector<std::string> sheader;
 	std::vector<std::string> request;
