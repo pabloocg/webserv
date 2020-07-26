@@ -1,5 +1,4 @@
 #include "Server.hpp"
-#include "utils.hpp"
 
 http::Server::Server() : max_client(30)
 {
