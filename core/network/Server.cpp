@@ -1,6 +1,8 @@
 #include "Server.hpp"
 
-http::Server::Server() : max_client(30)
+http::Server::Server():
+		max_client(30),
+		_log(ACCESS_LOG_PATH, ERROR_LOG_PATH)
 {
 	//aqui tendriamos que leer el archivo de configuracion y poner los parametros en nuestra clase
 	this->client_socket = (int *)calloc(30, sizeof(int));
@@ -11,6 +13,7 @@ void http::Server::start()
 	if ((server_socket = socket(AF_INET, SOCK_STREAM, 0)) == 0)
 	{
 		perror("socket failed");
+		this->_log.makeLog(ERROR_LOG, "socket failed");
 		exit(EXIT_FAILURE);
 	}
 	int _opt = TRUE;
@@ -26,6 +29,7 @@ void http::Server::start()
 	if (bind(server_socket, (struct sockaddr *)&address, sizeof(address)) < 0)
 	{
 		perror("bind failed");
+		this->_log.makeLog(ERROR_LOG, "bind failed");
 		exit(EXIT_FAILURE);
 	}
 	std::cout << "Listener on port " << PORT << std::endl;
@@ -71,6 +75,7 @@ void http::Server::wait_for_connection()
 		valread = read(new_socket, buffer, 30000);
 
 		printf("New connection , socket fd is %d\n", new_socket);
+		this->_log.makeLog(ACCESS_LOG, buffer);
 		message = http::parse_headers(buffer);
 		if (!message)
 		{
@@ -80,6 +85,7 @@ void http::Server::wait_for_connection()
 		if (send(new_socket, message, strlen(message), 0) != (ssize_t)strlen(message))
 		{
 			perror("send");
+			exit(EXIT_FAILURE);
 		}
 		free(message);
 		puts("Message sent");
@@ -106,6 +112,7 @@ void http::Server::wait_for_connection()
 			}
 			else
 			{
+				this->_log.makeLog(ACCESS_LOG, buffer);
 				message = http::parse_headers(buffer);
 				if (!message)
 				{

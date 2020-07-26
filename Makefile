@@ -18,7 +18,8 @@ LOGS_PATH = tmp/logs/
 
 SRCS =	main.cpp\
 		${addprefix ${NETWORK_PATH}, Server.cpp}\
-		${addprefix ${CONFIG_PATH}, Conf.cpp}
+		${addprefix ${CONFIG_PATH}, Logger.cpp}
+		#${addprefix ${CONFIG_PATH}, Conf.cpp} // In process
 
 NAME = webserv
 
@@ -30,17 +31,20 @@ FLAGS = -Wall -Werror -Wextra
 
 MKDIROBJS = @mkdir -p ${OBJS_PATH}
 
+
 MKDIRLOGS = @mkdir -p ${LOGS_PATH}
+LOGSFILES = @touch ${LOGS_PATH}error.log ${LOGS_PATH}access.log
 
 OBJS = ${addprefix ${CORE_PATH}, ${SRCS:.cpp=.o}}
 
-RM = rm -f
+RM = rm -rf
 
 #---------------------Orders---------------------------#
 
 .cpp.o:
 			${MKDIROBJS}
 			${MKDIRLOGS}
+			${LOGSFILES}
 			${CLANG} ${FLAGS} -c $< -o ${addprefix ${OBJS_PATH}, ${notdir ${<:.cpp=.o}}}
 
 $(NAME):	${OBJS}
@@ -54,7 +58,7 @@ all:		$(NAME)
 re:			fclean all
 
 clean:
-			${RM} ${addprefix ${OBJS_PATH}, ${notdir ${OBJS}}}
+			${RM} ${TMP_PATH}
 
 fclean:
 			${RM} ${NAME}

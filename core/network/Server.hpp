@@ -14,11 +14,15 @@
 # include <iostream>
 # include <string>
 # include "../utils/utils.hpp"
-char *http::parse_headers(std::string header);
+# include "../config/Logger.hpp"
 
 #define TRUE 1
 #define FALSE 0
 #define PORT 8080
+#define ACCESS_LOG_PATH "tmp/logs/access.log"
+#define ERROR_LOG_PATH "tmp/logs/error.log"
+#define ACCESS_LOG "access.log"
+#define ERROR_LOG "error.log"
 
 namespace http
 {
@@ -34,6 +38,7 @@ private:
 	//char *buffer;
 	SA_IN address;
 	fd_set readfds;
+	const Logger	_log;
 
 public:
 	Server();
