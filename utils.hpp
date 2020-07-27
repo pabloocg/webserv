@@ -64,19 +64,30 @@ namespace http
 			message_status = "Not Found";
 		}
 		//Should also do one if the client not have permissions to read the file page 403
-		while (std::getline(file, buf))
+		while (std::getline(file, buf)){
+			
 			content_file << buf << "\n";
+		}	
 		buf = content_file.str();
 		content_file.str("");
 		content_file.clear();
 		file.close();
-		content_file << "HTTP/1.1 " << status << " " << message_status << "\nContent-Type: text/" << file_type << "\ncharset=utf-8\nContent-Length: " << buf.length() << "\n\n"
-					 << buf;
+		content_file << "HTTP/1.1 " << status << " " << message_status;
+
+		std::cout << buf << std::endl;
+		if (file_type == "jpg" || file_type == "jpeg")
+			content_file << "\nContent-Type: image/jpeg" << "\ncharset=utf-8\nContent-Length: " << buf.length() << "\n\n" << buf;
+		else
+			content_file << "\nContent-Type: text/" << file_type << "\nContent-Length: " << buf.length() << "\n\n" << buf;
 		buf = content_file.str();
 		if (!(res = (char *)malloc(sizeof(char) * (buf.size() + 1))))
 			return (NULL);
-		std::copy(buf.begin(), buf.end(), res);
-		res[buf.size()] = '\0';
+		/*std::copy(buf.begin(), buf.end(), res);
+		res[buf.size()] = '\0';*/
+		strcpy(res, buf.c_str());
+		std::cout << buf.c_str() << std::endl;
+		std::cout << "*******************RESPONSE*****************" << std::endl;
+		
 		return (res);
 	}
 
@@ -84,6 +95,9 @@ namespace http
 	{
 		std::vector<std::string> sheader;
 		std::vector<std::string> request;
+
+		std::cout << "*******************REQUEST*****************" << std::endl;
+		std::cout << header << std::endl;
 
 		sheader = split(header, '\n');
 		request = split(sheader[0], ' ');
