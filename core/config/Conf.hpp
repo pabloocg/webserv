@@ -6,9 +6,8 @@
 #include <iostream>
 #include <string>
 
-#define DEFAULT_FILE_CONF "../../example.conf"
 #define DEFAULT_PORT 80
-#define DEFAULT_SERVER_HOST "127.0.0.1"
+#define DEFAULT_SERVER_ADDR "127.0.0.1"
 #define DEFAULT_ROOT_DIR "dir"
 #define DEFAULT_FILE_INDEX "index.html"
 #define DEFAULT_SERVER_NAME "localhost"
@@ -16,8 +15,12 @@
 #define DEFAULT_BODY_SIZE_BYTES 1000000
 #define DEFAULT_ERROR_PAGE_404 "404.html"
 #define DEFAULT_ERROR_PAGE_50X "50x.html"
-#define DEFAULT_ERROR_LOG "logs/error.log"
-#define DEFAULT_ACCESS_LOG "logs/access.log"
+#define DEFAULT_ERROR_LOG "tmp/logs/error.log"
+#define DEFAULT_ACCESS_LOG "tmp/logs/access.log"
+#define DEFAULT_AUTOINDEX false
+#define DEFAULT_ACCEPT_UPLOADS false
+#define DEFAULT_UPLOADS_PATH "tmp/files/"
+#define DEFAULT_HTTP_METHODS "GET POST HEAD PUT DELETE CONNECT OPTIONS TRACE PATCH"
 
 namespace http
 {
@@ -27,12 +30,19 @@ class Conf
 
 private:
 
-    const std::string           _file;
+    Conf(void);
+
+    const std::string           _filename;
+    Logger                      _log;
+    std::ifstream               _file;
     std::vector<http::Server>   _servers;
+
+    bool        file_exists(void);
+    void        read_file(void);
+    
 
 public:
 
-    Conf(void);
     Conf(const std::string &conf_file);
     virtual ~Conf(void) {};
 
