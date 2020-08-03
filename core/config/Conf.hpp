@@ -29,8 +29,8 @@ private:
 
 
     bool        file_exists(void);
-    void        simple_parse(void);
-    void        complex_parse(void);
+    std::string        simple_parse(void);
+    void        complex_parse(std::string s);
     
 
 public:

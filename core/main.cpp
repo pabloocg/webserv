@@ -1,6 +1,6 @@
 #include "network/Server.hpp"
 
-#define CONFIG_TEST
+//#define CONFIG_TEST
 
 #ifdef CONFIG_TEST
 
@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
     #endif
 
     #ifndef CONFIG_TEST
-
+        (void)argc;(void)argv;
         http::Server serv;
         serv.start();
         while (1)
