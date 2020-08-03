@@ -6,6 +6,9 @@
 # include <sstream>
 # include <string>
 
+namespace http
+{
+
 class Logger
 {
     private:
@@ -25,5 +28,7 @@ class Logger
 
         void        makeLog(std::string const & dest, std::string const & message) const;
 };
+
+}
 
 #endif

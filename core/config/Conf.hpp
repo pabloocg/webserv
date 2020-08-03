@@ -1,26 +1,14 @@
 #ifndef CONF_HPP
 #define CONF_HPP
 
-#include "../network/Server.hpp"
+#include "ServerConf.hpp"
+#include "../utils/utils.hpp"
+#include "Logger.hpp"
 #include <vector>
+#include <map>
 #include <iostream>
 #include <string>
-
-#define DEFAULT_PORT 80
-#define DEFAULT_SERVER_ADDR "127.0.0.1"
-#define DEFAULT_ROOT_DIR "dir"
-#define DEFAULT_FILE_INDEX "index.html"
-#define DEFAULT_SERVER_NAME "localhost"
-#define DEFAULT_BODY_SIZE_MEGABYTES 100
-#define DEFAULT_BODY_SIZE_BYTES 1000000
-#define DEFAULT_ERROR_PAGE_404 "404.html"
-#define DEFAULT_ERROR_PAGE_50X "50x.html"
-#define DEFAULT_ERROR_LOG "tmp/logs/error.log"
-#define DEFAULT_ACCESS_LOG "tmp/logs/access.log"
-#define DEFAULT_AUTOINDEX false
-#define DEFAULT_ACCEPT_UPLOADS false
-#define DEFAULT_UPLOADS_PATH "tmp/files/"
-#define DEFAULT_HTTP_METHODS "GET POST HEAD PUT DELETE CONNECT OPTIONS TRACE PATCH"
+#include <regex>
 
 namespace http
 {
@@ -32,13 +20,17 @@ private:
 
     Conf(void);
 
-    const std::string           _filename;
-    Logger                      _log;
-    std::ifstream               _file;
-    std::vector<http::Server>   _servers;
+    const std::string                   _filename;
+    http::Logger                        _log;
+    std::ifstream                       _file;
+    std::vector<http::ServerConf>       _servers;
+    std::map<std::string, bool>         _mandatory_conf;
+    std::vector<std::string>            _simple_conf;
+
 
     bool        file_exists(void);
-    void        read_file(void);
+    void        simple_parse(void);
+    void        complex_parse(void);
     
 
 public:
@@ -46,7 +38,19 @@ public:
     Conf(const std::string &conf_file);
     virtual ~Conf(void) {};
 
-    std::vector<http::Server>   getServers(void);
+    std::vector<http::ServerConf>   getServers(void);
+
+    class UnclosedBracket: public std::exception {
+        virtual const char* what() const throw();
+    };
+
+    class UnrecognizedParameter: public std::exception {
+        virtual const char* what() const throw();
+    };
+
+    class SemicolonMissing: public std::exception {
+        virtual const char* what() const throw();
+    };
 };
 
 } // namespace http

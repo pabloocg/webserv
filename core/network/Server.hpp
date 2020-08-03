@@ -13,16 +13,12 @@
 # include <netinet/in.h>
 # include <iostream>
 # include <string>
-# include "../utils/utils.hpp"
 # include "../config/Logger.hpp"
+# include "../utils/utils.hpp"
+# include "../config/ServerConf.hpp"
 
 #define TRUE 1
 #define FALSE 0
-#define PORT 8080
-#define ACCESS_LOG_PATH "tmp/logs/access.log"
-#define ERROR_LOG_PATH "tmp/logs/error.log"
-#define ACCESS_LOG "access.log"
-#define ERROR_LOG "error.log"
 
 namespace http
 {
@@ -39,6 +35,8 @@ private:
 	SA_IN address;
 	fd_set readfds;
 	const Logger	_log;
+	// Each server configuration
+	//std::vector<ServerConf>	servers;
 
 public:
 	Server();

@@ -6,6 +6,7 @@
 # include <sstream>
 # include <string>
 # include <algorithm>
+# include <regex>
 
 #define ROOT_DIR "dir"
 
@@ -23,8 +24,23 @@ static std::vector<std::string> split(std::string str, char delimiter)
 	return (internal);
 }
 
+static std::string		ltrim(std::string str)
+{
+	return (std::regex_replace(str, std::regex("^\\s+"), std::string("")));
+}
 
-//Esta funcion tendrá que ir dentro de cada server.
+static std::string		rtrim(std::string str)
+{
+	return (std::regex_replace(str, std::regex("\\s+$"), std::string("")));
+}
+
+inline std::string		trim(std::string str)
+{
+	return (rtrim(ltrim(str)));
+}
+
+
+//Esta funcion tendrá que ir en la clase Request
 static char *read_file(std::string file_request)
 {
 	std::ifstream file;

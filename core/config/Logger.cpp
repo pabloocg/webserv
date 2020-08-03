@@ -1,16 +1,16 @@
 #include "Logger.hpp"
 
-Logger::Logger(const std::string accs, const std::string err):
+http::Logger::Logger(const std::string accs, const std::string err):
             _access(accs),
             _error(err)
 {
 }
 
-Logger::~Logger()
+http::Logger::~Logger()
 {
 }
 
-void        Logger::logToAccess(std::string login_message) const
+void        http::Logger::logToAccess(std::string login_message) const
 {
     std::ofstream           new_file;
 
@@ -19,7 +19,7 @@ void        Logger::logToAccess(std::string login_message) const
     new_file.close();
 }
 
-void        Logger::logToError(std::string login_message) const
+void        http::Logger::logToError(std::string login_message) const
 {
     std::ofstream           new_file;
 
@@ -28,7 +28,7 @@ void        Logger::logToError(std::string login_message) const
     new_file.close();
 }
 
-std::string Logger::makeLogEntry(std::string message) const
+std::string http::Logger::makeLogEntry(std::string message) const
 {
     std::time_t         t;
     std::tm*            now;
@@ -43,11 +43,11 @@ std::string Logger::makeLogEntry(std::string message) const
     return (buffer.str());
 }
 
-void        Logger::makeLog(std::string const & dest, std::string const & message) const
+void        http::Logger::makeLog(std::string const & dest, std::string const & message) const
 {
-    static void    (Logger::*point_logs[])(std::string login_message) const = {
-            &Logger::logToAccess,
-            &Logger::logToError
+    static void    (http::Logger::*point_logs[])(std::string login_message) const = {
+            &http::Logger::logToAccess,
+            &http::Logger::logToError
     };
     static const std::string log_type[] = {
         "access.log",

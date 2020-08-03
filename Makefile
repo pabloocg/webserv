@@ -18,8 +18,8 @@ LOGS_PATH = tmp/logs/
 
 SRCS =	main.cpp\
 		${addprefix ${NETWORK_PATH}, Server.cpp}\
-		${addprefix ${CONFIG_PATH}, Logger.cpp}
-		#${addprefix ${CONFIG_PATH}, Conf.cpp} // In process
+		${addprefix ${CONFIG_PATH}, Logger.cpp}\
+		${addprefix ${CONFIG_PATH}, Conf.cpp}
 
 NAME = webserv
 
