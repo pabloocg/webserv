@@ -1,6 +1,6 @@
 #include "network/Server.hpp"
 
-//#define CONFIG_TEST
+#define CONFIG_TEST
 
 #ifdef CONFIG_TEST
 

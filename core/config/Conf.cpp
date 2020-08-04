@@ -38,9 +38,35 @@ std::string        http::Conf::simple_parse(void)
     return (buf.str());
 }
 
+void        http::Conf::parse_server_conf(std::string s)
+{
+    std::cout << "SERVER" << std::endl;
+    std::cout << s << std::endl;
+}
+
+size_t      get_BracketClose(std::string s)
+{
+    size_t i = 0;
+    int     level = 0;
+
+    for (size_t i = 0; i < s.length(); i++)
+    {
+        if (s[i] == '{')
+            level++;
+        else if (s[i] == '}')
+        {
+            level--;
+            if (!level)
+                return (i);
+        }
+    }
+    return (i);
+}
+
 void        http::Conf::complex_parse(std::string s)
 {
     size_t      i = 0;
+    size_t      bclose = 0;
     std::string string_p;
 
     if (std::count(s.begin(), s.end(), '{') != std::count(s.begin(), s.end(), '}'))
@@ -55,22 +81,29 @@ void        http::Conf::complex_parse(std::string s)
     if (!(s[i] == '{'))
         throw Conf::UnrecognizedParameter();
     string_p = s.substr(i + 1, s.find_last_of("}") - (i + 1));
-    /*i = -1;
-    while (string_p[++i])
+    while (!string_p.empty())
     {
-        if (!(s[i] == '{'))
-
-
+        if (!string_p.compare(0, 6, "server"))
+        {
+            std::cout << "namespace server found" << std::endl;
+            i = 6;
+            while (std::isspace(string_p[i]))
+                i++;
+            if (!(string_p[i] == '{'))
+                throw Conf::UnrecognizedParameter();
+            bclose = get_BracketClose(string_p);
+            this->parse_server_conf(string_p.substr(i + 1, bclose - (i + 1)));
+            string_p = string_p.substr(bclose + 1);
+        }
+        else
+            throw Conf::UnrecognizedParameter();
     }
-    */
-    std::cout << string_p << std::endl;
 }
 
 std::vector<http::ServerConf>   http::Conf::getServers(void)
 {
     return (this->_servers);
 }
-
 
 const char* http::Conf::UnclosedBracket::what() const throw()
 {
