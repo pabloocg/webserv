@@ -2,7 +2,7 @@
 
 http::Server::Server():
 		max_client(30),
-		_log(ACCESS_LOG_PATH, ERROR_LOG_PATH)
+		_log(DEFAULT_ACCESS_LOG, DEFAULT_ERROR_LOG)
 {
 	//aqui tendriamos que leer el archivo de configuracion y poner los parametros en nuestra clase
 	this->client_socket = (int *)calloc(30, sizeof(int));
@@ -25,14 +25,14 @@ void http::Server::start()
 	}
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = INADDR_ANY;
-	address.sin_port = htons(PORT);
+	address.sin_port = htons(DEFAULT_PORT);
 	if (bind(server_socket, (struct sockaddr *)&address, sizeof(address)) < 0)
 	{
 		perror("bind failed");
 		this->_log.makeLog(ERROR_LOG, "bind failed");
 		exit(EXIT_FAILURE);
 	}
-	std::cout << "Listener on port " << PORT << std::endl;
+	std::cout << "Listener on port " << DEFAULT_PORT << std::endl;
 	if (listen(server_socket, 3) < 0)
 	{
 		perror("listen");
