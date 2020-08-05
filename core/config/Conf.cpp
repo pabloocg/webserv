@@ -40,8 +40,37 @@ std::string        http::Conf::simple_parse(void)
 
 void        http::Conf::parse_server_conf(std::string s)
 {
+    http::ServerConf    new_server;
     std::cout << "SERVER" << std::endl;
     std::cout << s << std::endl;
+
+    // Read Port
+    //new_server.setPort(port);
+
+    // Read Address
+    //new_server.setServerAddr(srvr_addr)
+
+    // Read ServerName
+    //new_server.setServerName(srvr_name)
+
+    // Read BodySize
+    //new_server.setBodySize(bodysize);
+
+    // Read Error Pages
+    //new_server.setPagesErr();
+    /*
+    Add locations
+    while (!s.empty())
+    {
+        if (!s.compare(0, 8, "location"))
+        {
+            http::Routes    new_route;
+
+            new_server.add_route(new_route);
+        }
+    }
+    */
+    this->_servers.push_back(new_server);
 }
 
 size_t      get_BracketClose(std::string s)

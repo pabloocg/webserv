@@ -1,12 +1,13 @@
 #include "network/Server.hpp"
 #include "utils/Request.hpp"
 
-#define CONFIG_TEST
+//#define CONFIG_TEST
 
 #ifdef CONFIG_TEST
 
 # include "config/Conf.hpp"
 # define DEFAULT_FILE_CONF "example.conf"
+# include <vector>
 
 #endif
 
@@ -28,6 +29,9 @@ int main(int argc, char *argv[])
         try
         {
             http::Conf  config(file_conf);
+            std::vector<http::ServerConf>   servers(config.getServers());
+            for (std::vector<http::ServerConf>::iterator it = servers.begin(); it != servers.end(); it++)
+                std::cout << *it << std::endl;
         }
         catch(const std::exception& e)
         {
@@ -38,6 +42,8 @@ int main(int argc, char *argv[])
 
     #ifndef CONFIG_TEST
         (void)argc;(void)argv;
+        // Cuando la clase de coger la configuracion esté terminada
+        //http::Server serv(config.getServers());
         http::Server serv;
         serv.start();
         while (1)

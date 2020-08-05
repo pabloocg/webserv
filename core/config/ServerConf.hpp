@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include "../utils/params.hpp"
+#include "Routes.hpp"
 
 namespace http
 {
@@ -23,48 +24,6 @@ private:
         std::string _page404_path;
         std::string _page500_path;
     }               t_error_pages;
-
-    typedef struct  s_httpMethods
-    {
-
-        bool    _GET;
-        bool    _POST;
-        bool    _HEAD;
-        bool    _PUT;
-        bool    _DELETE;
-        bool    _CONNECT;
-        bool    _OPTIONS;
-        bool    _TRACE;
-        bool    _PATCH;
-    }               t_httpMethods;
-
-    typedef struct  s_routes
-    {
-        //Virtual location of the directory
-        std::string _location;
-
-        // Path of a existing directory
-        std::string _directory_path;
-
-        //HTTP Methods in a specific location
-        t_httpMethods   httpMethods;
-
-        // Enable or disable directory listing. Default disable
-        bool        _autoindex;
-
-        // Default file to answer if the request is a directory
-        std::string _index_file;
-
-        /*
-            CGI parameters must also be implemented here
-        */
-
-        // Make the route able to accept uploaded files. Default false
-        bool        _uploads;
-
-        // Configure where uploads should be saved
-        std::string _upload_path;
-    }               t_routes;
 
     // Port server. Default 80
     in_port_t       _port;
@@ -83,8 +42,8 @@ private:
 
     SA_IN           _address;
 
-    //    Define a directory to the specific route. the route / is mandatory.
-    std::vector<t_routes>   _routes;
+    // Define a directory to the specific route. the route / is mandatory.
+    std::vector<Routes>   _routes;
 
 public:
     ServerConf():
@@ -140,6 +99,33 @@ public:
     {
         return (this->_body_size);
     };
+
+    void        add_route(http::Routes  new_route)
+    {
+        this->_routes.push_back(new_route);
+    };
+
+    http::Routes    &getRoutebyPath(std::string  &path)
+    {
+        std::vector<http::Routes>::iterator it = this->_routes.begin();
+        std::vector<http::Routes>::iterator itend = this->_routes.end();
+
+        for (; it != itend; it++)
+            if (it->getVirtualLocation() == path)
+                return (*it);
+        //Excepcion y lanzar codigo 404
+        return (*itend);
+    };
+};
+
+inline std::ostream &operator<<(std::ostream &out, http::ServerConf &server)
+{
+    out << "\nSERVER INFO:\n";
+    out << "Server Port: " << server.getPort() << std::endl;
+    out << "Server Name: " << server.getServerName() << std::endl;
+    out << "Server Address: " << server.getServerAddr() << std::endl;
+    out << "Server BodySize: " << server.getBodySize() << std::endl;
+    return (out);
 };
 
 } // namespace http
