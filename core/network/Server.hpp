@@ -14,6 +14,7 @@
 # include <iostream>
 # include <string>
 # include "../config/Logger.hpp"
+# include "../utils/Request.hpp"
 # include "../utils/utils.hpp"
 # include "../config/ServerConf.hpp"
 
@@ -33,7 +34,7 @@ private:
 	int max_client;
 	//char *buffer;
 	SA_IN address;
-	fd_set readfds;
+	fd_set master;
 	const Logger	_log;
 	// Each server configuration
 	//std::vector<ServerConf>	servers;

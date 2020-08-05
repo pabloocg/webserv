@@ -1,4 +1,5 @@
 #include "network/Server.hpp"
+#include "utils/Request.hpp"
 
 #define CONFIG_TEST
 

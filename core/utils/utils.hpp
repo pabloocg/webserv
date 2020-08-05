@@ -55,8 +55,6 @@ static char *read_file(std::string file_request)
 	file_type = file_request.substr(file_request.find(".") + 1, file_request.size());
 	if (file_request == file_type)
 		file_type = "html";
-	std::cout << file_type << std::endl;
-	std::cout << "******" << file_request << "*******" << std::endl;
 	if (file_request == "dir/")
 		file_request = "dir/index.html";
 	file.open(file_request);
@@ -93,6 +91,8 @@ inline char *parse_headers(std::string header)
 {
 	std::vector<std::string> sheader;
 	std::vector<std::string> request;
+
+	std::cout << header << std::endl;
 
 	sheader = split(header, '\n');
 	request = split(sheader[0], ' ');
