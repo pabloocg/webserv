@@ -78,13 +78,14 @@ void http::Server::wait_for_connection()
 		printf("New connection , socket fd is %d\n", new_socket);
 		this->_log.makeLog(ACCESS_LOG, buffer);
 		http::Request req(buffer);
-		message = req.build_response();
+		int size;
+		message = req.build_response(&size);
 		if (!message)
 		{
 			perror("some error occured");
 			exit(EXIT_FAILURE);
 		}
-		if (send(new_socket, message, strlen(message), 0) != (ssize_t)strlen(message))
+		if (send(new_socket, message, size, 0) != (ssize_t)size)
 		{
 			perror("send");
 			exit(EXIT_FAILURE);
@@ -118,14 +119,15 @@ void http::Server::wait_for_connection()
 			{
 				this->_log.makeLog(ACCESS_LOG, buffer);
 				http::Request req(buffer);
-				message = req.build_response();
+				int size;
+				message = req.build_response(&size);
 				//message = http::parse_headers(buffer);
 				if (!message)
 				{
 					perror("some error occured");
 					exit(EXIT_FAILURE);
 				}
-				if (send(new_socket, message, strlen(message), 0) != (ssize_t)strlen(message))
+				if (send(new_socket, message, size, 0) != (ssize_t)size)
 				{
 					perror("send");
 				}

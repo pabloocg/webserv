@@ -38,13 +38,13 @@ namespace http
 	std::string message_status;
 	std::string resp_body;
 
-	char *build_get();
+	char *build_get(int *size);
 	std::string get_content_type(std::string file_type);
 
 	public:
 		Request(std::string req);
 
-		char *build_response();
+		char *build_response(int *size);
 		void save_header(std::string header);
 	};
 } // namespace http

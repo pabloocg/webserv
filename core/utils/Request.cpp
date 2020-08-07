@@ -115,7 +115,7 @@ std::string http::Request::get_content_type(std::string type){
 		return ("text/plain");
 }
 
-char *http::Request::build_get(){
+char *http::Request::build_get(int *size){
 	char *res;
 	std::ifstream file;
 	std::string buf;
@@ -153,12 +153,13 @@ char *http::Request::build_get(){
 		return (NULL);
 	std::copy(this->resp_body.begin(), this->resp_body.end(), res);
 	res[this->resp_body.size()] = '\0';
+	*size = this->resp_body.size();
 	return (res);
 }
 
-char *http::Request::build_response(){
+char *http::Request::build_response(int *size){
 	if (this->type == GET){
-		return (this->build_get());
+		return (this->build_get(size));
 	}
 	return (NULL);
 }
