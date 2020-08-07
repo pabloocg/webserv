@@ -43,31 +43,33 @@ void        http::Conf::parse_server_conf(std::string s)
     http::ServerConf    new_server;
     std::cout << "SERVER" << std::endl;
     std::cout << s << std::endl;
-
-    // Read Port
-    //new_server.setPort(port);
-
-    // Read Address
-    //new_server.setServerAddr(srvr_addr)
-
-    // Read ServerName
-    //new_server.setServerName(srvr_name)
-
-    // Read BodySize
-    //new_server.setBodySize(bodysize);
-
-    // Read Error Pages
-    //new_server.setPagesErr();
     /*
-    Add locations
-    while (!s.empty())
-    {
-        if (!s.compare(0, 8, "location"))
-        {
-            http::Routes    new_route;
+    std::vector<std::string>    params;
 
-            new_server.add_route(new_route);
-        }
+    params = http::special_split(s, ';');
+
+    for (size_t i = 0; i < params.size(); i++)
+    {
+        // Read Port
+        if (!params[i].compare(0, 7, "listen "))
+            new_server.setPort(std::atoi(params[i].substr(params[i].find_last_of(' ') + 1).c_str()));
+        // Read Address
+        else if (!params[i].compare(0, 12, "server_addr "))
+            new_server.setServerAddr(params[i].substr(params[i].find_last_of(' ') + 1));
+        // Read ServerName
+        else if (!params[i].compare(0, 12, "server_name "))
+            new_server.setServerName(params[i].substr(params[i].find_last_of(' ') + 1));
+        // Read BodySize
+        else if (!params[i].compare(0, 21, "client_max_body_size "))
+            new_server.setBodySize(std::atoi(params[i].substr(params[i].find_last_of(' ') + 1).c_str()));
+        // Read Error Pages
+        else if (!params[i].compare(0, 12, "error_pages "))
+            new_server.setErrorPage(params[i].substr(params[i].find_first_of(' ')));
+        // Add location
+        else if (!params[i].compare(0, 9, "location "))
+            save_location(params[i]);
+        else
+            throw Conf::UnrecognizedParameter();
     }
     */
     this->_servers.push_back(new_server);

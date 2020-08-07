@@ -32,6 +32,7 @@ private:
     std::string        simple_parse(void);
     void        complex_parse(std::string s);
     void        parse_server_conf(std::string s);
+    void        save_location(std::string s);
     
 
 public:

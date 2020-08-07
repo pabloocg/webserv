@@ -13,6 +13,13 @@
 namespace http
 {
 
+/*
+inline std::vector<std::string> special_split(std::string str, char delimiter)
+{
+
+}
+*/
+
 static std::vector<std::string> split(std::string str, char delimiter)
 {
 	std::vector<std::string> internal;

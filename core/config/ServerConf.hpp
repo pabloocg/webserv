@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <map>
 #include "../utils/params.hpp"
 #include "Routes.hpp"
 
@@ -19,12 +20,6 @@ private:
 
     typedef struct  sockaddr_in SA_IN;
 
-    typedef struct  s_error_pages
-    {
-        std::string _page404_path;
-        std::string _page500_path;
-    }               t_error_pages;
-
     // Port server. Default 80
     in_port_t       _port;
 
@@ -35,7 +30,7 @@ private:
     std::string     _server_name;
 
     // Default error pages
-    t_error_pages   _err_pages;
+    std::map<int, std::string>  _err_pages;
 
     // Limit client body size
     unsigned int    _body_size;
@@ -50,8 +45,8 @@ public:
         _port(DEFAULT_PORT), _server_addr(DEFAULT_SERVER_ADDR),
         _server_name(DEFAULT_SERVER_NAME), _body_size(DEFAULT_BODY_SIZE_MEGABYTES)
     {
-        this->_err_pages._page404_path = DEFAULT_ERROR_PAGE_404;
-        this->_err_pages._page500_path = DEFAULT_ERROR_PAGE_50X;
+        this->_err_pages[404] = DEFAULT_ERROR_PAGE_404;
+        this->_err_pages[500] = DEFAULT_ERROR_PAGE_50X;
         this->_address.sin_family = AF_INET;
         this->_address.sin_addr.s_addr = inet_addr(this->_server_addr.c_str());
         this->_address.sin_port = htons(this->_port);
@@ -60,6 +55,7 @@ public:
 
     void        setPort(in_port_t newport)
     {
+        std::cout << "New server port -> " << newport << std::endl;
         this->_port = newport;
         this->_address.sin_port = htons(this->_port);
     };
@@ -71,6 +67,7 @@ public:
 
     void        setServerAddr(std::string new_serveraddr)
     {
+        std::cout << "New server addr -> " << new_serveraddr << std::endl;
         this->_server_addr = new_serveraddr;
         this->_address.sin_addr.s_addr = inet_addr(this->_server_addr.c_str());
     };
@@ -82,6 +79,7 @@ public:
 
     void        setServerName(std::string new_servername)
     {
+        std::cout << "New server name -> " << new_servername << std::endl;
         this->_server_name = new_servername;
     };
 
@@ -92,12 +90,29 @@ public:
 
     void        setBodySize(unsigned int new_body_size)
     {
+        std::cout << "New server bodysize -> " << new_body_size << std::endl;
         this->_body_size = new_body_size;
     };
 
     unsigned int &getBodySize(void)
     {
         return (this->_body_size);
+    };
+
+    void        setErrorPage(std::string new_errpage)
+    {
+        //Trim spaces
+        std::cout << "New error page -> " << new_errpage << std::endl;
+    };
+
+    std::string getErrorPage(int code)
+    {
+        return (this->_err_pages[code]);
+    };
+
+    std::map<int, std::string>  &getErrorPages()
+    {
+        return (this->_err_pages);
     };
 
     void        add_route(http::Routes  new_route)
@@ -125,6 +140,11 @@ inline std::ostream &operator<<(std::ostream &out, http::ServerConf &server)
     out << "Server Name: " << server.getServerName() << std::endl;
     out << "Server Address: " << server.getServerAddr() << std::endl;
     out << "Server BodySize: " << server.getBodySize() << std::endl;
+    out << "Error Pages: " << std::endl;
+    std::map<int, std::string>::iterator it = server.getErrorPages().begin();
+    std::map<int, std::string>::iterator itend = server.getErrorPages().end();
+    for (; it != itend; it++)
+        out << "\t" << it->first << " -> " << it->second << std::endl;
     return (out);
 };
 
