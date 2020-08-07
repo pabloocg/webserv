@@ -130,6 +130,7 @@ char *http::Request::build_get(int *size){
 	//Read the error page 404
 	else
 	{
+		this->file_req = "dir/404.html";
 		file.open("dir/404.html");
 		this->status = 404;
 		this->message_status = "Not Found";

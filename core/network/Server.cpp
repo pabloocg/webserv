@@ -38,6 +38,7 @@ void http::Server::start()
 	}
 	FD_ZERO(&master);
 	FD_SET(server_socket, &master);
+	std::cout << "Server fd is " << server_socket << std::endl;
 	std::cout << "Waiting for connections..." << std::endl;
 }
 
@@ -57,21 +58,15 @@ void http::Server::wait_for_connection()
 	for (int i = 0; i < max_client; i++)
 		if (client_socket[i] > max_sd)
 			max_sd = client_socket[i];
+	std::cout << "Waiting for select" << std::endl;
 	activity = select(max_sd + 1, &readfds, NULL, NULL, NULL);
-	if (activity == 1){
-		std::cout << "New read possible" << std::endl;
+	if (activity > 0){
+		std::cout << "Number of reads possible " << activity << std::endl;
 	}
 	if ((activity < 0) && (errno != EINTR))
 	{
 		printf("select error");
 	}
-	//std::cout << "select " << activity << std::endl;
-	int q = 0;
-	int max = 0;
-	while(client_socket[q])
-		q++;
-	if (q != 0)
-		max = client_socket[--q];
 	if (FD_ISSET(server_socket, &readfds)) //nueva conexion entrante
 	{
 		if ((new_socket = accept(server_socket,
@@ -80,27 +75,8 @@ void http::Server::wait_for_connection()
 			perror("accept");
 			exit(EXIT_FAILURE);
 		}
-		printf("New connection , socket fd is %d\n", new_socket);
-		valread = read(new_socket, buffer, 30000);
-		if (valread != 0)
-		{
-			this->_log.makeLog(ACCESS_LOG, buffer);
-			http::Request req(buffer);
-			int size;
-			message = req.build_response(&size);
-			if (!message)
-			{
-				perror("some error occured");
-				exit(EXIT_FAILURE);
-			}
-			if (send(new_socket, message, size, 0) != (ssize_t)size)
-			{
-				perror("send");
-				exit(EXIT_FAILURE);
-			}
-			free(message);
-			std::cout << "message sent to " << new_socket << std::endl;
-		}
+		fcntl(new_socket, F_SETFL, O_NONBLOCK);
+		std::cout << "New connection!" << std::endl;
 		for (int i = 0; i < max_client; i++)
 		{
 			if (client_socket[i] == 0)

@@ -13,6 +13,7 @@
 # include <netinet/in.h>
 # include <iostream>
 # include <string>
+# include <fcntl.h>
 # include "../config/Logger.hpp"
 # include "../utils/Request.hpp"
 # include "../utils/utils.hpp"
