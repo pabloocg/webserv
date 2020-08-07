@@ -1,11 +1,9 @@
 #include "Server.hpp"
 
-http::Server::Server():
-		max_client(30),
-		_log(DEFAULT_ACCESS_LOG, DEFAULT_ERROR_LOG)
+http::Server::Server() : client_socket(30, 0),
+						 _log(DEFAULT_ACCESS_LOG, DEFAULT_ERROR_LOG)
 {
-	//aqui tendriamos que leer el archivo de configuracion y poner los parametros en nuestra clase
-	this->client_socket = (int *)calloc(30, sizeof(int));
+	this->max_client = 30;
 }
 
 void http::Server::start()
@@ -33,7 +31,7 @@ void http::Server::start()
 		exit(EXIT_FAILURE);
 	}
 	std::cout << "Listener on port " << DEFAULT_PORT << std::endl;
-	if (listen(server_socket, 3) < 0)
+	if (listen(server_socket, 10) < 0)
 	{
 		perror("listen");
 		exit(EXIT_FAILURE);
@@ -60,11 +58,20 @@ void http::Server::wait_for_connection()
 		if (client_socket[i] > max_sd)
 			max_sd = client_socket[i];
 	activity = select(max_sd + 1, &readfds, NULL, NULL, NULL);
+	if (activity == 1){
+		std::cout << "New read possible" << std::endl;
+	}
 	if ((activity < 0) && (errno != EINTR))
 	{
 		printf("select error");
 	}
 	//std::cout << "select " << activity << std::endl;
+	int q = 0;
+	int max = 0;
+	while(client_socket[q])
+		q++;
+	if (q != 0)
+		max = client_socket[--q];
 	if (FD_ISSET(server_socket, &readfds)) //nueva conexion entrante
 	{
 		if ((new_socket = accept(server_socket,
@@ -73,32 +80,40 @@ void http::Server::wait_for_connection()
 			perror("accept");
 			exit(EXIT_FAILURE);
 		}
-		valread = read(new_socket, buffer, 30000);
-
 		printf("New connection , socket fd is %d\n", new_socket);
-		this->_log.makeLog(ACCESS_LOG, buffer);
-		http::Request req(buffer);
-		int size;
-		message = req.build_response(&size);
-		if (!message)
+		valread = read(new_socket, buffer, 30000);
+		if (valread != 0)
 		{
-			perror("some error occured");
-			exit(EXIT_FAILURE);
+			this->_log.makeLog(ACCESS_LOG, buffer);
+			http::Request req(buffer);
+			int size;
+			message = req.build_response(&size);
+			if (!message)
+			{
+				perror("some error occured");
+				exit(EXIT_FAILURE);
+			}
+			if (send(new_socket, message, size, 0) != (ssize_t)size)
+			{
+				perror("send");
+				exit(EXIT_FAILURE);
+			}
+			free(message);
+			std::cout << "message sent to " << new_socket << std::endl;
 		}
-		if (send(new_socket, message, size, 0) != (ssize_t)size)
-		{
-			perror("send");
-			exit(EXIT_FAILURE);
-		}
-		free(message);
-		puts("Message sent");
 		for (int i = 0; i < max_client; i++)
 		{
 			if (client_socket[i] == 0)
 			{
 				client_socket[i] = new_socket;
 				FD_SET(new_socket, &master);
-				printf("Adding fd %d to list of sockets as %d\n", new_socket, i);
+				std::cout << "host number " << i << " connected" << std::endl;
+				std::cout << "fd list:" << std::endl;
+				for (int j = 0; j < 30; j++)
+				{
+					if (client_socket[j])
+						std::cout << j << " : " << client_socket[j] << std::endl;
+				}
 				break;
 			}
 		}
@@ -110,10 +125,16 @@ void http::Server::wait_for_connection()
 		{
 			if ((valread = read(sd, buffer, 30000)) == 0)
 			{
-				printf("Host disconnected with fd = %d\n", sd);
+				std::cout << "host number " << i << " disconnected" << std::endl;
 				close(sd);
 				FD_CLR(client_socket[i], &master);
 				client_socket[i] = 0;
+				std::cout << "fd list:" << std::endl;
+				for (int j = 0; j < 30; j++)
+				{
+					if (client_socket[j])
+						std::cout << j << " : "  << client_socket[j] << std::endl;
+				}
 			}
 			else
 			{
@@ -127,12 +148,12 @@ void http::Server::wait_for_connection()
 					perror("some error occured");
 					exit(EXIT_FAILURE);
 				}
-				if (send(new_socket, message, size, 0) != (ssize_t)size)
+				if (send(sd, message, size, 0) != (ssize_t)size)
 				{
 					perror("send");
 				}
 				free(message);
-				puts("Message sent");
+				std::cout << "message sent to " << sd << std::endl;
 			}
 		}
 	}

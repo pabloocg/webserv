@@ -60,9 +60,9 @@ void http::Request::save_header(std::string header){
 }
 
 http::Request::Request(std::string req){
-	std::cout << "************ REQUEST ************" << std::endl;
+	/*std::cout << "************ REQUEST ************" << std::endl;
 	std::cout << req << std::endl;
-	std::cout << "*********************************" << std::endl;
+	std::cout << "*********************************" << std::endl;*/
 	this->request = req;
 
 	std::vector<std::string> sheader;
@@ -146,14 +146,15 @@ char *http::Request::build_get(int *size){
 	<< get_content_type(this->file_type) << "\nContent-Length: " << this->resp_body.length() << "\n\n" << this->resp_body;
 
 	this->resp_body = stream.str();
-	std::cout << "************ RESPONSE ***********" << std::endl;
+	/*std::cout << "************ RESPONSE ***********" << std::endl;
 	std::cout << this->resp_body << std::endl;
-	std::cout << "*********************************" << std::endl;
+	std::cout << "*********************************" << std::endl;*/
 	if (!(res = (char *)malloc(sizeof(char) * (this->resp_body.size() + 1))))
 		return (NULL);
 	std::copy(this->resp_body.begin(), this->resp_body.end(), res);
 	res[this->resp_body.size()] = '\0';
 	*size = this->resp_body.size();
+	std::cout << "sending " << this->file_req << std::endl;
 	return (res);
 }
 

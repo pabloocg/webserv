@@ -30,7 +30,7 @@ private:
 	typedef struct sockaddr_in SA_IN;
 
 	int server_socket;
-	int *client_socket;
+	std::vector<int> client_socket;
 	int max_client;
 	//char *buffer;
 	SA_IN address;
