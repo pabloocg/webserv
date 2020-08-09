@@ -44,7 +44,7 @@ void http::Server::start()
 
 void http::Server::wait_for_connection()
 {
-	int max_sd, sd, activity, new_socket, valread;
+	int max_sd, sd, activity, new_socket, valread, size;
 	char buffer[30000] = {0};
 	char *message;
 	int addrlen = sizeof(address);
@@ -69,6 +69,7 @@ void http::Server::wait_for_connection()
 	}
 	if (FD_ISSET(server_socket, &readfds)) //nueva conexion entrante
 	{
+		std::cout << "New connection!" << std::endl;
 		if ((new_socket = accept(server_socket,
 								 (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
 		{
@@ -76,7 +77,6 @@ void http::Server::wait_for_connection()
 			exit(EXIT_FAILURE);
 		}
 		fcntl(new_socket, F_SETFL, O_NONBLOCK);
-		std::cout << "New connection!" << std::endl;
 		for (int i = 0; i < max_client; i++)
 		{
 			if (client_socket[i] == 0)
@@ -116,7 +116,6 @@ void http::Server::wait_for_connection()
 			{
 				this->_log.makeLog(ACCESS_LOG, buffer);
 				http::Request req(buffer);
-				int size;
 				message = req.build_response(&size);
 				//message = http::parse_headers(buffer);
 				if (!message)

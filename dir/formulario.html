@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+    <head lang="en">
+		<meta charset="UTF-8">
+        <title>Formulario</title>
+    </head>
+	<body>
+	<form action="procesa.php" method="post">
+		<fieldset>
+			<legend>Datos personales</legend>
+			<p><label for="name">Nombre (*)
+				<input type="text" name="name" id="name"
+				size="22" minlength="3" maxlength="20" required
+				placeholder="Introduzca su nombre">
+			</label></p>
+			<p><label for="name">Apellidos (*)
+				<input type="text" name="surname" id="surname"
+				required
+				placeholder="Introduzca sus apellidos">
+			</label></p>
+			<p><label for="phone">Teléfono
+				<input type="text" name="phone" id="phone"
+				placeholder="Introduzca su teléfono">
+			</label></p>
+			<p><label for="mail">Correo electrónico (*)
+				<input type="text" name="mail" id="mail"
+				required
+				placeholder="Introduzca su Correo electrónico">
+			</label></p>
+			<fieldset>
+				<legend>Selecciona Genero</legend>
+					<label for="name">Hombre
+						<input type="radio" name="male" id="male" value="male">
+					</label>
+					<label for="name">Mujer
+						<input type="radio" name="female" id="female" value="female">
+					</label>
+			</fieldset>
+			<p><label for="color">Color
+				<input type="color" name="color" id="color">
+			</label></p>
+			<p><label>Resumen del CV (*)</label>
+				<p><textarea name="resumen" id="resumen" cols="200" rows="10" placeholder="Breve resumen del CV">
+				</textarea></p>
+			<p><label>Ficheros adjuntos con el CV
+				<input type="file">
+			</label></p>
+			<fieldset>
+				<legend>Dirección</legend>
+					<p><label for="street">Calle
+						<input type="text" name="street" id="street"
+						placeholder="Calle">
+					</label></p>
+					<p><label for="number">Numero
+						<input type="text" name="street" id="street"
+						placeholder="Calle">
+					</label></p>
+					<p><label for="number">Codigo Postal
+						<input type="range" name="postcode" id="postcode"
+						min="10000" max="70000" step="1">
+					</label></p>
+					<p><label for="region">Provincia
+						<select name="region" id="region">
+							<option value="madrid">Madrid</option>
+							<option value="madrid">Andalucia</option>
+							<option value="madrid">Cantabria</option>
+							<option value="madrid">Castilla y Leon</option>
+							<option value="madrid">Asturias</option>
+						</select>
+					</label></p>
+					<p><label for="country">Pais
+						<input type="text" name="country" id="country" size="30"
+						placeholder="Teclea para completar el pais">
+					</label></p>
+			</fieldset>
+			<p><label for="type">Interesado en puestos
+				<input type="checkbox" name="complete" value="completo" checked>Tiempo Completo
+				<input type="checkbox" name="partial" value="parcial">Tiempo Parcial
+			</label></p>
+			<div>
+				<input type="submit" value="Enviar">
+				<input type="reset" value="Restablecer">
+			</div>
+		</fieldset>
+	</form>

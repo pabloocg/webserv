@@ -60,9 +60,9 @@ void http::Request::save_header(std::string header){
 }
 
 http::Request::Request(std::string req){
-	/*std::cout << "************ REQUEST ************" << std::endl;
+	std::cout << "************ REQUEST ************" << std::endl;
 	std::cout << req << std::endl;
-	std::cout << "*********************************" << std::endl;*/
+	std::cout << "*********************************" << std::endl;
 	this->request = req;
 
 	std::vector<std::string> sheader;
@@ -83,13 +83,13 @@ http::Request::Request(std::string req){
 		this->type = PUT;
 	
 	this->file_req = ROOT_DIR + request[1];
-	if (this->type == GET && request[1] == "/")
+	if ((this->type == GET || this->type == HEAD) && request[1] == "/")
 		this->file_req = "dir/index.html";
 
 	
 	this->file_type = this->file_req.substr(file_req.find(".") + 1, file_req.size());
-	if (this->file_req == this->file_type && this->type == GET)
-		this->file_type = "html";
+	//if (this->file_req == this->file_type && this->type == GET)
+	//	this->file_type = "html";
 	this->http_version = request[2];
 
 	for (int i = 1; i < (int)sheader.size(); i++){
@@ -131,6 +131,7 @@ char *http::Request::build_get(int *size){
 	else
 	{
 		this->file_req = "dir/404.html";
+		this->file_type = "html";
 		file.open("dir/404.html");
 		this->status = 404;
 		this->message_status = "Not Found";
@@ -144,7 +145,9 @@ char *http::Request::build_get(int *size){
 	file.close();
 
 	stream << "HTTP/1.1 " << this->status << " " << this->message_status << "\nContent-Type: "
-	<< get_content_type(this->file_type) << "\nContent-Length: " << this->resp_body.length() << "\n\n" << this->resp_body;
+	<< get_content_type(this->file_type) << "\nContent-Length: " << this->resp_body.length() << "\n\n";
+	if (this->type == GET)
+		stream << this->resp_body;
 
 	this->resp_body = stream.str();
 	/*std::cout << "************ RESPONSE ***********" << std::endl;
@@ -160,7 +163,7 @@ char *http::Request::build_get(int *size){
 }
 
 char *http::Request::build_response(int *size){
-	if (this->type == GET){
+	if (this->type == GET || this->type == HEAD){
 		return (this->build_get(size));
 	}
 	return (NULL);
