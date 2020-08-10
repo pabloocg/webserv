@@ -13,11 +13,11 @@ http::ServerC::ServerC(std::vector<http::ServerConf> servers):
 {
 	this->_max_client = 30;
 	this->_server_socket.resize(this->_servers.size());
-	this->_master.resize(this->_servers.size());
 }
 
 void http::ServerC::start()
 {
+	FD_ZERO(&_master);
 	for (size_t i = 0; i < _servers.size(); i++)
 	{
 		if ((_server_socket[i] = socket(AF_INET, SOCK_STREAM, 0)) == 0)
@@ -50,8 +50,7 @@ void http::ServerC::start()
 			perror("fcntl");
 			exit(EXIT_FAILURE);
 		}
-		FD_ZERO(&_master[i]);
-		FD_SET(_server_socket[i], &_master[i]);
+		FD_SET(_server_socket[i], &_master);
 		std::cout << "Server fd is " << _server_socket[i] << std::endl;
 		std::cout << "Waiting for connections..." << std::endl;
 	}	
@@ -66,9 +65,9 @@ void http::ServerC::wait_for_connection()
 	FD_ZERO(&readfds);
 	//fd_set writefds;
 	//FD_ZERO(&writefds); todavia no se como funciona el select para writes (creo que es para los multiples servidores)
-	readfds = _master[0];
+	readfds = _master;
 	//writefds = _master[i];
-	max_sd = _server_socket[0];
+	max_sd = _server_socket[1];
 	for (int i = 0; i < _max_client; i++)
 		if (_client_socket[i] > max_sd)
 			max_sd = _client_socket[i];
@@ -102,7 +101,7 @@ void http::ServerC::wait_for_connection()
 				if (_client_socket[j] == 0)
 				{
 					_client_socket[j] = new_socket;
-					FD_SET(new_socket, &_master[i]);
+					FD_SET(new_socket, &_master);
 					std::cout << "host number " << j << " connected" << std::endl;
 					std::cout << "fd list:" << std::endl;
 					for (int j = 0; j < 30; j++)
@@ -123,7 +122,7 @@ void http::ServerC::wait_for_connection()
 				{
 					std::cout << "host number " << i << " disconnected" << std::endl;
 					close(sd);
-					FD_CLR(_client_socket[j], &_master[i]);
+					FD_CLR(_client_socket[j], &_master);
 					_client_socket[j] = 0;
 					std::cout << "fd list:" << std::endl;
 					for (int k = 0; k < 30; k++)

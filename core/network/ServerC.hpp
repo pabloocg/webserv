@@ -35,7 +35,7 @@ private:
 	std::vector<int>				_server_socket;
 	std::vector<int>				_client_socket;
 	int								_max_client;
-	std::vector<fd_set>				_master;
+	fd_set							_master;
 	const Logger					_log;
 	std::vector<http::ServerConf>	_servers;
 
