@@ -13,21 +13,47 @@
 namespace http
 {
 
-/*
+
 inline std::vector<std::string> special_split(std::string str, char delimiter)
 {
+	std::vector<std::string> internal;
+	std::stringstream ss;
 
+	for (size_t i = 0; i < str.length(); i++)
+	{
+		if (str[i] == delimiter)
+		{
+			internal.push_back(ss.str());
+			ss.str("");
+			ss.clear();
+		}
+		else if (str[i] == '{')
+		{
+			while (str[i] != '}')
+				ss << str[i++];
+			ss << str[i];
+			internal.push_back(ss.str());
+			ss.str("");
+			ss.clear();
+		}
+		else
+			ss << str[i];
+	}
+	return (internal);
 }
-*/
 
-static std::vector<std::string> split(std::string str, char delimiter)
+
+inline std::vector<std::string> split(std::string str, char delimiter)
 {
 	std::vector<std::string> internal;
 	std::stringstream ss(str);
 	std::string tok;
 
 	while (std::getline(ss, tok, delimiter))
-		internal.push_back(tok);
+	{
+		if (tok.size() > 0)
+			internal.push_back(tok);
+	}
 	return (internal);
 }
 

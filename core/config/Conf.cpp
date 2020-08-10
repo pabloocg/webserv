@@ -38,18 +38,25 @@ std::string        http::Conf::simple_parse(void)
     return (buf.str());
 }
 
+void        http::Conf::save_location(std::string s)
+{
+    (void)s;
+    //std::cout << s << std::endl;
+}
+
 void        http::Conf::parse_server_conf(std::string s)
 {
     http::ServerConf    new_server;
-    std::cout << "SERVER" << std::endl;
-    std::cout << s << std::endl;
-    /*
+    //std::cout << "SERVER" << std::endl;
+    //std::cout << s << std::endl;
+
     std::vector<std::string>    params;
 
     params = http::special_split(s, ';');
 
     for (size_t i = 0; i < params.size(); i++)
     {
+        //std::cout << params[i] << std::endl;
         // Read Port
         if (!params[i].compare(0, 7, "listen "))
             new_server.setPort(std::atoi(params[i].substr(params[i].find_last_of(' ') + 1).c_str()));
@@ -63,7 +70,7 @@ void        http::Conf::parse_server_conf(std::string s)
         else if (!params[i].compare(0, 21, "client_max_body_size "))
             new_server.setBodySize(std::atoi(params[i].substr(params[i].find_last_of(' ') + 1).c_str()));
         // Read Error Pages
-        else if (!params[i].compare(0, 12, "error_pages "))
+        else if (!params[i].compare(0, 11, "error_page "))
             new_server.setErrorPage(params[i].substr(params[i].find_first_of(' ')));
         // Add location
         else if (!params[i].compare(0, 9, "location "))
@@ -71,7 +78,6 @@ void        http::Conf::parse_server_conf(std::string s)
         else
             throw Conf::UnrecognizedParameter();
     }
-    */
     this->_servers.push_back(new_server);
 }
 

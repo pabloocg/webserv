@@ -8,6 +8,7 @@
 #include <vector>
 #include <map>
 #include "../utils/params.hpp"
+#include "../utils/utils.hpp"
 #include "Routes.hpp"
 
 namespace http
@@ -52,6 +53,11 @@ public:
         this->_address.sin_port = htons(this->_port);
     };
     virtual ~ServerConf(){};
+
+    SA_IN       &getInfoAddress()
+    {
+        return (this->_address);
+    };
 
     void        setPort(in_port_t newport)
     {
@@ -101,8 +107,20 @@ public:
 
     void        setErrorPage(std::string new_errpage)
     {
-        //Trim spaces
-        std::cout << "New error page -> " << new_errpage << std::endl;
+        std::string     file;
+        std::vector<std::string>    sp_str;
+        int              n_err;
+
+        sp_str = split(new_errpage, ' ');
+
+        file = sp_str.back();
+        sp_str.pop_back();
+        while (sp_str.size() > 0)
+        {
+            n_err = atoi(sp_str.back().c_str());
+            this->_err_pages[n_err] = file;
+            sp_str.pop_back();
+        }
     };
 
     std::string getErrorPage(int code)
