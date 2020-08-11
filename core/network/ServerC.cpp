@@ -104,10 +104,10 @@ void http::ServerC::wait_for_connection()
 					FD_SET(new_socket, &_master);
 					std::cout << "host number " << j << " connected" << std::endl;
 					std::cout << "fd list:" << std::endl;
-					for (int j = 0; j < 30; j++)
+					for (int k = 0; k < 30; k++)
 					{
-						if (_client_socket[j])
-							std::cout << j << " : " << _client_socket[j] << std::endl;
+						if (_client_socket[k])
+							std::cout << k << " : " << _client_socket[k] << std::endl;
 					}
 					break;
 				}
@@ -120,7 +120,7 @@ void http::ServerC::wait_for_connection()
 			{
 				if ((valread = read(sd, buffer, 30000)) == 0)
 				{
-					std::cout << "host number " << i << " disconnected" << std::endl;
+					std::cout << "host number " << j << " disconnected" << std::endl;
 					close(sd);
 					FD_CLR(_client_socket[j], &_master);
 					_client_socket[j] = 0;
