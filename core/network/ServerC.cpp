@@ -132,17 +132,22 @@ void http::ServerC::wait_for_connection()
 						std::cout << k << " : " << _client_socket[k] << std::endl;
 				}
 			}
+			else if (valread == -1){
+				perror("read");
+			}
 			else
 			{
+				
 				this->_log.makeLog(ACCESS_LOG, buffer);
 				http::Request req(buffer);
 				message = req.build_response(&size, _mime_types);
+				std::cout << "size of the message: " << size << std::endl;
 				if (!message)
 				{
 					perror("some error occured");
 					exit(EXIT_FAILURE);
 				}
-				if (send(sd, message, size, 0) != (ssize_t)size)
+				if (http::sendall(sd, message, &size) == -1)
 				{
 					perror("send");
 				}
