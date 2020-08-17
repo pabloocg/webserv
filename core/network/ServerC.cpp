@@ -1,15 +1,14 @@
 #include "ServerC.hpp"
 
 http::ServerC::ServerC() : _client_socket(30, 0),
-						 _log(DEFAULT_ACCESS_LOG, DEFAULT_ERROR_LOG)
+						   _log(DEFAULT_ACCESS_LOG, DEFAULT_ERROR_LOG)
 {
 	this->_max_client = 30;
 }
 
-http::ServerC::ServerC(std::vector<http::ServerConf> servers):
-						_client_socket(30, 0),
-						_log(DEFAULT_ACCESS_LOG, DEFAULT_ERROR_LOG),
-						_servers(servers)
+http::ServerC::ServerC(std::vector<http::ServerConf> servers) : _client_socket(30, 0),
+																_log(DEFAULT_ACCESS_LOG, DEFAULT_ERROR_LOG),
+																_servers(servers)
 {
 	this->_max_client = 30;
 	this->_server_socket.resize(this->_servers.size());
@@ -28,7 +27,7 @@ void http::ServerC::start()
 		}
 		int _opt = TRUE;
 		if (setsockopt(_server_socket[i], SOL_SOCKET, SO_REUSEADDR, (char *)&_opt,
-					sizeof(_opt)) < 0)
+					   sizeof(_opt)) < 0)
 		{
 			perror("setsockopt");
 			exit(EXIT_FAILURE);
@@ -53,15 +52,15 @@ void http::ServerC::start()
 		FD_SET(_server_socket[i], &_master);
 		std::cout << "Server fd is " << _server_socket[i] << std::endl;
 		std::cout << "Waiting for connections..." << std::endl;
-	}	
+	}
 }
 
 void http::ServerC::wait_for_connection()
 {
-	int		max_sd, sd, activity, new_socket, valread, size;
-	char	buffer[30000] = {0};
-	char	*message;
-	fd_set	readfds;
+	int max_sd, sd, activity, new_socket, valread, size;
+	char buffer[30000] = {0};
+	char *message;
+	fd_set readfds;
 	FD_ZERO(&readfds);
 	//fd_set writefds;
 	//FD_ZERO(&writefds); todavia no se como funciona el select para writes (creo que es para los multiples servidores)
@@ -88,9 +87,9 @@ void http::ServerC::wait_for_connection()
 		int addrlen = sizeof(address);
 		if (FD_ISSET(_server_socket[i], &readfds)) //nueva conexion entrante
 		{
-			std::cout << "New connection!" << std::endl;
+			std::cout << "New connection at server " << i << "!" << std::endl;
 			if ((new_socket = accept(_server_socket[i],
-									(struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
+									 (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
 			{
 				perror("accept");
 				exit(EXIT_FAILURE);
@@ -113,43 +112,42 @@ void http::ServerC::wait_for_connection()
 				}
 			}
 		}
-		for (int j = 0; j < _max_client; j++)
+	}
+	for (int j = 0; j < _max_client; j++)
+	{
+		sd = _client_socket[j];
+		if (FD_ISSET(sd, &readfds))
 		{
-			sd = _client_socket[j];
-			if (FD_ISSET(sd, &readfds))
+			if ((valread = read(sd, buffer, 30000)) == 0)
 			{
-				if ((valread = read(sd, buffer, 30000)) == 0)
+				std::cout << "host number " << j << " disconnected" << std::endl;
+				close(sd);
+				FD_CLR(_client_socket[j], &_master);
+				_client_socket[j] = 0;
+				std::cout << "fd list:" << std::endl;
+				for (int k = 0; k < 30; k++)
 				{
-					std::cout << "host number " << j << " disconnected" << std::endl;
-					close(sd);
-					FD_CLR(_client_socket[j], &_master);
-					_client_socket[j] = 0;
-					std::cout << "fd list:" << std::endl;
-					for (int k = 0; k < 30; k++)
-					{
-						if (_client_socket[k])
-							std::cout << k << " : "  << _client_socket[k] << std::endl;
-					}
+					if (_client_socket[k])
+						std::cout << k << " : " << _client_socket[k] << std::endl;
 				}
-				else
+			}
+			else
+			{
+				this->_log.makeLog(ACCESS_LOG, buffer);
+				http::Request req(buffer);
+				message = req.build_response(&size);
+				if (!message)
 				{
-					this->_log.makeLog(ACCESS_LOG, buffer);
-					http::Request req(buffer);
-					message = req.build_response(&size);
-					if (!message)
-					{
-						perror("some error occured");
-						exit(EXIT_FAILURE);
-					}
-					if (send(sd, message, size, 0) != (ssize_t)size)
-					{
-						perror("send");
-					}
-					free(message);
-					std::cout << "message sent to " << sd << std::endl;
+					perror("some error occured");
+					exit(EXIT_FAILURE);
 				}
+				if (send(sd, message, size, 0) != (ssize_t)size)
+				{
+					perror("send");
+				}
+				free(message);
+				std::cout << "message sent to " << sd << std::endl;
 			}
 		}
 	}
-	
 }

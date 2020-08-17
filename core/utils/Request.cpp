@@ -60,9 +60,9 @@ void http::Request::save_header(std::string header){
 }
 
 http::Request::Request(std::string req){
-	std::cout << "************ REQUEST ************" << std::endl;
+	/*std::cout << "************ REQUEST ************" << std::endl;
 	std::cout << req << std::endl;
-	std::cout << "*********************************" << std::endl;
+	std::cout << "*********************************" << std::endl;*/
 	this->request = req;
 
 	std::vector<std::string> sheader;
