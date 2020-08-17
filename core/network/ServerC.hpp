@@ -38,11 +38,12 @@ private:
 	fd_set							_master;
 	const Logger					_log;
 	std::vector<http::ServerConf>	_servers;
+	std::map<std::string, std::string> _mime_types;
 
 public:
 
 	ServerC();
-	ServerC(std::vector<http::ServerConf> servers);
+	ServerC(std::vector<http::ServerConf> servers, std::map<std::string, std::string> mime_types);
 	virtual ~ServerC() {};
 
 	void start();

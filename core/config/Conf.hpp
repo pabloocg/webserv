@@ -20,18 +20,20 @@ private:
 
     Conf(void);
 
-    const std::string                   _filename;
+    std::string                   _filename;
     http::Logger                        _log;
     std::ifstream                       _file;
     std::vector<http::ServerConf>       _servers;
     std::map<std::string, bool>         _mandatory_conf;
     std::vector<std::string>            _simple_conf;
+	std::map<std::string, std::string>	_mime_types;
 
 
     bool        file_exists(void);
     std::string        simple_parse(void);
     void        complex_parse(std::string s);
     void        parse_server_conf(std::string s);
+	void        parse_types(std::string s);
     void        save_location(std::string s);
     
 
@@ -41,6 +43,7 @@ public:
     virtual ~Conf(void) {};
 
     std::vector<http::ServerConf>   getServers(void);
+	std::map<std::string, std::string> get_mime_types(void);
 
     class UnclosedBracket: public std::exception {
         virtual const char* what() const throw();

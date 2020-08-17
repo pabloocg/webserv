@@ -2341,3 +2341,558 @@ User-Agent: Fiddler Everywhere
 Host: 127.0.0.1:8081
 
 
+2020-08-17 17:58:17	Message: GET / HTTP/1.1
+Host: localhost:8080
+Upgrade-Insecure-Requests: 1
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+
+
+2020-08-17 17:58:17	Message: GET /apple-touch-icon-precomposed.png HTTP/1.1
+Host: localhost:8080
+Accept: */*
+Accept-Language: es-es
+Connection: keep-alive
+Accept-Encoding: gzip, deflate
+User-Agent: Safari/15609.2.9.1.2 CFNetwork/1126 Darwin/19.5.0 (x86_64)
+
+
+2020-08-17 17:58:17	Message: GET /apple-touch-icon.png HTTP/1.1
+Host: localhost:8080
+Accept: */*
+Accept-Language: es-es
+Connection: keep-alive
+Accept-Encoding: gzip, deflate
+User-Agent: Safari/15609.2.9.1.2 CFNetwork/1126 Darwin/19.5.0 (x86_64)
+
+
+2020-08-17 17:58:21	Message: GET /noticias_2/noticias_1.html HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Upgrade-Insecure-Requests: 1
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Referer: http://localhost:8080/
+Accept-Language: es-es
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:21	Message: GET /noticias_2/noticias_1.css HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: text/css,*/*;q=0.1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_2/noticias_1.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:21	Message: GET /noticias_2/alumnos.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_2/noticias_1.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:21	Message: GET /noticias_2/aereo.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_2/noticias_1.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:21	Message: GET /noticias_2/background.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_2/noticias_1.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:24	Message: GET /noticias_3/noticias_3.html HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Upgrade-Insecure-Requests: 1
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Referer: http://localhost:8080/
+Accept-Language: es-es
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:24	Message: GET /noticias_3/noticias_3.css HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: text/css,*/*;q=0.1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:24	Message: GET /noticias_3/alumnos.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:24	Message: GET /noticias_3/aereo.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:24	Message: GET /noticias_3/background.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:24	Message: GET /noticias_3/roboto_bold/Roboto-Bold-webfont.woff HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: */*
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:24	Message: GET /noticias_3/roboto_regular/Roboto-Regular-webfont.woff HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: */*
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:27	Message: GET /formulario.html HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Upgrade-Insecure-Requests: 1
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Referer: http://localhost:8080/
+Accept-Language: es-es
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:29	Message: GET /noticias_3/noticias_3.html HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Upgrade-Insecure-Requests: 1
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Referer: http://localhost:8080/
+Accept-Language: es-es
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:29	Message: GET /noticias_3/noticias_3.css HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: text/css,*/*;q=0.1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:29	Message: GET /noticias_3/alumnos.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:29	Message: GET /noticias_3/aereo.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:29	Message: GET /noticias_3/background.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:29	Message: GET /noticias_3/roboto_bold/Roboto-Bold-webfont.woff HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: */*
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:29	Message: GET /noticias_3/roboto_regular/Roboto-Regular-webfont.woff HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: */*
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:35	Message: GET /noticias_2/noticias_1.html HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Upgrade-Insecure-Requests: 1
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Referer: http://localhost:8080/
+Accept-Language: es-es
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:35	Message: GET /noticias_2/noticias_1.css HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: text/css,*/*;q=0.1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_2/noticias_1.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:35	Message: GET /noticias_2/alumnos.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_2/noticias_1.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:35	Message: GET /noticias_2/aereo.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_2/noticias_1.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:35	Message: GET /noticias_2/background.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_2/noticias_1.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:44	Message: GET /noticias_3/noticias_3.html HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Upgrade-Insecure-Requests: 1
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Referer: http://localhost:8080/
+Accept-Language: es-es
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:44	Message: GET /noticias_3/noticias_3.css HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: text/css,*/*;q=0.1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:44	Message: GET /noticias_3/alumnos.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:44	Message: GET /noticias_3/aereo.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:44	Message: GET /noticias_3/background.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:44	Message: GET /noticias_3/roboto_bold/Roboto-Bold-webfont.woff HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: */*
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 17:58:44	Message: GET /noticias_3/roboto_regular/Roboto-Regular-webfont.woff HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: */*
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+pt-Encoding: gzip, deflate
+
+
+2020-08-17 19:45:22	Message: GET / HTTP/1.1
+Host: localhost:8080
+Upgrade-Insecure-Requests: 1
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+
+
+2020-08-17 19:45:25	Message: GET /noticias_2/noticias_1.html HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Upgrade-Insecure-Requests: 1
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Referer: http://localhost:8080/
+Accept-Language: es-es
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 19:45:25	Message: GET /noticias_2/noticias_1.css HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: text/css,*/*;q=0.1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_2/noticias_1.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 19:45:25	Message: GET /noticias_2/alumnos.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_2/noticias_1.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 19:45:25	Message: GET /noticias_2/aereo.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_2/noticias_1.html
+Accept-Encoding: gzip, deflate
+
+
+
+2020-08-17 19:45:25	Message: GET /noticias_2/background.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_2/noticias_1.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 19:46:53	Message: GET /noticias_2/noticias_1.html HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Upgrade-Insecure-Requests: 1
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Referer: http://localhost:8080/
+Accept-Language: es-es
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 19:46:53	Message: GET /noticias_2/noticias_1.css HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: text/css,*/*;q=0.1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_2/noticias_1.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 19:46:53	Message: GET /noticias_2/alumnos.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_2/noticias_1.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 19:46:53	Message: GET /noticias_2/background.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_2/noticias_1.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 19:46:53	Message: GET /noticias_2/aereo.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_2/noticias_1.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 19:46:57	Message: GET /noticias_3/noticias_3.html HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Upgrade-Insecure-Requests: 1
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Referer: http://localhost:8080/
+Accept-Language: es-es
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 19:46:57	Message: GET /noticias_3/noticias_3.css HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: text/css,*/*;q=0.1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 19:46:57	Message: GET /noticias_3/alumnos.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 19:46:57	Message: GET /noticias_3/aereo.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+
+2020-08-17 19:46:57	Message: GET /noticias_3/background.jpg HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 19:46:57	Message: GET /noticias_3/roboto_bold/Roboto-Bold-webfont.woff HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: */*
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 19:46:57	Message: GET /noticias_3/roboto_regular/Roboto-Regular-webfont.woff HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: */*
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Accept-Language: es-es
+Referer: http://localhost:8080/noticias_3/noticias_3.html
+Accept-Encoding: gzip, deflate
+
+
+2020-08-17 19:46:59	Message: GET /formulario.html HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Upgrade-Insecure-Requests: 1
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15
+Referer: http://localhost:8080/
+Accept-Language: es-es
+Accept-Encoding: gzip, deflate
+
+

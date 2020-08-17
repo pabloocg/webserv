@@ -44,6 +44,34 @@ void        http::Conf::save_location(std::string s)
     //std::cout << s << std::endl;
 }
 
+void        http::Conf::parse_types(std::string s){
+	std::string value;
+	int i = 0;
+	while(i < (int)s.length()){
+		int count = 0;
+		while(!std::isspace(s[i + count])){
+			count++;
+		}
+		value = s.substr(i, count);
+		std::cout << "value added: " << value << std::endl;
+		i += count;
+		while(s[i] != ';'){
+			while(std::isspace(s[i])){
+				i++;
+			}
+			count = 0;
+			while(!std::isspace(s[i + count]) && s[i + count] != ';'){
+				count++;
+			}
+			std::pair<std::string, std::string> pair(s.substr(i, count), value);
+			this->_mime_types.insert(pair);
+			std::cout << "ha insertado " << s.substr(i, count) << std::endl;
+			i += count;
+		}
+		i++;
+	}
+}
+
 void        http::Conf::parse_server_conf(std::string s)
 {
     http::ServerConf    new_server;
@@ -132,6 +160,40 @@ void        http::Conf::complex_parse(std::string s)
             this->parse_server_conf(string_p.substr(i + 1, bclose - (i + 1)));
             string_p = string_p.substr(bclose + 1);
         }
+		else if (!string_p.compare(0, 7, "include")){
+			std::cout << "include found" << std::endl;
+			i = 7;
+			while (std::isspace(string_p[i]))
+                i++;
+			int aux = 0;
+			while (std::isalnum(string_p[i + aux]) || string_p[i + aux] == '.'){
+				aux++;
+			}
+			this->_filename = string_p.substr(i, aux);
+			std::cout << "file included: " << this->_filename << std::endl;
+			if (!file_exists())
+    		{
+        		this->_log.makeLog(ERROR_LOG, "Included file at configuration file doesn't exist");
+        		exit(EXIT_FAILURE);
+    		}
+			i += aux;
+			while (string_p[i] != ';')
+				i++;
+			string_p = string_p.substr(i + 1);
+			i = 0;
+			std::string include = simple_parse();
+			string_p = include + string_p;
+		}
+		else if (!string_p.compare(0, 5, "types")){
+			i = 5;
+			while (std::isspace(string_p[i]))
+                i++;
+			if (!(string_p[i] == '{'))
+                throw Conf::UnrecognizedParameter();
+            bclose = get_BracketClose(string_p);
+            this->parse_types(string_p.substr(i + 1, bclose - (i + 1)));
+			string_p = string_p.substr(bclose + 1);
+		}
         else
             throw Conf::UnrecognizedParameter();
     }
@@ -140,6 +202,11 @@ void        http::Conf::complex_parse(std::string s)
 std::vector<http::ServerConf>   http::Conf::getServers(void)
 {
     return (this->_servers);
+}
+
+std::map<std::string, std::string>   http::Conf::get_mime_types(void)
+{
+	return (this->_mime_types);
 }
 
 const char* http::Conf::UnclosedBracket::what() const throw()

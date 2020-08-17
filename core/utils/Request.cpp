@@ -98,24 +98,17 @@ http::Request::Request(std::string req){
 	
 }
 
-std::string http::Request::get_content_type(std::string type){
-	if (type == "htm")
-		type = "html";
-	else if (type == "ics")
-		type = "calendar";
-	if (type == "css" || type == "csv" || type == "html" || type == "calendar" || type == "csv-scherma" || type == "xml")
-		return("text/" + type);
-	if (type == "jpg")
-		return("image/jpeg");
-	if (type == "ico")
-		return("image/x-icon");
-	if (type == "woff" || type == "woff2" || type == "ttf")
-		return ("font/" + type);
-	else
-		return ("text/plain");
+std::string http::Request::get_content_type(std::string type, std::map<std::string, std::string> mime_types){
+	std::map<std::string, std::string>::iterator iter = mime_types.find(type);
+	if (iter == mime_types.end()){
+		return ("application/octet-stream");
+	}
+	else{
+		return (iter->second);
+	}
 }
 
-char *http::Request::build_get(int *size){
+char *http::Request::build_get(int *size, std::map<std::string, std::string> mime_types){
 	char *res;
 	std::ifstream file;
 	std::string buf;
@@ -145,7 +138,7 @@ char *http::Request::build_get(int *size){
 	file.close();
 
 	stream << "HTTP/1.1 " << this->status << " " << this->message_status << "\nContent-Type: "
-	<< get_content_type(this->file_type) << "\nContent-Length: " << this->resp_body.length() << "\n\n";
+	<< get_content_type(this->file_type, mime_types) << "\nContent-Length: " << this->resp_body.length() << "\n\n";
 	if (this->type == GET)
 		stream << this->resp_body;
 
@@ -162,9 +155,9 @@ char *http::Request::build_get(int *size){
 	return (res);
 }
 
-char *http::Request::build_response(int *size){
+char *http::Request::build_response(int *size, std::map<std::string, std::string> mime_types){
 	if (this->type == GET || this->type == HEAD){
-		return (this->build_get(size));
+		return (this->build_get(size, mime_types));
 	}
 	return (NULL);
 }

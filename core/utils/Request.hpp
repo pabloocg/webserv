@@ -12,6 +12,7 @@
 # include <sstream>
 # include <string>
 # include <algorithm>
+# include <map>
 
 #define GET 0
 #define HEAD 1
@@ -38,13 +39,13 @@ namespace http
 	std::string message_status;
 	std::string resp_body;
 
-	char *build_get(int *size);
-	std::string get_content_type(std::string file_type);
+	char *build_get(int *size, std::map<std::string, std::string> mime_types);
+	std::string get_content_type(std::string file_type, std::map<std::string, std::string> mime_types);
 
 	public:
 		Request(std::string req);
 
-		char *build_response(int *size);
+		char *build_response(int *size, std::map<std::string, std::string> mime_types);
 		void save_header(std::string header);
 	};
 } // namespace http

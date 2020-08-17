@@ -1,4 +1,3 @@
-#include "network/Server.hpp"
 #include "utils/Request.hpp"
 
 #define CONFIG_TEST
@@ -32,7 +31,7 @@ int main(int argc, char *argv[])
             //std::vector<http::ServerConf>   servers(config.getServers());
             //for (std::vector<http::ServerConf>::iterator it = servers.begin(); it != servers.end(); it++)
             //    std::cout << *it << std::endl;
-            http::ServerC serv(config.getServers());
+            http::ServerC serv(config.getServers(), config.get_mime_types());
 
             serv.start();
             while (1)
@@ -41,17 +40,6 @@ int main(int argc, char *argv[])
         catch(const std::exception& e)
         {
             std::cerr << e.what() << '\n';
-        }
-
-    #endif
-
-    #ifndef CONFIG_TEST
-        (void)argc;(void)argv;
-        http::Server serv;
-        serv.start();
-        while (1)
-        {
-            serv.wait_for_connection();
         }
 
     #endif
