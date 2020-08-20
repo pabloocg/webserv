@@ -20,6 +20,7 @@ SRCS =	main.cpp\
 		${addprefix ${NETWORK_PATH}, ServerC.cpp}\
 		${addprefix ${CONFIG_PATH}, Logger.cpp}\
 		${addprefix ${UTILS_PATH}, Request.cpp}\
+		${addprefix ${UTILS_PATH}, Pending_send.cpp}\
 		${addprefix ${CONFIG_PATH}, Conf.cpp}
 
 NAME = webserv

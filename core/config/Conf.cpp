@@ -47,6 +47,7 @@ void        http::Conf::save_location(std::string s)
 void        http::Conf::parse_types(std::string s){
 	std::string value;
 	int i = 0;
+	std::cout << s << std::endl;
 	while(i < (int)s.length()){
 		int count = 0;
 		while(!std::isspace(s[i + count])){
