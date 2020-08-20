@@ -3,6 +3,7 @@
 
 #include "ServerConf.hpp"
 #include "../utils/utils.hpp"
+#include "Routes.hpp"
 #include "Logger.hpp"
 #include <vector>
 #include <map>
@@ -20,7 +21,7 @@ private:
 
     Conf(void);
 
-    std::string                   _filename;
+    std::string                         _filename;
     http::Logger                        _log;
     std::ifstream                       _file;
     std::vector<http::ServerConf>       _servers;
@@ -29,12 +30,12 @@ private:
 	std::map<std::string, std::string>	_mime_types;
 
 
-    bool        file_exists(void);
-    std::string        simple_parse(void);
-    void        complex_parse(std::string s);
-    void        parse_server_conf(std::string s);
-	void        parse_types(std::string s);
-    void        save_location(std::string s);
+    bool            file_exists(void);
+    std::string     simple_parse(void);
+    void            complex_parse(std::string s);
+    void            parse_server_conf(std::string s);
+	void            parse_types(std::string s);
+    http::Routes    save_location(std::string s);
     
 
 public:
