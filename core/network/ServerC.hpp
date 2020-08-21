@@ -18,6 +18,7 @@
 # include "../utils/Request.hpp"
 # include "../utils/utils.hpp"
 # include "../config/ServerConf.hpp"
+# include "../utils/Pending_send.hpp"
 
 #define TRUE 1
 #define FALSE 0
@@ -36,9 +37,11 @@ private:
 	std::vector<int>				_server_socket;
 	std::vector<int>				_client_socket;
 	int								_max_client;
-	fd_set							_master;
+	fd_set							_master_read;
+	fd_set							_master_write;
 	const Logger					_log;
 	std::vector<http::ServerConf>	_servers;
+	std::map<int, http::Pending_send> _pending_messages;
 	std::map<std::string, std::string> _mime_types;
 
 public:
