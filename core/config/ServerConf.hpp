@@ -61,7 +61,7 @@ public:
 
     void        setPort(in_port_t newport)
     {
-        std::cout << "New server port -> " << newport << std::endl;
+        //std::cout << "New server port -> " << newport << std::endl;
         this->_port = newport;
         this->_address.sin_port = htons(this->_port);
     };
@@ -73,7 +73,7 @@ public:
 
     void        setServerAddr(std::string new_serveraddr)
     {
-        std::cout << "New server addr -> " << new_serveraddr << std::endl;
+        //std::cout << "New server addr -> " << new_serveraddr << std::endl;
         this->_server_addr = new_serveraddr;
         this->_address.sin_addr.s_addr = inet_addr(this->_server_addr.c_str());
     };
@@ -85,7 +85,7 @@ public:
 
     void        setServerName(std::string new_servername)
     {
-        std::cout << "New server name -> " << new_servername << std::endl;
+        //std::cout << "New server name -> " << new_servername << std::endl;
         this->_server_name = new_servername;
     };
 
@@ -96,7 +96,7 @@ public:
 
     void        setBodySize(unsigned int new_body_size)
     {
-        std::cout << "New server bodysize -> " << new_body_size << std::endl;
+        //std::cout << "New server bodysize -> " << new_body_size << std::endl;
         this->_body_size = new_body_size;
     };
 
@@ -133,9 +133,14 @@ public:
         return (this->_err_pages);
     };
 
-    void        add_route(http::Routes  new_route)
+    void        add_route(http::Routes new_route)
     {
         this->_routes.push_back(new_route);
+    };
+
+    std::vector<http::Routes>    getRoutes()
+    {
+        return (this->_routes);
     };
 
     http::Routes    &getRoutebyPath(std::string  &path)
@@ -153,8 +158,7 @@ public:
 
 inline std::ostream &operator<<(std::ostream &out, http::ServerConf &server)
 {
-    out << "\nSERVER INFO:\n";
-    out << "Server Port: " << server.getPort() << std::endl;
+    out << "\nServer Port: " << server.getPort() << std::endl;
     out << "Server Name: " << server.getServerName() << std::endl;
     out << "Server Address: " << server.getServerAddr() << std::endl;
     out << "Server BodySize: " << server.getBodySize() << std::endl;

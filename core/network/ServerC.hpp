@@ -30,6 +30,7 @@ class ServerC
 {
 
 private:
+	ServerC();
 
 	typedef struct sockaddr_in SA_IN;
 
@@ -45,7 +46,6 @@ private:
 
 public:
 
-	ServerC();
 	ServerC(std::vector<http::ServerConf> servers, std::map<std::string, std::string> mime_types);
 	virtual ~ServerC() {};
 

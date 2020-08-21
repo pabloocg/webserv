@@ -38,35 +38,96 @@ std::string        http::Conf::simple_parse(void)
     return (buf.str());
 }
 
-void        http::Conf::save_location(std::string s)
+http::Routes    http::Conf::save_location(std::string s)
 {
-    (void)s;
+    http::Routes        route;
+    std::stringstream   buf;
+    std::vector<std::string>    params;
+    size_t              count = 0;
+
+    s.erase(0, 9);
+    while (std::isspace(s[count]))
+        count++;
+    while (!std::isspace(s[count]))
+        buf << s[count++];
+    route.setLocation(buf.str()); // Save virtual directory location
+    while (std::isspace(s[count]))
+        count++;
+    if (!(s[count] == '{'))
+        throw Conf::UnrecognizedParameter();
+    s = s.substr(count + 1, s.find_last_of("}") - (count + 1));
+    buf.clear();
+    buf.str("");
     //std::cout << s << std::endl;
+    params = http::special_split(s, ';');
+    for (size_t i = 0; i < params.size(); i++)
+    {
+        //std::cout << params[i] << std::endl;
+        if (!params[i].compare(0, 5, "root ")) // Existing directory path
+            route.setDirPath(params[i].substr(params[i].find_last_of(' ') + 1));
+        else if (!params[i].compare(0, 6, "index ")) // File index
+            route.setIndexFile(params[i].substr(params[i].find_last_of(' ') + 1));
+        else if (!params[i].compare(0, 10, "autoindex ")) // Activate autoindex (show files in a dir)
+        {
+            if (params[i].substr(params[i].find_last_of(' ') + 1) == "on")
+                route.allowAutoIndex();
+        }
+        else if (!params[i].compare(0, 7, "upload ")) // allow uploads files
+        {
+            if (params[i].substr(params[i].find_last_of(' ') + 1) == "on")
+                route.allowUpload();
+        }
+        else if (!params[i].compare(0, 12, "path_upload ")) // Path to save uploads
+            route.setUploadPath(params[i].substr(params[i].find_last_of(' ') + 1));
+        else if (!params[i].compare(0, 13, "http_methods ")) // methods allowed in a location
+        {
+            count = 13;
+            std::string     s_cmp;
+            std::string     to_str(params[i]);
+            while (count < to_str.length())
+            {
+                while (std::isspace(to_str[count]) && count < to_str.length())
+                    count++;
+                while (!std::isspace(to_str[count]) && count < to_str.length())
+                    buf << to_str[count++];
+                s_cmp = buf.str();
+                if (s_cmp != "GET" && s_cmp != "POST" && s_cmp != "HEAD" && s_cmp != "DELETE"
+                    && s_cmp != "CONNECT" && s_cmp != "OPTIONS" && s_cmp != "TRACE" && s_cmp != "PATCH")
+                    throw http::Conf::UnrecognizedParameter();
+                route.setMethods(s_cmp);                
+                buf.clear();
+                buf.str("");
+            }
+        }
+        else
+            throw Conf::UnrecognizedParameter();
+    }
+    return (route);
 }
 
-void        http::Conf::parse_types(std::string s){
+void        http::Conf::parse_types(std::string s)
+{
 	std::string value;
 	int i = 0;
-	std::cout << s << std::endl;
-	while(i < (int)s.length()){
-		int count = 0;
-		while(!std::isspace(s[i + count])){
+    int count;
+	while (i < (int)s.length())
+    {
+        count = 0;
+		while (!std::isspace(s[i + count]))
 			count++;
-		}
 		value = s.substr(i, count);
-		std::cout << "value added: " << value << std::endl;
+		//std::cout << "value added: " << value << std::endl;
 		i += count;
-		while(s[i] != ';'){
-			while(std::isspace(s[i])){
+		while (s[i] != ';')
+        {
+			while (std::isspace(s[i]))
 				i++;
-			}
 			count = 0;
-			while(!std::isspace(s[i + count]) && s[i + count] != ';'){
+			while (!std::isspace(s[i + count]) && s[i + count] != ';')
 				count++;
-			}
 			std::pair<std::string, std::string> pair(s.substr(i, count), value);
 			this->_mime_types.insert(pair);
-			std::cout << "ha insertado " << s.substr(i, count) << std::endl;
+			//std::cout << "ha insertado " << s.substr(i, count) << std::endl;
 			i += count;
 		}
 		i++;
@@ -103,7 +164,7 @@ void        http::Conf::parse_server_conf(std::string s)
             new_server.setErrorPage(params[i].substr(params[i].find_first_of(' ')));
         // Add location
         else if (!params[i].compare(0, 9, "location "))
-            save_location(params[i]);
+            new_server.add_route(this->save_location(params[i]));
         else
             throw Conf::UnrecognizedParameter();
     }
@@ -151,7 +212,7 @@ void        http::Conf::complex_parse(std::string s)
     {
         if (!string_p.compare(0, 6, "server"))
         {
-            std::cout << "namespace server found" << std::endl;
+            //std::cout << "namespace server found" << std::endl;
             i = 6;
             while (std::isspace(string_p[i]))
                 i++;
@@ -161,17 +222,17 @@ void        http::Conf::complex_parse(std::string s)
             this->parse_server_conf(string_p.substr(i + 1, bclose - (i + 1)));
             string_p = string_p.substr(bclose + 1);
         }
-		else if (!string_p.compare(0, 7, "include")){
-			std::cout << "include found" << std::endl;
+		else if (!string_p.compare(0, 7, "include"))
+        {
+			//std::cout << "include found" << std::endl;
 			i = 7;
 			while (std::isspace(string_p[i]))
                 i++;
 			int aux = 0;
-			while (std::isalnum(string_p[i + aux]) || string_p[i + aux] == '.'){
+			while (std::isalnum(string_p[i + aux]) || string_p[i + aux] == '.')
 				aux++;
-			}
 			this->_filename = string_p.substr(i, aux);
-			std::cout << "file included: " << this->_filename << std::endl;
+			//std::cout << "file included: " << this->_filename << std::endl;
 			if (!file_exists())
     		{
         		this->_log.makeLog(ERROR_LOG, "Included file at configuration file doesn't exist");
@@ -185,7 +246,8 @@ void        http::Conf::complex_parse(std::string s)
 			std::string include = simple_parse();
 			string_p = include + string_p;
 		}
-		else if (!string_p.compare(0, 5, "types")){
+		else if (!string_p.compare(0, 5, "types"))
+        {
 			i = 5;
 			while (std::isspace(string_p[i]))
                 i++;
