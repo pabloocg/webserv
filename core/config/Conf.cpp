@@ -79,6 +79,13 @@ http::Routes    http::Conf::save_location(std::string s)
         }
         else if (!params[i].compare(0, 12, "path_upload ")) // Path to save uploads
             route.setUploadPath(params[i].substr(params[i].find_last_of(' ') + 1));
+        else if (!params[i].compare(0, 11, "auth_basic ")) // allow uploads files
+        {
+            route.allowAuth();
+            route.setAuthMessage(params[i].substr(11));
+        }
+        else if (!params[i].compare(0, 21, "auth_basic_user_file ")) // Path to save uploads
+            route.setPassAuthFile(params[i].substr(params[i].find_last_of(' ') + 1));
         else if (!params[i].compare(0, 13, "http_methods ")) // methods allowed in a location
         {
             count = 13;

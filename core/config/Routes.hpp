@@ -48,6 +48,15 @@ private:
     // Configure where uploads should be saved
     std::string     _upload_path;
 
+    //Authentication
+    bool            _is_auth;
+
+    //Message to Authenticate
+    std::string     _auth_message;
+
+    //Route of the password file Authentication
+    std::string     _path_auth;
+
 public:
     Routes()
     {
@@ -66,6 +75,9 @@ public:
         this->_index_file = std::string("");
         this->_uploads = false;
         this->_upload_path = std::string("");
+        this->_is_auth = false;
+        this->_auth_message = std::string("");
+        this->_path_auth = std::string("");
     };
 
     virtual ~Routes() {};
@@ -174,6 +186,36 @@ public:
     {
         return (this->_upload_path);
     };
+
+    void        allowAuth()
+    {
+        this->_is_auth = true;
+    };
+
+    bool        needAuth()
+    {
+        return (this->_is_auth);
+    };
+
+    void        setAuthMessage(std::string auth_mess)
+    {
+        this->_auth_message = trim2(auth_mess, "\"");
+    };
+
+    std::string &getAuthMessage()
+    {
+        return (this->_auth_message);
+    };
+
+    void        setPassAuthFile(std::string auth_file)
+    {
+        this->_path_auth = auth_file;
+    };
+
+    std::string &getPassAuthFile()
+    {
+        return (this->_path_auth);
+    };
 };
 
 inline std::ostream &operator<<(std::ostream &out, http::Routes &route)
@@ -184,6 +226,9 @@ inline std::ostream &operator<<(std::ostream &out, http::Routes &route)
     out << "Location autoindex: " << ((route.getAutoIndex()) ? "on" : "off") << std::endl;
     out << "Location uploads: " << ((route.getUpload()) ? "on" : "off") << std::endl;
     out << "Location uploadsPath: " << route.getUploadPath() << std::endl;
+    out << "Location authentication: " << ((route.needAuth()) ? "on" : "off") << std::endl;
+    out << "Location AuthMessage: " << route.getAuthMessage() << std::endl;
+    out << "Location Password Auth File: " << route.getPassAuthFile() << std::endl;
     out << "Location MethodsAllowed:" << std::endl;
     out << "\tGET: " << ((route.MethodAllow("GET")) ? "on": "off") << std::endl;
     out << "\tPOST: " << ((route.MethodAllow("POST")) ? "on": "off") << std::endl;

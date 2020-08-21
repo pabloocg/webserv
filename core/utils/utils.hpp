@@ -73,6 +73,19 @@ namespace http
 		return (rtrim(ltrim(str)));
 	}
 
+	inline std::string trim2(std::string s, std::string trimChars)
+	{
+		std::stringstream	buff;
+		size_t				i = 0;
+		while (i < s.length())
+		{
+			if (trimChars.find(s[i]) == std::string::npos)
+				buff << s[i];
+			i++;
+		}
+		return (buff.str());
+	}
+
 	//Esta funcion tendrá que ir en la clase Request
 	static char *read_file(std::string file_request)
 	{
