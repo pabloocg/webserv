@@ -64,12 +64,12 @@ void http::ServerC::start()
 
 void http::ServerC::wait_for_connection()
 {
-	int max_sd, sd, activity, new_socket, valread, size;
-	char buffer[30000] = {0};
-	char *message;
-	fd_set readfds;
+	int		max_sd, sd, activity;
+	fd_set	readfds;
+	fd_set	writefds;
+	SA_IN	address;
+
 	FD_ZERO(&readfds);
-	fd_set writefds;
 	FD_ZERO(&writefds);
 	readfds = _master_read;
 	writefds = _master_write;
@@ -88,111 +88,130 @@ void http::ServerC::wait_for_connection()
 	}
 	for (size_t i = 0; i < _servers.size(); i++)
 	{
-		SA_IN address;
-
 		address = _servers[i].getInfoAddress();
-		int addrlen = sizeof(address);
 		if (FD_ISSET(_server_socket[i], &readfds)) //nueva conexion entrante
 		{
 			std::cout << "New connection at server " << i << "!" << std::endl;
-			if ((new_socket = accept(_server_socket[i],
-									 (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
-			{
-				perror("accept");
-				exit(EXIT_FAILURE);
-			}
-			fcntl(new_socket, F_SETFL, O_NONBLOCK);
-			for (int j = 0; j < _max_client; j++)
-			{
-				if (_client_socket[j] == 0)
-				{
-					_client_socket[j] = new_socket;
-					FD_SET(new_socket, &_master_read);
-					std::cout << "host number " << j << " connected" << std::endl;
-					std::cout << "fd list:" << std::endl;
-					for (int k = 0; k < 30; k++)
-					{
-						if (_client_socket[k])
-							std::cout << k << " : " << _client_socket[k] << std::endl;
-					}
-					break;
-				}
-			}
+			manage_new_connection(&_server_socket[i], address);
 		}
 	}
 	for (int j = 0; j < _max_client; j++)
 	{
 		sd = _client_socket[j];
 		if (FD_ISSET(sd, &readfds))
-		{
-			if ((valread = read(sd, buffer, 30000)) == 0)
-			{
-				std::cout << "host number " << j << " disconnected" << std::endl;
-				close(sd);
-				FD_CLR(_client_socket[j], &_master_read);
-				_client_socket[j] = 0;
-				std::cout << "fd list:" << std::endl;
-				for (int k = 0; k < 30; k++)
-				{
-					if (_client_socket[k])
-						std::cout << k << " : " << _client_socket[k] << std::endl;
-				}
-			}
-			else if (valread == -1)
-			{
-				perror("read");
-			}
-			else
-			{
-
-				this->_log.makeLog(ACCESS_LOG, buffer);
-				http::Request req(buffer);
-				message = req.build_response(&size, _mime_types);
-				std::cout << "size of the message: " << size << std::endl;
-				if (!message)
-				{
-					perror("some error occured");
-					exit(EXIT_FAILURE);
-				}
-				int n = 0;
-				n = send(sd, message, (size_t)size, 0);
-				std::cout << "Sended " << n << " bytes to " << sd << ", " << size - n << " left" << std::endl; 
-				if (n == -1)
-				{
-					perror("send");
-				}
-				else if (n < size){
-					Pending_send sended(message, size, n, size - n);
-					std::pair<int, http::Pending_send> pair(sd, sended);
-					_pending_messages.insert(pair);
-					FD_SET(sd, &_master_write);
-				}
-				else
-					free(message);
-				std::cout << "Message sent to " << sd << std::endl;
-			}
-		}
+			manage_reads(&sd);
+		if (FD_ISSET(sd, &writefds))
+			manage_writes(&sd);
 	}
+}
+
+void http::ServerC::manage_new_connection(int *server_sckt, SA_IN address)
+{
+	int	new_socket;
+	int	addrlen;
+
+	addrlen = sizeof(address);
+	if ((new_socket = accept(*server_sckt,
+								(struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
+	{
+		perror("accept");
+		exit(EXIT_FAILURE);
+	}
+	fcntl(new_socket, F_SETFL, O_NONBLOCK);
 	for (int j = 0; j < _max_client; j++)
 	{
-		sd = _client_socket[j];
-		if (FD_ISSET(sd, &writefds)){
-			Pending_send pending = _pending_messages.find(sd)->second;
-			int n = 0;
-			n = send(sd, pending.get_message() + pending.get_sended(), pending.get_left(), 0);
-			std::cout << "Sended " << n + pending.get_sended() << " bytes to " << sd << ", " << pending.get_left() - n << " left" << std::endl; 
-			if (n == -1){
-				perror("send");
+		if (_client_socket[j] == 0)
+		{
+			_client_socket[j] = new_socket;
+			FD_SET(new_socket, &_master_read);
+			std::cout << "host number " << j << " connected" << std::endl;
+			std::cout << "fd list:" << std::endl;
+			for (int k = 0; k < 30; k++)
+			{
+				if (_client_socket[k])
+					std::cout << k << " : " << _client_socket[k] << std::endl;
 			}
-			else if (n < pending.get_left()){
-				_pending_messages.find(sd)->second.set_sended(pending.get_sended() + n);
-				_pending_messages.find(sd)->second.set_left(pending.get_left() - n);
-			}
-			else{
-				free(pending.get_message());
-				FD_CLR(sd, &_master_write);
-				_pending_messages.erase(_pending_messages.find(sd));
-			}
+			break;
 		}
+	}
+}
+
+void http::ServerC::manage_reads(int *sd)
+{
+	int		valread;
+	int		size;
+	char	buffer[30000] = {0};
+	char	*message;
+
+	if ((valread = read(*sd, buffer, 30000)) == 0)
+	{
+		std::cout << "host number " << *sd << " disconnected" << std::endl;
+		close(*sd);
+		FD_CLR(*sd, &_master_read);
+		*sd = 0;
+		std::cout << "fd list:" << std::endl;
+		for (int k = 0; k < 30; k++)
+		{
+			if (_client_socket[k])
+				std::cout << k << " : " << _client_socket[k] << std::endl;
+		}
+	}
+	else if (valread == -1)
+	{
+		perror("read");
+	}
+	else
+	{
+
+		this->_log.makeLog(ACCESS_LOG, buffer);
+		http::Request req(buffer);
+		message = req.build_response(&size, _mime_types);
+		std::cout << "size of the message: " << size << std::endl;
+		if (!message)
+		{
+			perror("some error occured");
+			exit(EXIT_FAILURE);
+		}
+		int n = 0;
+		n = send(*sd, message, (size_t)size, 0);
+		std::cout << "Sended " << n << " bytes to " << *sd << ", " << size - n << " left" << std::endl; 
+		if (n == -1)
+		{
+			perror("send");
+		}
+		else if (n < size)
+		{
+			http::Pending_send sended(message, size, n, size - n);
+			std::pair<int, http::Pending_send> pair(*sd, sended);
+			_pending_messages.insert(pair);
+			FD_SET(*sd, &_master_write);
+		}
+		else
+			free(message);
+		std::cout << "Message sent to " << *sd << std::endl;
+	}
+
+}
+
+void http::ServerC::manage_writes(int *sd)
+{
+	http::Pending_send pending = _pending_messages.find(*sd)->second;
+	int n = 0;
+	n = send(*sd, pending.get_message() + pending.get_sended(), pending.get_left(), 0);
+	std::cout << "Sended " << n + pending.get_sended() << " bytes to " << *sd << ", " << pending.get_left() - n << " left" << std::endl; 
+	if (n == -1)
+	{
+		perror("send");
+	}
+	else if (n < pending.get_left())
+	{
+		_pending_messages.find(*sd)->second.set_sended(pending.get_sended() + n);
+		_pending_messages.find(*sd)->second.set_left(pending.get_left() - n);
+	}
+	else
+	{
+		free(pending.get_message());
+		FD_CLR(*sd, &_master_write);
+		_pending_messages.erase(_pending_messages.find(*sd));
 	}
 }
