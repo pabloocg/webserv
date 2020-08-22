@@ -43,6 +43,7 @@ private:
 	std::vector<http::ServerConf>		_servers;
 	std::map<int, http::Pending_send>	_pending_messages;
 	std::map<std::string, std::string>	_mime_types;
+	std::map<int, int>					_client_server_map;
 
 public:
 
@@ -51,7 +52,7 @@ public:
 
 	void	start();
 	void	wait_for_connection();
-	void	manage_new_connection(int *server_sckt, SA_IN address);
+	void	manage_new_connection(int *server_sckt, SA_IN address, int serv_num);
 	void	manage_reads(int *sd);
 	void	manage_writes(int *sd);
 

@@ -13,6 +13,7 @@
 # include <string>
 # include <algorithm>
 # include <map>
+# include "../config/ServerConf.hpp"
 
 #define GET 0
 #define HEAD 1
@@ -33,19 +34,25 @@ namespace http
 	std::string file_type;
 	std::string request;
 	std::string http_version;
+	std::string _auth;
+	std::string _realm;
+	std::string _auth_file_path;
+	bool _www_auth_required;
 
 	//Response variables
 	int status;
 	std::string message_status;
 	std::string resp_body;
 
-	char *build_get(int *size, std::map<std::string, std::string> mime_types);
+	char *build_get(int *size, std::map<std::string, std::string> mime_types, http::ServerConf server);
 	std::string get_content_type(std::string file_type, std::map<std::string, std::string> mime_types);
+	bool needs_auth(std::string file_name, std::vector<http::Routes>   routes);
+	bool validate_password(std::string auth);
 
 	public:
 		Request(std::string req);
 
-		char *build_response(int *size, std::map<std::string, std::string> mime_types);
+		char *build_response(int *size, std::map<std::string, std::string> mime_types, http::ServerConf server);
 		void save_header(std::string header);
 	};
 } // namespace http

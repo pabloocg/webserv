@@ -92,7 +92,7 @@ void http::ServerC::wait_for_connection()
 		if (FD_ISSET(_server_socket[i], &readfds)) //nueva conexion entrante
 		{
 			std::cout << "New connection at server " << i << "!" << std::endl;
-			manage_new_connection(&_server_socket[i], address);
+			manage_new_connection(&_server_socket[i], address, i);
 		}
 	}
 	for (int j = 0; j < _max_client; j++)
@@ -100,12 +100,12 @@ void http::ServerC::wait_for_connection()
 		sd = _client_socket[j];
 		if (FD_ISSET(sd, &readfds))
 			manage_reads(&sd);
-		if (FD_ISSET(sd, &writefds))
+		else if (FD_ISSET(sd, &writefds))
 			manage_writes(&sd);
 	}
 }
 
-void http::ServerC::manage_new_connection(int *server_sckt, SA_IN address)
+void http::ServerC::manage_new_connection(int *server_sckt, SA_IN address, int serv_num)
 {
 	int	new_socket;
 	int	addrlen;
@@ -118,6 +118,7 @@ void http::ServerC::manage_new_connection(int *server_sckt, SA_IN address)
 		exit(EXIT_FAILURE);
 	}
 	fcntl(new_socket, F_SETFL, O_NONBLOCK);
+	_client_server_map[new_socket] = serv_num;
 	for (int j = 0; j < _max_client; j++)
 	{
 		if (_client_socket[j] == 0)
@@ -165,7 +166,7 @@ void http::ServerC::manage_reads(int *sd)
 
 		this->_log.makeLog(ACCESS_LOG, buffer);
 		http::Request req(buffer);
-		message = req.build_response(&size, _mime_types);
+		message = req.build_response(&size, _mime_types, _servers[_client_server_map[*sd]]);
 		std::cout << "size of the message: " << size << std::endl;
 		if (!message)
 		{
