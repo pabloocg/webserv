@@ -69,26 +69,25 @@ http::Request::Request(std::string req)
 	this->request = req;
 
 	std::vector<std::string> sheader;
-	std::vector<std::string> request;
+	std::vector<std::string> srequest;
 
 	sheader = http::split(req, '\n');
 
-	request = http::split(sheader[0], ' ');
-	if (request[0] == "GET")
+	srequest = http::split(sheader[0], ' ');
+	if (srequest[0] == "GET")
 		this->type = GET;
-	else if (request[0] == "HEAD")
+	else if (srequest[0] == "HEAD")
 		this->type = HEAD;
-	else if (request[0] == "OPTIONS")
+	else if (srequest[0] == "OPTIONS")
 		this->type = OPTIONS;
-	else if (request[0] == "POST")
+	else if (srequest[0] == "POST")
 		this->type = POST;
-	else if (request[0] == "PUT")
+	else if (srequest[0] == "PUT")
 		this->type = PUT;
 
-	this->file_req = ROOT_DIR + request[1];
-	if ((this->type == GET || this->type == HEAD) && request[1] == "/")
+	this->file_req = ROOT_DIR + srequest[1]; //aqui habria que mirar los location que tenemos (de mas largo a mas corto) y el primero que esté al principio de la URI ese es su location y lo reemplazamos por el root. Si es exactamente la location le añadimos el index file tambien
+	if ((this->type == GET || this->type == HEAD) && srequest[1] == "/")
 		this->file_req = "dir/index.html";
-
 	this->file_type = this->file_req.substr(file_req.find(".") + 1, file_req.size());
 	//if (this->file_req == this->file_type && this->type == GET)
 	//	this->file_type = "html";
@@ -116,22 +115,54 @@ std::string http::Request::get_content_type(std::string type, std::map<std::stri
 
 bool http::Request::needs_auth(http::Routes route)
 {
-	if (route.needAuth()){
+	std::cout << route << std::endl;
+	if (route.needAuth())
+	{
 		this->_realm = route.getAuthMessage();
 		this->_auth_file_path = route.getPassAuthFile();
 		return true;
 	}
-	
+
 	return false;
+}
+
+void http::Request::read_file_requested(void)
+{
+	std::ifstream file;
+	std::stringstream stream;
+	std::string buf;
+
+	file.open(this->file_req);
+	if (file.is_open())
+	{
+		if (this->status == 0){
+			this->status = 200;
+			this->message_status = "OK";
+		}
+	}
+	else
+	{
+		this->file_req = "dir/404.html";
+		this->file_type = "html";
+		file.open("dir/404.html");
+		this->status = 404;
+		this->message_status = "Not Found";
+	}
+	while (std::getline(file, buf))
+		stream << buf << "\n";
+	this->resp_body = stream.str();
+	stream.str("");
+	stream.clear();
+	file.close();
 }
 
 char *http::Request::build_get(int *size, std::map<std::string, std::string> mime_types, http::ServerConf server)
 {
 	char *res;
-	std::ifstream file;
 	std::string buf;
 	std::stringstream stream;
 	this->_www_auth_required = false;
+	this->status = 0;
 	if (needs_auth(server.getRoutebyPath(this->file_req)))
 	{
 		if (this->_auth == "NULL")
@@ -141,38 +172,19 @@ char *http::Request::build_get(int *size, std::map<std::string, std::string> mim
 			this->_www_auth_required = true;
 			this->file_req = "dir/401.html";
 			this->file_type = "html";
-			file.open("dir/401.html");
 		}
 		else
 		{
-			validate_password(this->_auth);
+			if (!validate_password(this->_auth))
+			{
+				this->status = 403;
+				this->message_status = "Forbidden";
+				this->file_req = "dir/403.html";
+				this->file_type = "html";
+			}
 		}
 	}
-	else
-	{
-		file.open(this->file_req);
-		if (file.is_open())
-		{
-			this->status = 200;
-			this->message_status = "OK";
-		}
-		//Read the error page 404
-		else
-		{
-			this->file_req = "dir/404.html";
-			this->file_type = "html";
-			file.open("dir/404.html");
-			this->status = 404;
-			this->message_status = "Not Found";
-		}
-	}
-
-	while (std::getline(file, buf))
-		stream << buf << "\n";
-	this->resp_body = stream.str();
-	stream.str("");
-	stream.clear();
-	file.close();
+	read_file_requested();
 
 	stream << "HTTP/1.1 " << this->status << " " << this->message_status << "\nContent-Type: "
 		   << get_content_type(this->file_type, mime_types) << "\nContent-Length: " << this->resp_body.length();
@@ -193,7 +205,7 @@ char *http::Request::build_get(int *size, std::map<std::string, std::string> mim
 	std::copy(this->resp_body.begin(), this->resp_body.end(), res);
 	res[this->resp_body.size()] = '\0';
 	*size = this->resp_body.size();
-	std::cout << "sending " << this->file_req << std::endl;
+	std::cout << "Sending " << this->file_req << std::endl;
 	return (res);
 }
 
@@ -212,7 +224,6 @@ bool http::Request::validate_password(std::string auth)
 	std::string buf;
 
 	auth = auth.substr(0, auth.size() - 1);
-	std::cout << "AUTENTICATION: " << auth << std::endl;
 	std::vector<std::uint8_t> decoded = base64::decode(auth);
 	std::string decoded_str;
 	for (int i = 0; i < (int)decoded.size(); i++)
@@ -224,16 +235,26 @@ bool http::Request::validate_password(std::string auth)
 	std::string password;
 	user = decoded_str.substr(0, pos);
 	password = decoded_str.substr(pos + 1, (decoded_str.size() - pos + 1));
-	std::cout << "USER: " << user << ", PASSWD: " << password << std::endl;
 	htpasswd.open(this->_auth_file_path);
-	if (htpasswd.is_open()){
-		while (std::getline(htpasswd, buf)){
-			if (user == buf.substr(0, buf.find(':'))){
+	if (htpasswd.is_open())
+	{
+		while (std::getline(htpasswd, buf))
+		{
+			if (user == buf.substr(0, buf.find(':')))
+			{
 				std::string encrypted_passwd = buf.substr(buf.find(':') + 1, buf.size() - buf.find(':') + 1);
-				std::cout << "Match!, encrypted password: " << encrypted_passwd << std::cout;
+				decoded.clear();
+				for (int i = 0; i < (int)password.size(); i++)
+				{
+					decoded.push_back((unsigned char)password[i]);
+				}
+				std::string encoded = base64::encode(decoded);
+				if (encoded == encrypted_passwd)
+				{
+					return (true);
+				}
 			}
 		}
 	}
-
-	return(true);
+	return (false);
 }

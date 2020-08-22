@@ -28,6 +28,7 @@ private:
     std::map<std::string, bool>         _mandatory_conf;
     std::vector<std::string>            _simple_conf;
 	std::map<std::string, std::string>	_mime_types;
+    static const std::string            _http_methods[9];
 
 
     bool            file_exists(void);
@@ -36,7 +37,7 @@ private:
     void            parse_server_conf(std::string s);
 	void            parse_types(std::string s);
     http::Routes    save_location(std::string s);
-    
+    http::Routes    check_inheritance(http::Routes locat, std::vector<http::Routes> all_routes);
 
 public:
 

@@ -1,32 +1,45 @@
-#include <stdio.h>
-#include <time.h>
-#include <unistd.h>
-#include <crypt.h>
+#include<iostream>
+#include<fstream>
+#include<unistd.h>
+#include <random>
 
-int 
-main(void)
-{
-  unsigned long seed[2];
-  char salt[] = "$1$........";
-  const char *const seedchars = 
-    "./0123456789ABCDEFGHIJKLMNOPQRST"
-    "UVWXYZabcdefghijklmnopqrstuvwxyz";
-  char *password;
-  int i;
-  
-  /* Generate a (not very) random seed.  
-     You should do it better than this... */
-  seed[0] = time(NULL);
-  seed[1] = getpid() ^ (seed[0] >> 14 & 0x30000);
-  
-  /* Turn it into printable characters from `seedchars'. */
-  for (i = 0; i < 8; i++)
-    salt[3+i] = seedchars[(seed[i/5] >> (i%5)*6) & 0x3f];
-  
-  /* Read in the user's password and encrypt it. */
-  password = crypt(getpass("Password:"), salt);
-  
-  /* Print the results. */
-  puts(password);
-  return 0;
+
+using namespace std;
+
+std::string generateSalt() {
+
+    const char alphanum[] =
+            "0123456789"
+            "!@#$%^&*"
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            "abcdefghijklmnopqrstuvwxyz"; //salt alphanum
+
+    std::random_device rd;  //Will be used to obtain a seed for the random number engine
+    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+    std::uniform_int_distribution<> dis(0, sizeof(alphanum)-1); //Uniform distribution on an interval
+    char salt[22];          // 21 useful characters in salt (as in original code)
+    for(char& c: salt) {
+        c = alphanum[dis(gen)];
+    }
+    salt[21] = 0;
+    return std::string(salt);
+}
+
+/*====== MAIN ======*/
+int main(int argc, char** argv) {
+
+    string username, password, salt, hash;
+
+    ofstream myshadow("myshadow.txt", ios::out);
+
+    cout << "Enter your username: ";
+    if (! getline(cin, username)) return 1;
+    cout << "Enter your password: ";
+    if (! getline(cin, password)) return 1;
+	salt = generateSalt();
+
+    hash = crypt(password.c_str(), "Y");
+
+    std::cout << username << ":" << hash << ", with salt:" << salt;
+    return 0;
 }

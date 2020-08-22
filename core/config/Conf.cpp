@@ -1,5 +1,17 @@
 #include "Conf.hpp"
 
+const std::string    http::Conf::_http_methods[9] = {
+    "GET",
+    "POST",
+    "HEAD",
+    "PUT",
+    "DELETE",
+    "CONNECT",
+    "OPTIONS",
+    "TRACE",
+    "PATCH"
+};
+
 http::Conf::Conf(const std::string &conf_file):
             _filename(conf_file),
             _log(DEFAULT_ACCESS_LOG, DEFAULT_ERROR_LOG)
@@ -171,11 +183,52 @@ void        http::Conf::parse_server_conf(std::string s)
             new_server.setErrorPage(params[i].substr(params[i].find_first_of(' ')));
         // Add location
         else if (!params[i].compare(0, 9, "location "))
-            new_server.add_route(this->save_location(params[i]));
+            new_server.add_route(check_inheritance(this->save_location(params[i]), new_server.getRoutes()));
         else
             throw Conf::UnrecognizedParameter();
     }
     this->_servers.push_back(new_server);
+}
+
+http::Routes    http::Conf::check_inheritance(http::Routes new_route, std::vector<http::Routes> all_routes)
+{
+    std::vector<http::Routes>::iterator father_location;
+    size_t  len = 0;
+    size_t  max_len = 0;
+    std::string path;
+    for (std::vector<http::Routes>::iterator it = all_routes.begin(); it != all_routes.end(); it++)
+    {
+        path = it->getVirtualLocation();
+        len = path.length();
+        if (new_route.getVirtualLocation().compare(0, len, path) == 0)
+        {
+            if (!max_len)
+            {
+                max_len = len;
+                father_location = it;
+            }
+            else if (len > max_len)
+            {
+                max_len = len;
+                father_location = it;
+            }
+        }
+    }
+    if (max_len)
+    {
+        // inheritance of HTTP METHODS
+        for (size_t i = 0; i < 9; i++)
+            if (father_location->MethodAllow(this->_http_methods[i]))
+                new_route.setMethods(this->_http_methods[i]);
+        // inheritance of WWW-Authentication
+        if (father_location->needAuth() && !new_route.needAuth())
+        {
+            new_route.allowAuth();
+            new_route.setAuthMessage(father_location->getAuthMessage());
+            new_route.setPassAuthFile(father_location->getPassAuthFile());
+        }
+    }
+    return (new_route);
 }
 
 size_t      get_BracketClose(std::string s)

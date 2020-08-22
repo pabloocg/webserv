@@ -53,8 +53,8 @@ public:
 	void	start();
 	void	wait_for_connection();
 	void	manage_new_connection(int *server_sckt, SA_IN address, int serv_num);
-	void	manage_reads(int *sd);
-	void	manage_writes(int *sd);
+	void	manage_reads(int &sd);
+	void	manage_writes(int &sd);
 
 };
 

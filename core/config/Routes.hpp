@@ -80,6 +80,51 @@ public:
         this->_path_auth = std::string("");
     };
 
+    Routes(const http::Routes &other)
+    {
+        this->_location = other._location;
+        this->_directory_path = other._directory_path;
+        this->_httpMethods._CONNECT = other._httpMethods._CONNECT;
+        this->_httpMethods._DELETE = other._httpMethods._DELETE;
+        this->_httpMethods._GET = other._httpMethods._GET;
+        this->_httpMethods._HEAD = other._httpMethods._HEAD;
+        this->_httpMethods._OPTIONS = other._httpMethods._OPTIONS;
+        this->_httpMethods._PATCH = other._httpMethods._PATCH;
+        this->_httpMethods._POST = other._httpMethods._POST;
+        this->_httpMethods._PUT = other._httpMethods._PUT;
+        this->_httpMethods._TRACE = other._httpMethods._TRACE;
+        this->_autoindex = other._autoindex;
+        this->_index_file = other._index_file;
+        this->_uploads = other._uploads;
+        this->_upload_path = other._upload_path;
+        this->_is_auth = other._is_auth;
+        this->_auth_message = other._auth_message;
+        this->_path_auth = other._path_auth;
+    };
+
+    Routes      &operator=(const http::Routes &other)
+    {
+        this->_location = other._location;
+        this->_directory_path = other._directory_path;
+        this->_httpMethods._CONNECT = other._httpMethods._CONNECT;
+        this->_httpMethods._DELETE = other._httpMethods._DELETE;
+        this->_httpMethods._GET = other._httpMethods._GET;
+        this->_httpMethods._HEAD = other._httpMethods._HEAD;
+        this->_httpMethods._OPTIONS = other._httpMethods._OPTIONS;
+        this->_httpMethods._PATCH = other._httpMethods._PATCH;
+        this->_httpMethods._POST = other._httpMethods._POST;
+        this->_httpMethods._PUT = other._httpMethods._PUT;
+        this->_httpMethods._TRACE = other._httpMethods._TRACE;
+        this->_autoindex = other._autoindex;
+        this->_index_file = other._index_file;
+        this->_uploads = other._uploads;
+        this->_upload_path = other._upload_path;
+        this->_is_auth = other._is_auth;
+        this->_auth_message = other._auth_message;
+        this->_path_auth = other._path_auth;
+        return (*this);
+    }
+
     virtual ~Routes() {};
 
     void    setMethods(std::string mthd)

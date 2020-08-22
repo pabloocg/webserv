@@ -46,8 +46,9 @@ namespace http
 
 	char *build_get(int *size, std::map<std::string, std::string> mime_types, http::ServerConf server);
 	std::string get_content_type(std::string file_type, std::map<std::string, std::string> mime_types);
-	bool needs_auth(std::string file_name, std::vector<http::Routes>   routes);
+	bool needs_auth(http::Routes  routes);
 	bool validate_password(std::string auth);
+	void read_file_requested(void);
 
 	public:
 		Request(std::string req);
