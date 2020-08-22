@@ -143,16 +143,36 @@ public:
         return (this->_routes);
     };
 
-    http::Routes    &getRoutebyPath(std::string  &path)
+    http::Routes    &getRoutebyPath(std::string  &search_path)
     {
         std::vector<http::Routes>::iterator it = this->_routes.begin();
         std::vector<http::Routes>::iterator itend = this->_routes.end();
-
+        std::vector<http::Routes>::iterator father_location;
+        size_t  len = 0;
+        size_t  max_len = 0;
+        std::string path;
         for (; it != itend; it++)
-            if (it->getVirtualLocation() == path)
-                return (*it);
-        //Excepcion y lanzar codigo 404
-        return (*itend);
+        {
+            path = it->getVirtualLocation();
+            len = path.length();
+            if (search_path.compare(0, len, path) == 0)
+            {
+                if (!max_len)
+                {
+                    max_len = len;
+                    father_location = it;
+                }
+                else if (len > max_len)
+                {
+                    max_len = len;
+                    father_location = it;
+                }
+            }
+        }
+        if (max_len)
+            return (*father_location);
+        else
+            return (*itend);
     };
 };
 

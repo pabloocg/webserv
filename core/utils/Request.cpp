@@ -66,24 +66,24 @@ http::Request::Request(std::string req){
 	this->request = req;
 
 	std::vector<std::string> sheader;
-	std::vector<std::string> request;
+	std::vector<std::string> srequest;
 
 	sheader = http::split(req, '\n');
 
-	request = http::split(sheader[0], ' ');
-	if (request[0] == "GET")
+	srequest = http::split(sheader[0], ' ');
+	if (srequest[0] == "GET")
 		this->type = GET;
-	else if (request[0] == "HEAD")
+	else if (srequest[0] == "HEAD")
 		this->type = HEAD;
-	else if (request[0] == "OPTIONS")
+	else if (srequest[0] == "OPTIONS")
 		this->type = OPTIONS;
-	else if (request[0] == "POST")
+	else if (srequest[0] == "POST")
 		this->type = POST;
-	else if (request[0] == "PUT")
+	else if (srequest[0] == "PUT")
 		this->type = PUT;
 	
-	this->file_req = ROOT_DIR + request[1];
-	if ((this->type == GET || this->type == HEAD) && request[1] == "/")
+	this->file_req = ROOT_DIR + srequest[1];
+	if ((this->type == GET || this->type == HEAD) && srequest[1] == "/")
 		this->file_req = "dir/index.html";
 
 	
@@ -113,6 +113,10 @@ char *http::Request::build_get(int *size, std::map<std::string, std::string> mim
 	std::ifstream file;
 	std::string buf;
 	std::stringstream stream;
+
+	/*
+		Aqui hay que llamar a getRouteByPath() del objeto ServerConf
+	*/
 
 	file.open(this->file_req);
 	if (file.is_open())
