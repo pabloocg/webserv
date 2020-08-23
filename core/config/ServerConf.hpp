@@ -46,6 +46,8 @@ public:
         _port(DEFAULT_PORT), _server_addr(DEFAULT_SERVER_ADDR),
         _server_name(DEFAULT_SERVER_NAME), _body_size(DEFAULT_BODY_SIZE_MEGABYTES)
     {
+        this->_err_pages[401] = DEFAULT_ERROR_PAGE_401;
+        this->_err_pages[403] = DEFAULT_ERROR_PAGE_403;
         this->_err_pages[404] = DEFAULT_ERROR_PAGE_404;
         this->_err_pages[500] = DEFAULT_ERROR_PAGE_50X;
         this->_address.sin_family = AF_INET;
@@ -155,7 +157,13 @@ public:
         {
             path = it->getVirtualLocation();
             len = path.length();
-            if (search_path.compare(0, len, path) == 0)
+            if (path == search_path)
+            {
+                father_location = it;
+                max_len = len;
+                break ;
+            }
+            else if (search_path.compare(0, len, path) == 0)
             {
                 if (!max_len)
                 {

@@ -10,11 +10,20 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/select.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #define ROOT_DIR "dir"
 
 namespace http
 {
+
+	inline int	file_exists(std::string file)
+	{
+		struct stat	buff;
+
+		return (stat(file.c_str(), &buff));
+	}
 
 	inline std::vector<std::string> special_split(std::string str, char delimiter)
 	{

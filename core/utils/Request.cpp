@@ -1,5 +1,4 @@
 #include "Request.hpp"
-#include "utils.hpp"
 #include "base64.hpp"
 
 void http::Request::save_header(std::string header)
@@ -61,12 +60,13 @@ void http::Request::save_header(std::string header)
 	}
 }
 
-http::Request::Request(std::string req, http::ServerConf server)
+http::Request::Request(std::string req, http::ServerConf server): _error_mgs(create_map())
 {
 	/*std::cout << "************ REQUEST ************" << std::endl;
 	std::cout << req << std::endl;
 	std::cout << "*********************************" << std::endl;*/
 	this->request = req;
+	this->_server = server;
 
 	std::vector<std::string> sheader;
 	std::vector<std::string> srequest;
@@ -86,14 +86,12 @@ http::Request::Request(std::string req, http::ServerConf server)
 		this->type = PUT;
 
 	this->file_req = srequest[1];
-	this->location = server.getRoutebyPath(this->file_req);
-	this->file_req.replace(0, this->location.getVirtualLocation().size(), this->location.getDirPath());//.getVirtualLocation();
-	if(this->file_req == this->location.getDirPath()){
-		this->file_req += this->location.getIndexFile();
-	}
+	this->location = this->_server.getRoutebyPath(this->file_req);
+	this->file_req = this->location.getFileTransformed(this->file_req);
 	this->file_type = this->file_req.substr(file_req.find(".") + 1, file_req.size());
 	this->http_version = srequest[2];
 	this->_auth = "NULL";
+	this->_www_auth_required = false;
 	for (int i = 1; i < (int)sheader.size(); i++)
 	{
 		this->save_header(sheader[i]); //esto leera cada header y lo guardara en su respectiva variable privada de Request
@@ -119,40 +117,53 @@ bool http::Request::needs_auth(http::Routes route)
 	{
 		this->_realm = route.getAuthMessage();
 		this->_auth_file_path = route.getPassAuthFile();
-		return true;
+		return (true);
 	}
-
-	return false;
+	return (false);
 }
 
 void http::Request::read_file_requested(void)
 {
-	std::ifstream file;
-	std::stringstream stream;
-	std::string buf;
+	std::ifstream		file;
+	std::stringstream	stream;
+	std::string			buf;
+	int					code;
 
+	code = 0;
+	if (needs_auth(this->location))
+	{
+		if (this->_auth == "NULL")
+		{
+			code = 401;
+			this->_www_auth_required = true;
+		}
+		else if (!validate_password(this->_auth))
+			code = 403;
+	}
+	if (!http::file_exists(this->file_req))
+	{
+		if (code == 0)
+			code = 200;
+	}
+	else
+		code = 404;
+	this->status = code;
+	this->message_status = this->_error_mgs[code];
+	if (this->status != 200)
+	{
+		this->file_req = this->_server.getErrorPage(code);
+		this->file_type = this->file_req.substr(file_req.find(".") + 1);
+	}
 	file.open(this->file_req);
 	if (file.is_open())
 	{
-		if (this->status == 0){
-			this->status = 200;
-			this->message_status = "OK";
-		}
+		while (std::getline(file, buf))
+			stream << buf << "\n";
+		this->resp_body = stream.str();
+		file.close();
 	}
 	else
-	{
-		this->file_req = "dir/404.html";
-		this->file_type = "html";
-		file.open("dir/404.html");
-		this->status = 404;
-		this->message_status = "Not Found";
-	}
-	while (std::getline(file, buf))
-		stream << buf << "\n";
-	this->resp_body = stream.str();
-	stream.str("");
-	stream.clear();
-	file.close();
+		throw "SERVER ERROR";
 }
 
 char *http::Request::build_get(int *size, std::map<std::string, std::string> mime_types)
@@ -160,37 +171,12 @@ char *http::Request::build_get(int *size, std::map<std::string, std::string> mim
 	char *res;
 	std::string buf;
 	std::stringstream stream;
-	this->_www_auth_required = false;
-	this->status = 0;
-	if (needs_auth(this->location))
-	{
-		if (this->_auth == "NULL")
-		{
-			this->status = 401;
-			this->message_status = "Unauthorized";
-			this->_www_auth_required = true;
-			this->file_req = "dir/401.html";
-			this->file_type = "html";
-		}
-		else
-		{
-			if (!validate_password(this->_auth))
-			{
-				this->status = 403;
-				this->message_status = "Forbidden";
-				this->file_req = "dir/403.html";
-				this->file_type = "html";
-			}
-		}
-	}
+	
 	read_file_requested();
-
 	stream << "HTTP/1.1 " << this->status << " " << this->message_status << "\nContent-Type: "
 		   << get_content_type(this->file_type, mime_types) << "\nContent-Length: " << this->resp_body.length();
 	if (this->_www_auth_required == true)
-	{
 		stream << "\nWWW-Authenticate: Basic realm=\"" << this->_realm << "\"";
-	}
 	stream << "\n\n";
 	if (this->type == GET)
 		stream << this->resp_body;

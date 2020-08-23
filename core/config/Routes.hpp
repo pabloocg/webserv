@@ -261,6 +261,14 @@ public:
     {
         return (this->_path_auth);
     };
+
+    std::string &getFileTransformed(std::string &path_requested)
+    {
+        path_requested.replace(0, this->getVirtualLocation().size(), this->getDirPath());
+	    if(path_requested == this->getDirPath())
+		    path_requested += this->getIndexFile();
+        return (path_requested);
+    };
 };
 
 inline std::ostream &operator<<(std::ostream &out, http::Routes &route)
