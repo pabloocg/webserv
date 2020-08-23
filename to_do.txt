@@ -1,0 +1,122 @@
+Cosas por hacer:
+
+-Implementar CGI
+-Gestion de errores en el archivo de configuracion
+-Implementar el autoindex
+-Implementar timeout si una request se queda colgada (Creo que se hace en el select)
+-Implementar codigos de error de cliente (4XX)
+    - 400 Bad Request. El servidor no puede o no va a procesar el request por un error de sintaxis del cliente.
+    - 406 Not Acceptable. El recurso solicitado solo genera contenido no aceptado de acuerdo con los headers Accept enviados en el request.
+    - 411 Length Required. El request no especificó la longitud del contenido, la cual es requerida por el recurso solicitado.
+    - 413 Request Entity Too Large. El request es más largo que el que está dispuesto a aceptar el servidor.
+    - 429 Too Many Requests. Indica que el usuario ha enviado demasiadas solicitudes en un período de tiempo determinado.
+-Implementar codigos de error de servidor (50X)
+    - 500 Internal Server Error. Error genérico, cuando se ha dado una condición no esperada y no se puede concretar el mensaje.
+    *- 502 Bad Gateway. El server actuaba como puerta de entrada o proxy y recibió una respuesta inválida del servidor upstream.
+    - 503 Service Unavailable. El servidor está actualmente no disponible, ya sea por mantenimiento o por sobrecarga.
+        (Por ejemplo cuando todos los fd de un server esten llenos)
+    *- 504 Gateway Timeout. El servidor estaba actuando como puerta de entrada o proxy y no recibió una respuesta oportuna por parte del servidor upstream.
+    - 505 HTTP Version Not Supported. El servidor no soporta la versión del protocolo HTTP usada en el request.
+*No se si esos habrá que hacerlos ya que parece que es solo para proxys
+
+Metodos HTTP:
+-Implementar POST
+-Implementar PUT
+-Implementar DELETE
+-Implementar CONNECT
+-Implementar OPTIONS
+-Implementar TRACE
+-Implementar PATCH
+- En el GET habría que ver si nos pasan parametros &clave=valor en la ruta concatenados
+
+Implementar Headers:
+
+- Accept-Charset (Lo manda el cliente). Indica al servidor qué tipos de codificaciones de caracteres entiende el cliente 
+    #Accept-Charset: iso-8859-1
+    #Accept-Charset: utf-8, iso-8859-1;q=0.5
+    #Accept-Charset: utf-8, iso-8859-1;q=0.5, *;q=0.1
+    (la q es la preferencia que tiene el cliente por el metodo usado
+    en el ultimo caso utf-8 tiene prioridad 1, iso-8859-1 tiene prioridad 0.5 y * que es cualquier otro 0.1)
+- Content-Type (Lo manda el servidor).
+**El servidor responde con el header Content-Type poniendo el metodo usado**
+    Formato:
+    Content-Type: <mime_type>; <charset(codificacion)>; <boundary(NPI)>
+    #Content-Type: text/html; charset=utf-8
+    #Content-Type: multipart/form-data; boundary=something
+
+- Allow (Lo manda el servidor). Enumera el conjunto de métodos admitidos por un recurso. 
+        Esta cabecera debe ser enviada si el servidor responde con un estado 405 Method Not Allowed
+        para indicar cual metodo de peticion puede ser usado.
+    #Allow: <http-methods>
+    #Allow: GET, POST, HEAD
+
+- Accept-Language (Lo manda el cliente). Request HTTP header advertises which languages the client is able to understand,
+                and which locale variant is preferred
+    If the server cannot serve any matching language, it can theoretically send back a 406 (Not Acceptable) error code.
+    But, for a better user experience, this is rarely done and more common way is to ignore the Accept-Language header in this case
+- Content-Language.
+** El servidor responde con el header Content-Language poniendo el lenguaje usado ** 
+
+- Server (Lo manda el servidor). describe el software utilizado por el servidor de origen que manejó la solicitud 
+    #Server: webserv/1.0
+
+- Referer (Lo manda el cliente). Contiene la dirección de la página web anterior desde la que se siguió un enlace a la página solicitada actualmente.
+    (No se usa para nada, asi que se guarda en una variable y ya)
+
+- Retry-After (Lo manda el servidor). Indica cuánto tiempo debe esperar el cliente antes de realizar otra request 
+Hay tres casos principales en que se utiliza este encabezado:
+    -Cuando se envía con una respuesta 503 (Service Unavailable),
+        indica cuánto tiempo se espera que el servicio no esté disponible.
+    - Cuando se envía con una respuesta 429 (Too Many Requests),
+        indica cuánto tiempo se debe esperar antes de realizar una nueva solicitud.
+    -Cuando se envía con una respuesta de redireccionamiento, como 301 (Moved Permanently),
+        esto indica el tiempo mínimo que se le pide al agente de usuario que espere antes de emitir la solicitud redirigida.
+
+- Date (Lo manda el servidor). Fecha y hora en formato GMT
+    Formato:
+    #Date: <day-name>, <day> <month> <year> <hour>:<minute>:<second> GMT
+    #Date: Wed, 21 Oct 2015 07:28:00 GMT
+
+- Transfer-Encoding (Lo manda el servidor). Especifica la forma de codificación utilizada para transferir de forma segura la respuesta al usuario
+    Cuando está presente en una respuesta a una solicitud HEAD que no tiene cuerpo, indica el valor que se habría aplicado al mensaje GET correspondiente.
+    #Transfer-Encoding: gzip
+    #Transfer-Encoding: gzip, chunked
+    Tipos de Encoding:
+        - chunked
+            Los datos se envían en una serie de fragmentos.
+            En este caso, se omite el encabezado Content-Length y al comienzo de cada fragmento 
+            se debe agregar la longitud del fragmento actual en formato hexadecimal,
+            seguido de '\r\n' y luego el fragmento en sí, seguido de otro '\r\n'.
+            El fragmento de terminación es un fragmento regular, con la excepción de que su longitud es cero.
+            Le sigue el tráiler, que consiste en una secuencia (posiblemente vacía) de campos de encabezado de entidad.
+        - gzip
+            Un formato que usa Lempel-Ziv coding (LZ77), con un CRC de 32 bits.
+            Este es originalmente el formato del programa gzip de UNIX.
+            El estándar HTTP/1.1 también recomienda que los servidores que soporten esta codificación también deberían reconocer x-gzip como un alias por motivos de compatibilidad.
+        - deflate
+            Usa la estructura zlib (definida en RFC 1950), con el algoritmo de compresión deflate (definido en RFC 1951).
+        - identity
+            Indica la función de identidad (es decir, sin compresión ni modificación).
+            Este símbolo, excepto si se especifica explícitamente, siempre se considera aceptable.
+
+- User-Agent (Lo manda el cliente). permite que los servidores y los pares de la red identifiquen la aplicación,
+        el sistema operativo, el proveedor y / o la versión del agente de usuario solicitante.
+    (No sirve para nada, se guarda en una variable y listo)
+
+- Host (Lo manda el cliente). Se debe enviar un campo de encabezado de host en todos los mensajes de solicitud HTTP/1.1.
+Se puede enviar un código de estado 400 (Bad Request) a cualquier mensaje de solicitud HTTP/1.1
+que no tenga un campo de encabezado de host o que contenga más de uno.
+    #Host: <host>:<port> El campo port es opcional, el campo host seria el server_name o la IP?
+
+
+No me quedan claros
+- Location (Lo manda el servidor?). Indica la URL a la que redirigir una página.
+Solo proporciona un significado cuando se sirve con una respuesta de estado 3xx (redirección) o 201 (creado).
+
+- Content-Location (Lo manda el servidor?). Indica una ubicación alternativa para los datos devueltos.
+El uso principal es indicar la URL de un recurso transmitido como resultado de la negociación de contenido.
+
+Location y Content-Location son diferentes.
+Location indica la URL de un redireccionamiento, mientras que Content-Location indica la URL directa
+que se utilizará para acceder al recurso, sin más negociaciones de contenido en el futuro.
+Location es un encabezado asociado con la respuesta, mientras que Content-Location está asociado con los datos devueltos.
