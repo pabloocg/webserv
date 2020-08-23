@@ -30,8 +30,6 @@ int main(int argc, char** argv) {
 
     string username, password, salt, hash;
 
-    ofstream myshadow("myshadow.txt", ios::out);
-
     cout << "Enter your username: ";
     if (! getline(cin, username)) return 1;
     cout << "Enter your password: ";

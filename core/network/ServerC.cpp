@@ -152,30 +152,49 @@ void http::ServerC::wait_for_connection()
 			}
 			else
 			{
-				this->_log.makeLog(ACCESS_LOG, buffer);
-				http::Request req(buffer, _servers[_client_server_map[sd]]);
-				message = req.build_response(&size, _mime_types);
-				if (!message)
+				buffer[valread] = '\0';
+				std::string s_buffer = "";
+				for (int i = 0; i < valread; i++)
 				{
-					perror("some error occured");
-					exit(EXIT_FAILURE);
+					s_buffer += buffer[i];
 				}
-				int n = 0;
-				n = send(sd, message, (size_t)size, 0);
-				std::cout << "Sended " << n << " bytes to " << sd << ", " << size - n << " left" << std::endl;
-				if (n == -1)
+				if (_pending_reads.find(sd) != _pending_reads.end())
 				{
-					perror("send");
-				}
-				else if (n < size)
-				{
-					http::Pending_send sended(message, size, n, size - n);
-					std::pair<int, http::Pending_send> pair(sd, sended);
-					_pending_messages.insert(pair);
-					FD_SET(sd, &_master_write);
+					_pending_reads[sd] += s_buffer;
 				}
 				else
-					free(message);
+				{
+					_pending_reads[sd] = s_buffer;
+				}
+				if (valid_req_format(_pending_reads[sd]))
+				{
+					std::cout << "valid format!" << std::endl;
+					this->_log.makeLog(ACCESS_LOG, _pending_reads[sd]);
+					http::Request req(_pending_reads[sd], _servers[_client_server_map[sd]]);
+					message = req.build_response(&size, _mime_types);
+					_pending_reads.erase(sd);
+					if (!message)
+					{
+						perror("some error occured");
+						exit(EXIT_FAILURE);
+					}
+					int n = 0;
+					n = send(sd, message, (size_t)size, 0);
+					std::cout << "Sended " << n << " bytes to " << sd << ", " << size - n << " left" << std::endl;
+					if (n == -1)
+					{
+						perror("send");
+					}
+					else if (n < size)
+					{
+						http::Pending_send sended(message, size, n, size - n);
+						std::pair<int, http::Pending_send> pair(sd, sended);
+						_pending_messages.insert(pair);
+						FD_SET(sd, &_master_write);
+					}
+					else
+						free(message);
+				}
 			}
 		}
 
@@ -202,6 +221,40 @@ void http::ServerC::wait_for_connection()
 			}
 		}
 	}
+}
+bool http::ServerC::valid_req_format(std::string buffer)
+{
+	std::vector<std::string> splitted_req;
+	int body_size = 0;
+
+	splitted_req = http::split(buffer, '\n');
+	if (splitted_req.size() < 2)
+	{
+		return (false);
+	}
+	for (int i = 0; i < (int)splitted_req.size(); i++)
+	{
+		if (splitted_req[i].find("Content-Length:") != std::string::npos)
+		{
+			body_size = std::atoi(splitted_req[i].substr(16, splitted_req[i].length() - 16).c_str());
+		}
+	}
+	for (int i = 0; i < (int)buffer.length(); i++)
+	{
+		if (i == (int)buffer.length() - 1)
+		{
+			return (false);
+		}
+		if (buffer[i] == '\n' && buffer[i + 2] == '\n')
+		{
+			if (i + 3 + body_size == (int)buffer.length() || i + 3 + body_size == (int)buffer.length() - 2)
+			{
+				return (true);
+			}
+			break;
+		}
+	}
+	return (false);
 }
 /*
 void http::ServerC::manage_new_connection(int *server_sckt, SA_IN address, int serv_num)

@@ -55,16 +55,13 @@ void http::Request::save_header(std::string header)
 	else if (words[0] == "User-Agent:")
 	{
 	}
-	else if (words[0] == "WWW-Authenticate:")
-	{
-	}
 }
 
 http::Request::Request(std::string req, http::ServerConf server): _error_mgs(create_map())
 {
-	/*std::cout << "************ REQUEST ************" << std::endl;
+	std::cout << "************ REQUEST ************" << std::endl;
 	std::cout << req << std::endl;
-	std::cout << "*********************************" << std::endl;*/
+	std::cout << "*********************************" << std::endl;
 	this->request = req;
 	this->_server = server;
 
