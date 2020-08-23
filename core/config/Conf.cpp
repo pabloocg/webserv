@@ -184,6 +184,13 @@ void        http::Conf::parse_server_conf(std::string s)
         // Add location
         else if (!params[i].compare(0, 9, "location "))
             new_server.add_route(check_inheritance(this->save_location(params[i]), new_server.getRoutes()));
+        else if (!params[i].compare(0, 11, "auth_basic ")) // allow uploads files
+        {
+            new_server.allowAuth();
+            new_server.setAuthMessage(params[i].substr(11));
+        }
+        else if (!params[i].compare(0, 21, "auth_basic_user_file ")) // Path to save uploads
+            new_server.setPassAuthFile(params[i].substr(params[i].find_last_of(' ') + 1));
         else
             throw Conf::UnrecognizedParameter();
     }

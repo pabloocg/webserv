@@ -51,6 +51,9 @@ private:
     //Authentication
     bool            _is_auth;
 
+    //Authentication off
+    bool            _explicit_no_auth;
+
     //Message to Authenticate
     std::string     _auth_message;
 
@@ -76,6 +79,7 @@ public:
         this->_uploads = false;
         this->_upload_path = std::string("");
         this->_is_auth = false;
+        this->_explicit_no_auth = false;
         this->_auth_message = std::string("");
         this->_path_auth = std::string("");
     };
@@ -98,6 +102,7 @@ public:
         this->_uploads = other._uploads;
         this->_upload_path = other._upload_path;
         this->_is_auth = other._is_auth;
+        this->_explicit_no_auth = other._explicit_no_auth;
         this->_auth_message = other._auth_message;
         this->_path_auth = other._path_auth;
     };
@@ -120,6 +125,7 @@ public:
         this->_uploads = other._uploads;
         this->_upload_path = other._upload_path;
         this->_is_auth = other._is_auth;
+        this->_explicit_no_auth = other._explicit_no_auth;
         this->_auth_message = other._auth_message;
         this->_path_auth = other._path_auth;
         return (*this);
@@ -237,14 +243,30 @@ public:
         this->_is_auth = true;
     };
 
+    void        denyAuth()
+    {
+        this->_explicit_no_auth = true;
+    };
+
+    bool        needExplicitAuth()
+    {
+        return (this->_explicit_no_auth);
+    };
+
     bool        needAuth()
     {
+        if (this->_explicit_no_auth)
+            return (false);
         return (this->_is_auth);
     };
 
     void        setAuthMessage(std::string auth_mess)
     {
-        this->_auth_message = trim2(auth_mess, "\"");
+        auth_mess = trim(auth_mess);
+        if (auth_mess == "off")
+            this->denyAuth();
+        else
+            this->_auth_message = trim2(auth_mess, "\"");
     };
 
     std::string &getAuthMessage()

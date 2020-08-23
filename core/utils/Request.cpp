@@ -119,6 +119,12 @@ bool http::Request::needs_auth(http::Routes route)
 		this->_auth_file_path = route.getPassAuthFile();
 		return (true);
 	}
+	else if (!route.needExplicitAuth() && this->_server.needAuth())
+	{
+		this->_realm = this->_server.getAuthMessage();
+		this->_auth_file_path = this->_server.getPassAuthFile();
+		return (true);
+	}
 	return (false);
 }
 

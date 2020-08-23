@@ -41,6 +41,15 @@ private:
     // Define a directory to the specific route. the route / is mandatory.
     std::vector<Routes>   _routes;
 
+    //Authentication
+    bool            _is_auth;
+
+    //Message to Authenticate
+    std::string     _auth_message;
+
+    //Route of the password file Authentication
+    std::string     _path_auth;
+
 public:
     ServerConf():
         _port(DEFAULT_PORT), _server_addr(DEFAULT_SERVER_ADDR),
@@ -50,6 +59,9 @@ public:
         this->_err_pages[403] = DEFAULT_ERROR_PAGE_403;
         this->_err_pages[404] = DEFAULT_ERROR_PAGE_404;
         this->_err_pages[500] = DEFAULT_ERROR_PAGE_50X;
+        this->_is_auth = false;
+        this->_auth_message = std::string("");
+        this->_path_auth = std::string("");
         this->_address.sin_family = AF_INET;
         this->_address.sin_addr.s_addr = inet_addr(this->_server_addr.c_str());
         this->_address.sin_port = htons(this->_port);
@@ -145,6 +157,37 @@ public:
         return (this->_routes);
     };
 
+    void        allowAuth()
+    {
+        this->_is_auth = true;
+    };
+
+    bool        needAuth()
+    {
+        return (this->_is_auth);
+    };
+
+    void        setAuthMessage(std::string auth_mess)
+    {
+        auth_mess = trim(auth_mess);
+        this->_auth_message = trim2(auth_mess, "\"");
+    };
+
+    std::string &getAuthMessage()
+    {
+        return (this->_auth_message);
+    };
+
+    void        setPassAuthFile(std::string auth_file)
+    {
+        this->_path_auth = auth_file;
+    };
+
+    std::string &getPassAuthFile()
+    {
+        return (this->_path_auth);
+    };
+
     http::Routes    &getRoutebyPath(std::string  &search_path)
     {
         std::vector<http::Routes>::iterator it = this->_routes.begin();
@@ -191,6 +234,9 @@ inline std::ostream &operator<<(std::ostream &out, http::ServerConf &server)
     out << "Server Address: " << server.getServerAddr() << std::endl;
     out << "Server BodySize: " << server.getBodySize() << std::endl;
     out << "Error Pages: " << std::endl;
+    out << "Location authentication: " << ((server.needAuth()) ? "on" : "off") << std::endl;
+    out << "Location AuthMessage: " << server.getAuthMessage() << std::endl;
+    out << "Location Password Auth File: " << server.getPassAuthFile() << std::endl;
     std::map<int, std::string>::iterator it = server.getErrorPages().begin();
     std::map<int, std::string>::iterator itend = server.getErrorPages().end();
     for (; it != itend; it++)
