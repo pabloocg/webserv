@@ -62,7 +62,8 @@ namespace http
 		while (std::getline(ss, tok, delimiter))
 		{
 			if (tok.size() > 0)
-				internal.push_back(tok);
+				if (!(tok.size() == 1 && tok[0] == '\r'))
+					internal.push_back(tok);
 		}
 		return (internal);
 	}

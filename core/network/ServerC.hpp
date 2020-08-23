@@ -44,6 +44,7 @@ private:
 	std::map<int, http::Pending_send>	_pending_messages;
 	std::map<std::string, std::string>	_mime_types;
 	std::map<int, int>					_client_server_map;
+	std::map<int, std::string>			_pending_reads;
 
 public:
 
@@ -55,6 +56,7 @@ public:
 	void	manage_new_connection(int *server_sckt, SA_IN address, int serv_num);
 	void	manage_reads(int &sd);
 	void	manage_writes(int &sd);
+	bool	valid_req_format(std::string buffer);
 
 };
 
