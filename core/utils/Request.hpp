@@ -15,13 +15,6 @@
 # include <map>
 # include "../config/ServerConf.hpp"
 
-#define GET 0
-#define HEAD 1
-#define OPTIONS 2
-#define POST 3
-#define PUT 4
-
-
 namespace http
 {
 	class Request
@@ -60,6 +53,7 @@ namespace http
 		m[401] = "Unauthorized";
 		m[403] = "Forbidden";
 		m[404] = "Not Found";
+		m[405] = "Not Allowed";
 		return (m);
 	};
 

@@ -58,6 +58,7 @@ public:
         this->_err_pages[401] = DEFAULT_ERROR_PAGE_401;
         this->_err_pages[403] = DEFAULT_ERROR_PAGE_403;
         this->_err_pages[404] = DEFAULT_ERROR_PAGE_404;
+        this->_err_pages[405] = DEFAULT_ERROR_PAGE_405;
         this->_err_pages[500] = DEFAULT_ERROR_PAGE_50X;
         this->_is_auth = false;
         this->_auth_message = std::string("");

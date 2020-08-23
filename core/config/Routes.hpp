@@ -4,6 +4,17 @@
 # include <string>
 # include <iostream>
 
+
+#define GET 0
+#define HEAD 1
+#define POST 2
+#define PUT 3
+#define DELETE 4
+#define CONNECT 5
+#define OPTIONS 6
+#define TRACE 7
+#define PATCH 8
+
 namespace http
 {
 
@@ -174,6 +185,29 @@ public:
         if (method == "TRACE")
             return (this->_httpMethods._TRACE);
         if (method == "PATCH")
+            return (this->_httpMethods._PATCH);
+        return (false);
+    };
+
+    bool MethodAllow(int method)
+    {
+        if (method == GET)
+            return (this->_httpMethods._GET);
+        if (method == POST)
+            return (this->_httpMethods._POST);
+        if (method == HEAD)
+            return (this->_httpMethods._HEAD);
+        if (method == PUT)
+            return (this->_httpMethods._PUT);
+        if (method == DELETE)
+            return (this->_httpMethods._DELETE);
+        if (method == CONNECT)
+            return (this->_httpMethods._CONNECT);
+        if (method == OPTIONS)
+            return (this->_httpMethods._OPTIONS);
+        if (method == TRACE)
+            return (this->_httpMethods._TRACE);
+        if (method == PATCH)
             return (this->_httpMethods._PATCH);
         return (false);
     };

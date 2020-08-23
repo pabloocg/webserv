@@ -224,9 +224,9 @@ http::Routes    http::Conf::check_inheritance(http::Routes new_route, std::vecto
     if (max_len)
     {
         // inheritance of HTTP METHODS
-        for (size_t i = 0; i < 9; i++)
-            if (father_location->MethodAllow(this->_http_methods[i]))
-                new_route.setMethods(this->_http_methods[i]);
+        //for (size_t i = 0; i < 9; i++)
+        //    if (father_location->MethodAllow(this->_http_methods[i]))
+        //        new_route.setMethods(this->_http_methods[i]);
         // inheritance of WWW-Authentication
         if (father_location->needAuth() && !new_route.needAuth())
         {

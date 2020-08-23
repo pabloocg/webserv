@@ -136,23 +136,28 @@ void http::Request::read_file_requested(void)
 	int					code;
 
 	code = 0;
-	if (needs_auth(this->location))
+	if (this->location.MethodAllow(this->type))
 	{
-		if (this->_auth == "NULL")
+		if (needs_auth(this->location))
 		{
-			code = 401;
-			this->_www_auth_required = true;
+			if (this->_auth == "NULL")
+			{
+				code = 401;
+				this->_www_auth_required = true;
+			}
+			else if (!validate_password(this->_auth))
+				code = 403;
 		}
-		else if (!validate_password(this->_auth))
-			code = 403;
-	}
-	if (!http::file_exists(this->file_req))
-	{
-		if (code == 0)
-			code = 200;
+		if (!http::file_exists(this->file_req))
+		{
+			if (code == 0)
+				code = 200;
+		}
+		else
+			code = 404;
 	}
 	else
-		code = 404;
+		code = 405;
 	this->status = code;
 	this->message_status = this->_error_mgs[code];
 	if (this->status != 200)
