@@ -37,6 +37,7 @@ namespace http
 	std::string _auth;
 	std::string _realm;
 	std::string _auth_file_path;
+	http::Routes location;
 	bool _www_auth_required;
 
 	//Response variables
@@ -44,16 +45,16 @@ namespace http
 	std::string message_status;
 	std::string resp_body;
 
-	char *build_get(int *size, std::map<std::string, std::string> mime_types, http::ServerConf server);
+	char *build_get(int *size, std::map<std::string, std::string> mime_types);
 	std::string get_content_type(std::string file_type, std::map<std::string, std::string> mime_types);
 	bool needs_auth(http::Routes  routes);
 	bool validate_password(std::string auth);
 	void read_file_requested(void);
 
 	public:
-		Request(std::string req);
+		Request(std::string req, http::ServerConf server);
 
-		char *build_response(int *size, std::map<std::string, std::string> mime_types, http::ServerConf server);
+		char *build_response(int *size, std::map<std::string, std::string> mime_types);
 		void save_header(std::string header);
 	};
 } // namespace http

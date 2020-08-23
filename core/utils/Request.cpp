@@ -61,7 +61,7 @@ void http::Request::save_header(std::string header)
 	}
 }
 
-http::Request::Request(std::string req)
+http::Request::Request(std::string req, http::ServerConf server)
 {
 	/*std::cout << "************ REQUEST ************" << std::endl;
 	std::cout << req << std::endl;
@@ -85,14 +85,14 @@ http::Request::Request(std::string req)
 	else if (srequest[0] == "PUT")
 		this->type = PUT;
 
-	this->file_req = ROOT_DIR + srequest[1]; //aqui habria que mirar los location que tenemos (de mas largo a mas corto) y el primero que esté al principio de la URI ese es su location y lo reemplazamos por el root. Si es exactamente la location le añadimos el index file tambien
-	if ((this->type == GET || this->type == HEAD) && srequest[1] == "/")
-		this->file_req = "dir/index.html";
+	this->file_req = srequest[1];
+	this->location = server.getRoutebyPath(this->file_req);
+	this->file_req.replace(0, this->location.getVirtualLocation().size(), this->location.getDirPath());//.getVirtualLocation();
+	if(this->file_req == this->location.getDirPath()){
+		this->file_req += this->location.getIndexFile();
+	}
 	this->file_type = this->file_req.substr(file_req.find(".") + 1, file_req.size());
-	//if (this->file_req == this->file_type && this->type == GET)
-	//	this->file_type = "html";
-	this->http_version = request[2];
-
+	this->http_version = srequest[2];
 	this->_auth = "NULL";
 	for (int i = 1; i < (int)sheader.size(); i++)
 	{
@@ -115,7 +115,6 @@ std::string http::Request::get_content_type(std::string type, std::map<std::stri
 
 bool http::Request::needs_auth(http::Routes route)
 {
-	std::cout << route << std::endl;
 	if (route.needAuth())
 	{
 		this->_realm = route.getAuthMessage();
@@ -156,14 +155,14 @@ void http::Request::read_file_requested(void)
 	file.close();
 }
 
-char *http::Request::build_get(int *size, std::map<std::string, std::string> mime_types, http::ServerConf server)
+char *http::Request::build_get(int *size, std::map<std::string, std::string> mime_types)
 {
 	char *res;
 	std::string buf;
 	std::stringstream stream;
 	this->_www_auth_required = false;
 	this->status = 0;
-	if (needs_auth(server.getRoutebyPath(this->file_req)))
+	if (needs_auth(this->location))
 	{
 		if (this->_auth == "NULL")
 		{
@@ -209,11 +208,11 @@ char *http::Request::build_get(int *size, std::map<std::string, std::string> mim
 	return (res);
 }
 
-char *http::Request::build_response(int *size, std::map<std::string, std::string> mime_types, http::ServerConf server)
+char *http::Request::build_response(int *size, std::map<std::string, std::string> mime_types)
 {
 	if (this->type == GET || this->type == HEAD)
 	{
-		return (this->build_get(size, mime_types, server));
+		return (this->build_get(size, mime_types));
 	}
 	return (NULL);
 }

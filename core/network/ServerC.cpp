@@ -153,8 +153,8 @@ void http::ServerC::wait_for_connection()
 			else
 			{
 				this->_log.makeLog(ACCESS_LOG, buffer);
-				http::Request req(buffer);
-				message = req.build_response(&size, _mime_types, _servers[_client_server_map[sd]]);
+				http::Request req(buffer, _servers[_client_server_map[sd]]);
+				message = req.build_response(&size, _mime_types);
 				if (!message)
 				{
 					perror("some error occured");
