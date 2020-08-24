@@ -50,11 +50,14 @@ private:
     //Route of the password file Authentication
     std::string     _path_auth;
 
+	bool			_default_server;
+
 public:
     ServerConf():
         _port(DEFAULT_PORT), _server_addr(DEFAULT_SERVER_ADDR),
         _server_name(DEFAULT_SERVER_NAME), _body_size(DEFAULT_BODY_SIZE_MEGABYTES)
     {
+		this->_err_pages[400] = DEFAULT_ERROR_PAGE_400;
         this->_err_pages[401] = DEFAULT_ERROR_PAGE_401;
         this->_err_pages[403] = DEFAULT_ERROR_PAGE_403;
         this->_err_pages[404] = DEFAULT_ERROR_PAGE_404;
@@ -97,6 +100,14 @@ public:
     {
         return (this->_server_addr);
     };
+
+	void		setDefaultServer(bool b){
+		this->_default_server = b;
+	}
+
+	bool		isDefault(void){
+		return (this->_default_server);
+	}
 
     void        setServerName(std::string new_servername)
     {
@@ -189,6 +200,17 @@ public:
         return (this->_path_auth);
     };
 
+	std::vector<std::string> get_server_host_names(){
+		std::vector<std::string> host_names;
+		if (this->getPort() == 80 && this->getServerName() == "localhost"){
+			host_names.push_back("localhost");
+		}
+		host_names.push_back(this->getServerName() + ":" + std::to_string(this->getPort()));
+		host_names.push_back(this->getServerAddr() + ":" + std::to_string(this->getPort()));
+		host_names.push_back("localhost:" + std::to_string(this->getPort()));
+		return (host_names);
+	}
+
     http::Routes    &getRoutebyPath(std::string  &search_path)
     {
         std::vector<http::Routes>::iterator it = this->_routes.begin();
@@ -227,6 +249,8 @@ public:
             return (*itend);
     };
 };
+
+
 
 inline std::ostream &operator<<(std::ostream &out, http::ServerConf &server)
 {

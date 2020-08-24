@@ -1,6 +1,6 @@
 Cosas por hacer:
 
--Implementar CGI
+-Implementar CGI  //para implementar el CGI hay que 
 -Gestion de errores en el archivo de configuracion
 -Implementar el autoindex
 -Implementar timeout si una request se queda colgada (Creo que se hace en el select)
@@ -23,7 +23,7 @@ Metodos HTTP:
 -Implementar POST
 -Implementar PUT
 -Implementar DELETE
--Implementar CONNECT
+-Implementar CONNECT hay que hacerlo??
 -Implementar OPTIONS
 -Implementar TRACE
 -Implementar PATCH
@@ -44,11 +44,12 @@ Implementar Headers:
     #Content-Type: text/html; charset=utf-8
     #Content-Type: multipart/form-data; boundary=something
 
-- Allow (Lo manda el servidor). Enumera el conjunto de métodos admitidos por un recurso. 
-        Esta cabecera debe ser enviada si el servidor responde con un estado 405 Method Not Allowed
-        para indicar cual metodo de peticion puede ser usado.
-    #Allow: <http-methods>
-    #Allow: GET, POST, HEAD
+
+***AÑADIDO***- Allow (Lo manda el servidor). Enumera el conjunto de métodos admitidos por un recurso. 			 
+        Esta cabecera debe ser enviada si el servidor responde con un estado 405 Method Not Allowed  
+        para indicar cual metodo de peticion puede ser usado.										 
+    #Allow: <http-methods>                                                                           
+    #Allow: GET, POST, HEAD                                                                          
 
 - Accept-Language (Lo manda el cliente). Request HTTP header advertises which languages the client is able to understand,
                 and which locale variant is preferred
@@ -57,10 +58,11 @@ Implementar Headers:
 - Content-Language.
 ** El servidor responde con el header Content-Language poniendo el lenguaje usado ** 
 
-- Server (Lo manda el servidor). describe el software utilizado por el servidor de origen que manejó la solicitud 
+
+***AÑADIDO***- Server (Lo manda el servidor). describe el software utilizado por el servidor de origen que manejó la solicitud  
     #Server: webserv/1.0
 
-- Referer (Lo manda el cliente). Contiene la dirección de la página web anterior desde la que se siguió un enlace a la página solicitada actualmente.
+***AÑADIDO***- Referer (Lo manda el cliente). Contiene la dirección de la página web anterior desde la que se siguió un enlace a la página solicitada actualmente.
     (No se usa para nada, asi que se guarda en una variable y ya)
 
 - Retry-After (Lo manda el servidor). Indica cuánto tiempo debe esperar el cliente antes de realizar otra request 
@@ -99,11 +101,11 @@ Hay tres casos principales en que se utiliza este encabezado:
             Indica la función de identidad (es decir, sin compresión ni modificación).
             Este símbolo, excepto si se especifica explícitamente, siempre se considera aceptable.
 
-- User-Agent (Lo manda el cliente). permite que los servidores y los pares de la red identifiquen la aplicación,
+***AÑADIDO***- User-Agent (Lo manda el cliente). permite que los servidores y los pares de la red identifiquen la aplicación,
         el sistema operativo, el proveedor y / o la versión del agente de usuario solicitante.
     (No sirve para nada, se guarda en una variable y listo)
 
-- Host (Lo manda el cliente). Se debe enviar un campo de encabezado de host en todos los mensajes de solicitud HTTP/1.1.
+***AÑADIDO***- Host (Lo manda el cliente). Se debe enviar un campo de encabezado de host en todos los mensajes de solicitud HTTP/1.1.
 Se puede enviar un código de estado 400 (Bad Request) a cualquier mensaje de solicitud HTTP/1.1
 que no tenga un campo de encabezado de host o que contenga más de uno.
     #Host: <host>:<port> El campo port es opcional, el campo host seria el server_name o la IP?

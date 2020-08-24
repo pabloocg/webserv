@@ -167,8 +167,16 @@ void        http::Conf::parse_server_conf(std::string s)
     {
         //std::cout << params[i] << std::endl;
         // Read Port
-        if (!params[i].compare(0, 7, "listen "))
+        if (!params[i].compare(0, 7, "listen ")){
             new_server.setPort(std::atoi(params[i].substr(params[i].find_last_of(' ') + 1).c_str()));
+			if (params[i].find("default_server") != std::string::npos){
+				new_server.setDefaultServer(true);
+			}
+			else{
+				new_server.setDefaultServer(false);
+			}
+		}
+
         // Read Address
         else if (!params[i].compare(0, 12, "server_addr "))
             new_server.setServerAddr(params[i].substr(params[i].find_last_of(' ') + 1));

@@ -168,9 +168,8 @@ void http::ServerC::wait_for_connection()
 				}
 				if (valid_req_format(_pending_reads[sd]))
 				{
-					std::cout << "valid format!" << std::endl;
 					this->_log.makeLog(ACCESS_LOG, _pending_reads[sd]);
-					http::Request req(_pending_reads[sd], _servers[_client_server_map[sd]]);
+					http::Request req(_pending_reads[sd], get_server(), this->_bad_request);
 					message = req.build_response(&size, _mime_types);
 					_pending_reads.erase(sd);
 					if (!message)
@@ -226,7 +225,8 @@ bool http::ServerC::valid_req_format(std::string buffer)
 {
 	std::vector<std::string> splitted_req;
 	int body_size = 0;
-
+	this->_host_header = "NULL";
+	this->_bad_request = false;
 	splitted_req = http::split(buffer, '\n');
 	if (splitted_req.size() < 2)
 	{
@@ -237,6 +237,13 @@ bool http::ServerC::valid_req_format(std::string buffer)
 		if (splitted_req[i].find("Content-Length:") != std::string::npos)
 		{
 			body_size = std::atoi(splitted_req[i].substr(16, splitted_req[i].length() - 16).c_str());
+		}
+		if (splitted_req[i].find("Host:") != std::string::npos){
+			if (this->_host_header == "NULL"){
+			this->_host_header = splitted_req[i].substr(6, splitted_req[i].length() - 7);
+			}
+			else
+				this->_bad_request = true;
 		}
 	}
 	for (int i = 0; i < (int)buffer.length(); i++)
@@ -249,12 +256,35 @@ bool http::ServerC::valid_req_format(std::string buffer)
 		{
 			if (i + 3 + body_size == (int)buffer.length() || i + 3 + body_size == (int)buffer.length() - 2)
 			{
+				if (this->_host_header == "NULL")
+					this->_bad_request = true;
 				return (true);
 			}
 			break;
 		}
 	}
 	return (false);
+}
+
+http::ServerConf http::ServerC::get_server(void){
+	for(int i = 0; i < (int)this->_servers.size(); i++){
+		std::vector<std::string> names = this->_servers[i].get_server_host_names();
+		for (int j = 0; j < (int)names.size(); j++){
+			if (this->_host_header == names[j]){
+				return (this->_servers[i]);
+			}
+		}
+	}
+	return (get_default_server());
+}
+
+http::ServerConf http::ServerC::get_default_server(void){
+	for(int i = 0; i < (int)this->_servers.size(); i++){
+		if (this->_servers[i].isDefault()){
+			return (this->_servers[i]);
+		}
+	}
+	return (this->_servers[0]);
 }
 /*
 void http::ServerC::manage_new_connection(int *server_sckt, SA_IN address, int serv_num)

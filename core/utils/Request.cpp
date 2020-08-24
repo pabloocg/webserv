@@ -12,9 +12,6 @@ void http::Request::save_header(std::string header)
 	else if (words[0] == "Accept-Language:")
 	{
 	}
-	else if (words[0] == "Allow:")
-	{
-	}
 	else if (words[0] == "Authorization:")
 	{
 		this->_auth = words[2];
@@ -22,16 +19,10 @@ void http::Request::save_header(std::string header)
 	else if (words[0] == "Content-Language:")
 	{
 	}
-	else if (words[0] == "Content-Length:")
-	{
-	}
 	else if (words[0] == "Content-Location:")
 	{
 	}
 	else if (words[0] == "Content-Type:")
-	{
-	}
-	else if (words[0] == "Date:")
 	{
 	}
 	else if (words[0] == "Host:")
@@ -42,11 +33,11 @@ void http::Request::save_header(std::string header)
 	}
 	else if (words[0] == "Referer:")
 	{
+		for (int i = 0; i < (int)words.size(); i++)
+			this->_client_info += words[i];
+		this->_client_info += "\n";
 	}
 	else if (words[0] == "Retry-After:")
-	{
-	}
-	else if (words[0] == "Server:")
 	{
 	}
 	else if (words[0] == "Transfer-Encoding:")
@@ -54,16 +45,24 @@ void http::Request::save_header(std::string header)
 	}
 	else if (words[0] == "User-Agent:")
 	{
+		for (int i = 0; i < (int)words.size(); i++)
+			this->_client_info += words[i];
+		this->_client_info += "\n";
 	}
 }
 
-http::Request::Request(std::string req, http::ServerConf server): _error_mgs(create_map())
+http::Request::Request(std::string req, http::ServerConf server, bool bad_request): _error_mgs(create_map())
 {
-	std::cout << "************ REQUEST ************" << std::endl;
+	/*std::cout << "************ REQUEST ************" << std::endl;
 	std::cout << req << std::endl;
-	std::cout << "*********************************" << std::endl;
+	std::cout << "*********************************" << std::endl;*/
+	
 	this->request = req;
 	this->_server = server;
+	this->status = 0;
+	if (bad_request == true){
+		this->status = 400;
+	}
 
 	std::vector<std::string> sheader;
 	std::vector<std::string> srequest;
@@ -88,6 +87,7 @@ http::Request::Request(std::string req, http::ServerConf server): _error_mgs(cre
 	this->file_type = this->file_req.substr(file_req.find(".") + 1, file_req.size());
 	this->http_version = srequest[2];
 	this->_auth = "NULL";
+	this->_allow.clear();
 	this->_www_auth_required = false;
 	for (int i = 1; i < (int)sheader.size(); i++)
 	{
@@ -125,6 +125,25 @@ bool http::Request::needs_auth(http::Routes route)
 	return (false);
 }
 
+void http::Request::get_allowed_methods(void){
+	if (this->location.MethodAllow(GET))
+		this->_allow.push_back("GET");
+	if (this->location.MethodAllow(HEAD))
+		this->_allow.push_back("HEAD");
+	if (this->location.MethodAllow(POST))
+		this->_allow.push_back("POST");
+	if (this->location.MethodAllow(PUT))
+		this->_allow.push_back("PUT");
+	if (this->location.MethodAllow(OPTIONS))
+		this->_allow.push_back("OPTIONS");
+	if (this->location.MethodAllow(DELETE))
+		this->_allow.push_back("DELETE");
+	if (this->location.MethodAllow(CONNECT))
+		this->_allow.push_back("CONNECT");
+	if (this->location.MethodAllow(TRACE))
+		this->_allow.push_back("TRACE");
+}
+
 void http::Request::read_file_requested(void)
 {
 	std::ifstream		file;
@@ -153,8 +172,12 @@ void http::Request::read_file_requested(void)
 		else
 			code = 404;
 	}
-	else
+	else{
 		code = 405;
+		get_allowed_methods();
+	}
+	if (this->status == 400)
+		code = 400;
 	this->status = code;
 	this->message_status = this->_error_mgs[code];
 	if (this->status != 200)
@@ -172,6 +195,7 @@ void http::Request::read_file_requested(void)
 	}
 	else
 		throw "SERVER ERROR";
+	
 }
 
 char *http::Request::build_get(int *size, std::map<std::string, std::string> mime_types)
@@ -182,7 +206,17 @@ char *http::Request::build_get(int *size, std::map<std::string, std::string> mim
 	
 	read_file_requested();
 	stream << "HTTP/1.1 " << this->status << " " << this->message_status << "\nContent-Type: "
-		   << get_content_type(this->file_type, mime_types) << "\nContent-Length: " << this->resp_body.length();
+		   << get_content_type(this->file_type, mime_types) << "\nContent-Length: " << this->resp_body.length()
+		   << "\nServer: Webserv/1.0";
+	if (this->status == 405){
+		stream << "\nAllow:";
+		for(int i = 0; i < (int)this->_allow.size(); i++){
+			if (i < (int)this->_allow.size() - 1)
+				stream << " " << this->_allow[i] << ",";
+			else
+				stream << " " << this->_allow[i];
+		}
+	}
 	if (this->_www_auth_required == true)
 		stream << "\nWWW-Authenticate: Basic realm=\"" << this->_realm << "\"";
 	stream << "\n\n";

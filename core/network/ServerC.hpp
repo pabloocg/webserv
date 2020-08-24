@@ -45,6 +45,8 @@ private:
 	std::map<std::string, std::string>	_mime_types;
 	std::map<int, int>					_client_server_map;
 	std::map<int, std::string>			_pending_reads;
+	std::string							_host_header;
+	bool								_bad_request;
 
 public:
 
@@ -57,6 +59,8 @@ public:
 	void	manage_reads(int &sd);
 	void	manage_writes(int &sd);
 	bool	valid_req_format(std::string buffer);
+	http::ServerConf get_server(void);
+	http::ServerConf get_default_server(void);
 
 };
 

@@ -34,6 +34,8 @@ namespace http
 	http::ServerConf	_server;
 	bool	_www_auth_required;
 	std::map<int,std::string>	_error_mgs;
+	std::vector<std::string> _allow;
+	std::string				_client_info;
 
 	//Response variables
 	int status;
@@ -45,11 +47,13 @@ namespace http
 	bool needs_auth(http::Routes  routes);
 	bool validate_password(std::string auth);
 	void read_file_requested(void);
+	void get_allowed_methods(void);
 	std::map<int, std::string> create_map()
 	{
 		std::map<int, std::string> m;
 
 		m[200] = "OK";
+		m[400] = "Bad Request";
 		m[401] = "Unauthorized";
 		m[403] = "Forbidden";
 		m[404] = "Not Found";
@@ -58,7 +62,7 @@ namespace http
 	};
 
 	public:
-		Request(std::string req, http::ServerConf server);
+		Request(std::string req, http::ServerConf server, bool bad_request);
 
 		char *build_response(int *size, std::map<std::string, std::string> mime_types);
 		void save_header(std::string header);
