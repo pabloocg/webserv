@@ -24,9 +24,11 @@ void http::Request::save_header(std::string header)
 	}
 	else if (words[0] == "Content-Type:")
 	{
+		this->_req_content_type = words[1];
 	}
-	else if (words[0] == "Host:")
+	else if (words[0] == "Content-Length:")
 	{
+		this->_req_content_length = words[1];
 	}
 	else if (words[0] == "Location:")
 	{
@@ -51,16 +53,19 @@ void http::Request::save_header(std::string header)
 	}
 }
 
-http::Request::Request(std::string req, http::ServerConf server, bool bad_request): _error_mgs(create_map())
+http::Request::Request(std::string req, http::ServerConf server, bool bad_request, std::vector<std::string> env) : _error_mgs(create_map())
 {
-	/*std::cout << "************ REQUEST ************" << std::endl;
+	std::cout << "************ REQUEST ************" << std::endl;
 	std::cout << req << std::endl;
-	std::cout << "*********************************" << std::endl;*/
-	
+	std::cout << "*********************************" << std::endl;
+
 	this->request = req;
 	this->_server = server;
+	this->_env = env;
+	this->_isCGI = false;
 	this->status = 0;
-	if (bad_request == true){
+	if (bad_request == true)
+	{
 		this->status = 400;
 	}
 
@@ -81,7 +86,14 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	else if (srequest[0] == "PUT")
 		this->type = PUT;
 
-	this->file_req = srequest[1];
+	this->_req_URI = srequest[1];
+	if (this->_req_URI.find('?') != std::string::npos){
+		this->_query_string = this->_req_URI.substr(this->_req_URI.find("?") + 1);
+		this->file_req = this->_req_URI.substr(0, this->_req_URI.find("?"));
+		std::cout << "file req: " << this->file_req << std::endl;
+	}
+	else
+		this->file_req = this->_req_URI;
 	this->location = this->_server.getRoutebyPath(this->file_req);
 	this->file_req = this->location.getFileTransformed(this->file_req);
 	this->file_type = this->file_req.substr(file_req.find(".") + 1, file_req.size());
@@ -91,8 +103,66 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	this->_www_auth_required = false;
 	for (int i = 1; i < (int)sheader.size(); i++)
 	{
-		this->save_header(sheader[i]); //esto leera cada header y lo guardara en su respectiva variable privada de Request
+		this->save_header(sheader[i]);
 	}
+	if (this->file_req.find("php") != std::string::npos){ //(this->location.isCGI){
+		this->_isCGI = true;
+		this->_path_info = this->file_req.substr(this->file_req.find("php") + 3);
+		this->_script_name = this->file_req.substr(0, this->file_req.find("php") + 3);
+		add_basic_env_vars();
+	}
+}
+
+void http::Request::add_basic_env_vars(void)
+{
+	this->_env.push_back("SERVER_NAME=" + this->_server.getServerName());
+	this->_env.push_back("SERVER_PORT=" + std::to_string(this->_server.getPort()));
+	this->_env.push_back("SERVER_SOFTWARE=webserv/1.0");
+	this->_env.push_back("SERVER_PROTOCOL=HTTP/1.1");
+	this->_env.push_back("GATEWAY_INTERFACE=CGI/1.1");
+	this->_env.push_back("REQUEST_URI=" + this->_req_URI);
+	if (this->_req_content_type.size() > 0)
+		this->_env.push_back("CONTENT_TYPE=" + this->_req_content_type);
+	if (this->_req_content_length.size() > 0)
+		this->_env.push_back("CONTENT_TYPE=" + this->_req_content_length);
+	else
+		this->_env.push_back("CONTENT_TYPE=NULL");
+	if (this->_auth != "NULL"){
+		this->_env.push_back("AUTH_TYPE=BASIC");
+		this->_env.push_back("REMOTE_USER=" + this->_auth);
+	}
+	if (this->_req_URI.find('?') != std::string::npos){
+		this->_env.push_back("QUERY_STRING=" + this->_query_string);
+	}
+	else{
+		this->_env.push_back("QUERY_STRING=");
+	}
+	if (this->type == GET){
+		this->_env.push_back("REQUEST_METHOD=GET");
+	}
+	else if (this->type == HEAD){
+		this->_env.push_back("REQUEST_METHOD=HEAD");
+	}
+	else if (this->type == POST){
+		this->_env.push_back("REQUEST_METHOD=POST");
+	}
+	else if (this->type == PUT){
+		this->_env.push_back("REQUEST_METHOD=PUT");
+	}
+	else if (this->type == DELETE){
+		this->_env.push_back("REQUEST_METHOD=DELETE");
+	}
+	else if (this->type == OPTIONS){
+		this->_env.push_back("REQUEST_METHOD=OPTIONS");
+	}
+	if (this->_path_info.size() > 0){
+		this->_env.push_back("PATH_INFO=" + this->_path_info);
+		this->_env.push_back("PATH_TRANSLATED=http://" + this->_server.getServerName() + ":" + std::to_string(this->_server.getPort()) + this->_path_info);
+	}
+	this->_env.push_back("SCRIPT_NAME=" + this->_script_name);
+	for (int i = 0; i < (int)this->_env.size(); i++)
+		std::cout << this->_env[i] << std::endl;
+	
 }
 
 std::string http::Request::get_content_type(std::string type, std::map<std::string, std::string> mime_types)
@@ -125,7 +195,8 @@ bool http::Request::needs_auth(http::Routes route)
 	return (false);
 }
 
-void http::Request::get_allowed_methods(void){
+void http::Request::get_allowed_methods(void)
+{
 	if (this->location.MethodAllow(GET))
 		this->_allow.push_back("GET");
 	if (this->location.MethodAllow(HEAD))
@@ -146,10 +217,10 @@ void http::Request::get_allowed_methods(void){
 
 void http::Request::read_file_requested(void)
 {
-	std::ifstream		file;
-	std::stringstream	stream;
-	std::string			buf;
-	int					code;
+	std::ifstream file;
+	std::stringstream stream;
+	std::string buf;
+	int code;
 
 	code = 0;
 	if (this->location.MethodAllow(this->type))
@@ -172,7 +243,8 @@ void http::Request::read_file_requested(void)
 		else
 			code = 404;
 	}
-	else{
+	else
+	{
 		code = 405;
 		get_allowed_methods();
 	}
@@ -195,7 +267,6 @@ void http::Request::read_file_requested(void)
 	}
 	else
 		throw "SERVER ERROR";
-	
 }
 
 char *http::Request::build_get(int *size, std::map<std::string, std::string> mime_types)
@@ -203,14 +274,16 @@ char *http::Request::build_get(int *size, std::map<std::string, std::string> mim
 	char *res;
 	std::string buf;
 	std::stringstream stream;
-	
+
 	read_file_requested();
 	stream << "HTTP/1.1 " << this->status << " " << this->message_status << "\nContent-Type: "
 		   << get_content_type(this->file_type, mime_types) << "\nContent-Length: " << this->resp_body.length()
 		   << "\nServer: Webserv/1.0";
-	if (this->status == 405){
+	if (this->status == 405)
+	{
 		stream << "\nAllow:";
-		for(int i = 0; i < (int)this->_allow.size(); i++){
+		for (int i = 0; i < (int)this->_allow.size(); i++)
+		{
 			if (i < (int)this->_allow.size() - 1)
 				stream << " " << this->_allow[i] << ",";
 			else
@@ -238,11 +311,19 @@ char *http::Request::build_get(int *size, std::map<std::string, std::string> mim
 
 char *http::Request::build_response(int *size, std::map<std::string, std::string> mime_types)
 {
+	if (this->_isCGI){
+		startCGI();
+	}
 	if (this->type == GET || this->type == HEAD)
 	{
 		return (this->build_get(size, mime_types));
 	}
 	return (NULL);
+}
+
+void http::Request::startCGI(void){
+	//char **env;
+
 }
 
 bool http::Request::validate_password(std::string auth)

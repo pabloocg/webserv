@@ -157,32 +157,17 @@ namespace http
 		return (NULL);
 	}
 
-	inline int sendall(int s, char *buf, int *len)
-	{
-		int total = 0;		  
-		int bytesleft = *len;
-		int n;
-		int sended = 0;
-		while (total < *len)
-		{
-			if (sended){
-				fd_set writefds;
-				FD_ZERO(&writefds);
-				FD_SET(s, &writefds);
-				select(s + 1, NULL, &writefds, NULL, NULL);
+	inline std::vector<std::string> charptrptrToVector(char **env){
+		std::vector<std::string> vec;
+		int i = -1;
+		while (env[++i]){
+			std::string word = ""; 
+			for (int j = 0; env[i][j]; j++){
+				word += env[i][j];
 			}
-			n = send(s, buf + total, bytesleft, 0);
-			if (n == -1)
-			{
-				break;
-			}
-			total += n;
-			bytesleft -= n;
-			sended = 1;
-			std::cout << "sended " << n << " bytes, " << total << "/" << *len << ", left:" << bytesleft << std::endl;
+			vec.push_back(word);
 		}
-		*len = total;			 
-		return n == -1 ? -1 : 0;
+		return (vec);
 	}
 
 	typedef unsigned char uchar;

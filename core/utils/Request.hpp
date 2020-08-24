@@ -36,6 +36,14 @@ namespace http
 	std::map<int,std::string>	_error_mgs;
 	std::vector<std::string> _allow;
 	std::string				_client_info;
+	std::vector<std::string> _env;
+	std::string					_req_content_type;
+	std::string					_req_content_length;
+	std::string					_req_URI;
+	std::string					_query_string;
+	std::string					_path_info;
+	std::string					_script_name;
+	bool						_isCGI;
 
 	//Response variables
 	int status;
@@ -48,6 +56,8 @@ namespace http
 	bool validate_password(std::string auth);
 	void read_file_requested(void);
 	void get_allowed_methods(void);
+	void add_basic_env_vars(void);
+	void startCGI(void);
 	std::map<int, std::string> create_map()
 	{
 		std::map<int, std::string> m;
@@ -62,7 +72,7 @@ namespace http
 	};
 
 	public:
-		Request(std::string req, http::ServerConf server, bool bad_request);
+		Request(std::string req, http::ServerConf server, bool bad_request, std::vector<std::string> env);
 
 		char *build_response(int *size, std::map<std::string, std::string> mime_types);
 		void save_header(std::string header);

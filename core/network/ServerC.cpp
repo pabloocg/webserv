@@ -1,12 +1,13 @@
 #include "ServerC.hpp"
 
-http::ServerC::ServerC(std::vector<http::ServerConf> servers, std::map<std::string, std::string> mime_types) : _client_socket(30, 0),
+http::ServerC::ServerC(std::vector<http::ServerConf> servers, std::map<std::string, std::string> mime_types, char **env) : _client_socket(30, 0),
 																											   _log(DEFAULT_ACCESS_LOG, DEFAULT_ERROR_LOG),
 																											   _servers(servers),
 																											   _mime_types(mime_types)
 {
 	this->_max_client = 30;
 	this->_server_socket.resize(this->_servers.size());
+	this->_env = http::charptrptrToVector(env);
 	for (
 		struct {std::vector<http::ServerConf>::iterator it; int i; } v = {this->_servers.begin(), 0}; v.it != this->_servers.end(); v.it++, v.i++)
 	{
@@ -169,7 +170,7 @@ void http::ServerC::wait_for_connection()
 				if (valid_req_format(_pending_reads[sd]))
 				{
 					this->_log.makeLog(ACCESS_LOG, _pending_reads[sd]);
-					http::Request req(_pending_reads[sd], get_server(), this->_bad_request);
+					http::Request req(_pending_reads[sd], get_server(), this->_bad_request, this->_env);
 					message = req.build_response(&size, _mime_types);
 					_pending_reads.erase(sd);
 					if (!message)
