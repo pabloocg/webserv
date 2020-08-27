@@ -34,6 +34,9 @@ private:
         bool _TRACE;
         bool _PATCH;
     }               t_httpMethods;
+
+    std::string     _optional_modifier;
+
     //Virtual location of the directory
     std::string     _location;
 
@@ -47,7 +50,7 @@ private:
     bool            _autoindex;
 
     // Default file to answer if the request is a directory
-    std::string     _index_file;
+    std::vector<std::string>     _index_file;
 
     /*
         CGI parameters must also be implemented here
@@ -74,6 +77,7 @@ private:
 public:
     Routes()
     {
+        this->_optional_modifier = std::string("");
         this->_location = std::string("");
         this->_directory_path = std::string("");
         this->_httpMethods._CONNECT = false;
@@ -86,7 +90,6 @@ public:
         this->_httpMethods._PUT = false;
         this->_httpMethods._TRACE = false;
         this->_autoindex = false;
-        this->_index_file = std::string("");
         this->_uploads = false;
         this->_upload_path = std::string("");
         this->_is_auth = false;
@@ -97,6 +100,7 @@ public:
 
     Routes(const http::Routes &other)
     {
+        this->_optional_modifier = other._optional_modifier;
         this->_location = other._location;
         this->_directory_path = other._directory_path;
         this->_httpMethods._CONNECT = other._httpMethods._CONNECT;
@@ -120,6 +124,7 @@ public:
 
     Routes      &operator=(const http::Routes &other)
     {
+        this->_optional_modifier = other._optional_modifier;
         this->_location = other._location;
         this->_directory_path = other._directory_path;
         this->_httpMethods._CONNECT = other._httpMethods._CONNECT;
@@ -143,6 +148,14 @@ public:
     }
 
     virtual ~Routes() {};
+
+    class ErrorOptionalMod: public std::exception {
+        const char *what() const throw()
+        {
+            return ("File Configuration Exception: Optional Modifier Unrecognized");
+        }
+    };
+
 
     void    setMethods(std::string mthd)
     {
@@ -212,6 +225,18 @@ public:
         return (false);
     };
 
+    void        setOptModifier(std::string opt)
+    {
+        if (opt != "~" && opt != "=" && opt != "~*" && opt == "^~")
+            throw http::Routes::ErrorOptionalMod();
+        this->_optional_modifier = opt;
+    };
+
+    std::string &getOptModifier()
+    {
+        return (this->_optional_modifier);
+    };
+
     void        setLocation(std::string locat)
     {
         this->_location = locat;
@@ -242,12 +267,12 @@ public:
         return (this->_autoindex);
     };
 
-    void        setIndexFile(std::string index_file)
+    void        addIndexFile(std::string index_file)
     {
-        this->_index_file = index_file;
+        this->_index_file.push_back(index_file);
     };
 
-    std::string &getIndexFile()
+    std::vector<std::string> getIndexFile()
     {
         return (this->_index_file);
     };
@@ -296,11 +321,13 @@ public:
 
     void        setAuthMessage(std::string auth_mess)
     {
-        auth_mess = trim(auth_mess);
         if (auth_mess == "off")
             this->denyAuth();
         else
+        {
+            this->allowAuth();
             this->_auth_message = trim2(auth_mess, "\"");
+        }
     };
 
     std::string &getAuthMessage()
@@ -321,17 +348,33 @@ public:
     std::string &getFileTransformed(std::string &path_requested)
     {
         path_requested.replace(0, this->getVirtualLocation().size(), this->getDirPath());
-	    if(path_requested == this->getDirPath())
-		    path_requested += this->getIndexFile();
+	    if (path_requested == this->getDirPath())
+        {
+            std::string     tmp;
+            for (std::vector<std::string>::iterator it = this->_index_file.begin(); it < this->_index_file.end(); it++)
+            {
+                tmp = std::string(path_requested);
+                tmp += *it;
+                if (!http::file_exists(tmp))
+		            path_requested += *it;
+                break ;
+            }
+        }
         return (path_requested);
     };
 };
 
 inline std::ostream &operator<<(std::ostream &out, http::Routes &route)
 {
+    std::vector<std::string>::iterator it = route.getIndexFile().begin();
+    std::vector<std::string>::iterator itend = route.getIndexFile().end();
     out << "\nLocation VirtualDirectory: " << route.getVirtualLocation() << std::endl;
+    out << "\nLocation OptionalModifier: " << route.getOptModifier() << std::endl;
     out << "Location RootPath: " << route.getDirPath() << std::endl;
-    out << "Location indexFile: " << route.getIndexFile() << std::endl;
+    out << "Location indexFile: ";
+    for (; it != itend; it++)
+        out << *it << " ";
+    out << std::endl;
     out << "Location autoindex: " << ((route.getAutoIndex()) ? "on" : "off") << std::endl;
     out << "Location uploads: " << ((route.getUpload()) ? "on" : "off") << std::endl;
     out << "Location uploadsPath: " << route.getUploadPath() << std::endl;
