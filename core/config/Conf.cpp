@@ -416,7 +416,7 @@ http::Routes http::Conf::save_location(std::string s, std::string opt, std::stri
                     buf << s[i++];
                 s_cmp = buf.str();
                 if (s_cmp != "GET" && s_cmp != "POST" && s_cmp != "HEAD" && s_cmp != "DELETE" &&
-                    s_cmp != "CONNECT" && s_cmp != "OPTIONS" && s_cmp != "TRACE" && s_cmp != "PATCH")
+                    s_cmp != "OPTIONS" && s_cmp != "PATCH" && s_cmp != "PUT")
                     throw http::Conf::UnrecognizedParameter();
                 route.setMethods(s_cmp);
                 buf.clear();

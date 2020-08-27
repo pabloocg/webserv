@@ -62,6 +62,7 @@ namespace http
 	std::string resp_body;
 
 	char *build_get(int *size, std::map<std::string, std::string> mime_types);
+	char *build_put(int *size);
 	std::string get_content_type(std::string file_type, std::map<std::string, std::string> mime_types);
 	bool needs_auth(http::Routes  routes);
 	bool validate_password(std::string auth);
@@ -76,6 +77,7 @@ namespace http
 		std::map<int, std::string> m;
 
 		m[200] = "OK";
+		m[201] = "Created";
 		m[400] = "Bad Request";
 		m[401] = "Unauthorized";
 		m[403] = "Forbidden";

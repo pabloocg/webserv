@@ -120,6 +120,7 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 		this->file_req = this->_script_name;
 		add_basic_env_vars();
 	}
+	read_file_requested();
 }
 
 void http::Request::add_basic_env_vars(void)
@@ -254,6 +255,11 @@ void http::Request::read_file_requested(void)
 			if (code == 0)
 				code = 200;
 		}
+		else if (http::file_exists(this->file_req) && this->type == PUT)
+		{
+			if (code == 0)
+				code = 201;
+		}
 		else
 			code = 404;
 	}
@@ -266,14 +272,15 @@ void http::Request::read_file_requested(void)
 		code = 400;
 	this->status = code;
 	this->message_status = this->_error_mgs[code];
-	if (this->status != 200)
+	if (this->status != 200 && this->status != 201)
 	{
 		this->_isCGI = false;
 		this->file_req = this->_server.getErrorPage(code);
 		this->file_type = this->file_req.substr(file_req.find(".") + 1);
 	}
 	
-	if (!this->_isCGI){
+	if (!this->_isCGI && this->status != 201)
+	{
 		file.open(this->file_req);
 		if (file.is_open() && !this->_isCGI)
 		{
@@ -289,11 +296,9 @@ void http::Request::read_file_requested(void)
 
 char *http::Request::build_get(int *size, std::map<std::string, std::string> mime_types)
 {
-	char *res;
-	std::string buf;
-	std::stringstream stream;
+	char				*res;
+	std::stringstream	stream;
 
-	read_file_requested();
 	if (this->_isCGI){
 		startCGI();
 	}
@@ -340,8 +345,62 @@ char *http::Request::build_get(int *size, std::map<std::string, std::string> mim
 	return (res);
 }
 
+char *http::Request::build_put(int *size)
+{
+	std::ofstream	f(this->file_req);
+	char				*res;
+	std::stringstream	stream;
+
+	if (f.good())
+		f << this->_request_body << std::endl;
+	else
+		f << "error" << std::endl;
+	f.close();
+
+	stream << "HTTP/1.1 " << this->status << " " << this->message_status;
+	if (this->status == 405)
+	{
+		stream << "\nAllow:";
+		for (int i = 0; i < (int)this->_allow.size(); i++)
+		{
+			if (i < (int)this->_allow.size() - 1)
+				stream << " " << this->_allow[i] << ",";
+			else
+				stream << " " << this->_allow[i];
+		}
+	}
+	if (this->_www_auth_required == true)
+		stream << "\nWWW-Authenticate: Basic realm=\"" << this->_realm << "\"";
+	
+	/*if (this->_isCGI){
+		for (int i = 0; i < (int)this->_CGI_headers.size(); i++){
+			stream << "\n" << this->_CGI_headers[i];
+		}
+	}
+	*/
+	stream << /*"\nContent-Length: " << this->resp_body.length() <<*/ "\nServer: Webserv/1.0\n\n";
+	//if (this->type != HEAD)
+	//	stream << this->resp_body;
+
+	this->resp_body = stream.str();
+	if (this->resp_body.length() < 1000){
+		std::cout << "************ RESPONSE ***********" << std::endl;
+		std::cout << this->resp_body << std::endl;
+		std::cout << "*********************************" << std::endl;
+	}
+	if (!(res = (char *)malloc(sizeof(char) * (this->resp_body.size() + 1))))
+		return (NULL);
+	std::copy(this->resp_body.begin(), this->resp_body.end(), res);
+	res[this->resp_body.size()] = '\0';
+	*size = this->resp_body.size();
+	std::cout << "Created " << this->file_req << std::endl;
+	return (res);
+}
+
 char *http::Request::build_response(int *size, std::map<std::string, std::string> mime_types)
 {
+	if (this->type == PUT)
+		return (this->build_put(size));
 	if (this->type == GET || this->type > GET)//aqui entran todos
 	{
 		return (this->build_get(size, mime_types));
