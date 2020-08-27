@@ -226,6 +226,9 @@ bool http::ServerC::valid_req_format(std::string buffer)
 {
 	std::vector<std::string> splitted_req;
 	int body_size = 0;
+	bool chunked;
+	chunked = false;
+	std::string chunked_str;
 	this->_host_header = "NULL";
 	this->_bad_request = false;
 	splitted_req = http::split(buffer, '\n');
@@ -239,9 +242,13 @@ bool http::ServerC::valid_req_format(std::string buffer)
 		{
 			body_size = std::atoi(splitted_req[i].substr(16, splitted_req[i].length() - 16).c_str());
 		}
+		if (splitted_req[i].find("Transfer-Encoding: chunked") != std::string::npos)
+		{
+			chunked = true;
+		}
 		if (splitted_req[i].find("Host:") != std::string::npos){
 			if (this->_host_header == "NULL"){
-			this->_host_header = splitted_req[i].substr(6, splitted_req[i].length() - 7);
+				this->_host_header = splitted_req[i].substr(6, splitted_req[i].length() - 7);
 			}
 			else
 				this->_bad_request = true;
@@ -255,7 +262,13 @@ bool http::ServerC::valid_req_format(std::string buffer)
 		}
 		if (buffer[i] == '\n' && buffer[i + 2] == '\n')
 		{
-			if (i + 3 + body_size == (int)buffer.length() || i + 3 + body_size == (int)buffer.length() - 2)
+			if (chunked == true){
+				std::cout << "las of 0:" << buffer.find_last_of('0') << " length:" << (int)buffer.length() << std::endl;
+				if (buffer.find_last_of('0') == buffer.length() - 5){
+					return (true);
+				}
+			}
+			if (chunked == false && (i + 3 + body_size == (int)buffer.length() || i + 3 + body_size == (int)buffer.length() - 2))
 			{
 				if (this->_host_header == "NULL")
 					this->_bad_request = true;

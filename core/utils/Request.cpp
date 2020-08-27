@@ -321,8 +321,10 @@ char *http::Request::build_get(int *size, std::map<std::string, std::string> mim
 			stream << "\n" << this->_CGI_headers[i];
 		}
 	}
-	stream << "\nContent-Length: " << this->resp_body.length() << "\nServer: Webserv/1.0\n\n";
-	if (this->type != HEAD)
+	stream << "\nDate: " << http::get_actual_date();
+	stream << "\nContent-Length: " << this->resp_body.length()
+		   << "\nServer: Webserv/1.0\n\n";
+	if (this->type != HEAD || this->status != 200)
 		stream << this->resp_body;
 
 	this->resp_body = stream.str();
