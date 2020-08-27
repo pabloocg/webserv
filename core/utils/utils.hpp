@@ -13,7 +13,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdlib.h>
-# include <fcntl.h>
+#include <fcntl.h>
+#include <time.h>
+#include <sys/time.h>
 
 #define ROOT_DIR "dir"
 
@@ -97,67 +99,6 @@ namespace http
 		return (buff.str());
 	}
 
-	//Esta funcion tendrá que ir en la clase Request
-	static char *read_file(std::string file_request)
-	{
-		std::ifstream file;
-		std::stringstream content_file;
-		std::string buf;
-		char *res;
-		int status;
-		std::string message_status;
-		std::string file_type;
-
-		//Read the file requested
-		file_type = file_request.substr(file_request.find(".") + 1, file_request.size());
-		if (file_request == file_type)
-			file_type = "html";
-		if (file_request == "dir/")
-			file_request = "dir/index.html";
-		file.open(file_request);
-		if (file.is_open())
-		{
-			status = 200;
-			message_status = "OK";
-		}
-		//Read the error page 404
-		else
-		{
-			file.open("dir/404.html");
-			status = 404;
-			message_status = "Not Found";
-		}
-		//Should also do one if the client not have permissions to read the file page 403
-		while (std::getline(file, buf))
-			content_file << buf << "\n";
-		buf = content_file.str();
-		content_file.str("");
-		content_file.clear();
-		file.close();
-		content_file << "HTTP/1.1 " << status << " " << message_status << "\nContent-Type: text/" << file_type << "\ncharset=utf-8\nContent-Length: " << buf.length() << "\n\n"
-					 << buf;
-		buf = content_file.str();
-		if (!(res = (char *)malloc(sizeof(char) * (buf.size() + 1))))
-			return (NULL);
-		std::copy(buf.begin(), buf.end(), res);
-		res[buf.size()] = '\0';
-		return (res);
-	}
-
-	inline char *parse_headers(std::string header)
-	{
-		std::vector<std::string> sheader;
-		std::vector<std::string> request;
-
-		std::cout << header << std::endl;
-
-		sheader = split(header, '\n');
-		request = split(sheader[0], ' ');
-		if (request[0] == "GET")
-			return (read_file(ROOT_DIR + request[1]));
-		return (NULL);
-	}
-
 	inline std::vector<std::string> charptrptrToVector(char **env)
 	{
 		std::vector<std::string> vec;
@@ -189,32 +130,25 @@ namespace http
 		return (ret);
 	}
 
-	typedef unsigned char uchar;
-	static const std::string b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"; //=
-	inline std::string base64_decode(const std::string &in)
+	inline std::string get_actual_date(void)
 	{
-
-		std::string out;
-
-		std::vector<int> T(256, -1);
-		for (int i = 0; i < 64; i++)
-			T[b[i]] = i;
-
-		int val = 0, valb = -8;
-		for (int i = 0; i < (int)in.size(); i++)
+		struct timeval tv;
+		char buf[30];
+		if (gettimeofday(&tv, NULL) != 0)
 		{
-			uchar c = (uchar)in[i];
-			if (T[c] == -1)
-				break;
-			val = (val << 6) + T[c];
-			valb += 6;
-			if (valb >= 0)
+			perror("gettimeofday");
+		}
+		ssize_t written = -1;
+		struct tm *gm = gmtime(&tv.tv_sec);
+		if (gm)
+		{
+			written = (ssize_t)strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", gm);
+			if (!(written > 0))
 			{
-				out.push_back(char((val >> valb) & 0xFF));
-				valb -= 8;
+				perror("strftime");
 			}
 		}
-		return out;
+		return (buf);
 	}
 
 } // namespace http
