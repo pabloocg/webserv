@@ -65,6 +65,9 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	this->_env = env;
 	this->_isCGI = false;
 	this->status = 0;
+	this->_auth = "NULL";
+	this->_allow.clear();
+	this->_www_auth_required = false;
 	if (bad_request == true)
 	{
 		this->status = 400;
@@ -88,22 +91,17 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 		this->type = PUT;
 
 	this->_req_URI = srequest[1];
+	this->http_version = srequest[2];
+
 	if (this->_req_URI.find('?') != std::string::npos){
 		this->_query_string = this->_req_URI.substr(this->_req_URI.find("?") + 1);
 		this->file_req = this->_req_URI.substr(0, this->_req_URI.find("?"));
 	}
 	else
 		this->file_req = this->_req_URI;
-	std::cout << "******************" <<this->file_req << std::endl;
-	this->location = this->_server.getRoutebyPath(this->file_req);
-	std::cout << "******************" <<this->location << std::endl;
+	this->location = this->_server.getRoutebyPath(this->file_req); //si file_req = * me pasas la location del server entero
 	this->file_req = this->location.getFileTransformed(this->file_req);
-	std::cout << "******************" <<this->file_req << std::endl;
 	this->file_type = this->file_req.substr(file_req.find(".") + 1, file_req.size());
-	this->http_version = srequest[2];
-	this->_auth = "NULL";
-	this->_allow.clear();
-	this->_www_auth_required = false;
 	for (int i = 1; i < (int)sheader.size(); i++)
 	{
 		this->save_header(sheader[i]);
@@ -111,8 +109,7 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	if (atoi(this->_req_content_length.c_str()) > 0){
 		save_request_body();
 	}
-	//if (this->file_req.find("php") != std::string::npos){ //(this->location.isCGI){
-	if (this->location.isCgi())
+	if (this->location.isCgi() && this->type != OPTIONS)
 	{
 		this->_isCGI = true;
 		this->_path_info = this->file_req.substr(this->file_req.find(this->location.getExtension()) + 3);
@@ -252,8 +249,15 @@ void http::Request::read_file_requested(void)
 		}
 		if (!http::file_exists(this->file_req))
 		{
-			if (code == 0)
-				code = 200;
+			if (code == 0){
+				if (this->type == OPTIONS){
+					code = 204;
+					get_allowed_methods();
+				}
+				else{
+					code = 200;
+				}
+			}
 		}
 		else if (http::file_exists(this->file_req) && this->type == PUT)
 		{
@@ -272,17 +276,17 @@ void http::Request::read_file_requested(void)
 		code = 400;
 	this->status = code;
 	this->message_status = this->_error_mgs[code];
-	if (this->status != 200 && this->status != 201)
+	if (this->status >= 400)
 	{
 		this->_isCGI = false;
 		this->file_req = this->_server.getErrorPage(code);
 		this->file_type = this->file_req.substr(file_req.find(".") + 1);
 	}
 	
-	if (!this->_isCGI && this->status != 201)
+	if (this->status != 204 && this->status != 201 && !this->_isCGI)
 	{
 		file.open(this->file_req);
-		if (file.is_open() && !this->_isCGI)
+		if (file.is_open())
 		{
 			while (std::getline(file, buf))
 				stream << buf << "\n";
@@ -305,10 +309,10 @@ char *http::Request::build_get(int *size, std::map<std::string, std::string> mim
 
 	stream << "HTTP/1.1 " << this->status << " " << this->message_status;
 
-	if (!this->_isCGI)
+	if (!this->_isCGI && this->status != 204)
 		stream	<< "\nContent-Type: " << get_content_type(this->file_type, mime_types);
 		   
-	if (this->status == 405)
+	if (this->status == 405 || (this->status == 204 && this->type == OPTIONS))
 	{
 		stream << "\nAllow:";
 		for (int i = 0; i < (int)this->_allow.size(); i++)
@@ -327,9 +331,13 @@ char *http::Request::build_get(int *size, std::map<std::string, std::string> mim
 		}
 	}
 	stream << "\nDate: " << http::get_actual_date();
-	stream << "\nContent-Length: " << this->resp_body.length()
-		   << "\nServer: Webserv/1.0\n\n";
-	if (this->type != HEAD || this->status != 200)
+
+	if (this->status != 204)
+		stream << "\nContent-Length: " << this->resp_body.length();
+
+	stream << "\nServer: Webserv/1.0\n\n";
+
+	if ((this->type != HEAD || this->status != 200) && this->status != 204)
 		stream << this->resp_body;
 
 	this->resp_body = stream.str();
@@ -374,15 +382,7 @@ char *http::Request::build_put(int *size)
 	if (this->_www_auth_required == true)
 		stream << "\nWWW-Authenticate: Basic realm=\"" << this->_realm << "\"";
 	
-	/*if (this->_isCGI){
-		for (int i = 0; i < (int)this->_CGI_headers.size(); i++){
-			stream << "\n" << this->_CGI_headers[i];
-		}
-	}
-	*/
-	stream << /*"\nContent-Length: " << this->resp_body.length() <<*/ "\nServer: Webserv/1.0\n\n";
-	//if (this->type != HEAD)
-	//	stream << this->resp_body;
+	stream << "\nServer: Webserv/1.0\n\n";
 
 	this->resp_body = stream.str();
 	if (this->resp_body.length() < 1000){
@@ -401,16 +401,15 @@ char *http::Request::build_put(int *size)
 
 char *http::Request::build_response(int *size, std::map<std::string, std::string> mime_types)
 {
-	if (this->type == PUT)
+	if (this->type == PUT && !this->_isCGI)
 		return (this->build_put(size));
-	if (this->type == GET || this->type > GET)//aqui entran todos
-	{
+	else{
 		return (this->build_get(size, mime_types));
 	}
 	return (NULL);
 }
 
-void http::Request::startCGI(void){ //Esto esta guarrisimo pero solo es para probar como funciona el CGI
+void http::Request::startCGI(void){
 	char **env = http::vecToCharptrptr(this->_env);
 	char **args;
 	int ret = EXIT_SUCCESS;
@@ -429,7 +428,6 @@ void http::Request::startCGI(void){ //Esto esta guarrisimo pero solo es para pro
 			perror("malloc");
 	}
 	args[0] = strdup(this->location.getCgiExec().c_str());
-	//args[0] = strdup("/usr/local/Cellar/php/7.4.9/bin/php-cgi");
 	args[1] = NULL;
 
 	pid_t pid = fork();

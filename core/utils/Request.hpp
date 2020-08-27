@@ -78,6 +78,7 @@ namespace http
 
 		m[200] = "OK";
 		m[201] = "Created";
+		m[204] = "No Content";
 		m[400] = "Bad Request";
 		m[401] = "Unauthorized";
 		m[403] = "Forbidden";
