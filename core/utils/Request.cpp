@@ -320,9 +320,11 @@ char *http::Request::build_get(int *size, std::map<std::string, std::string> mim
 		stream << this->resp_body;
 
 	this->resp_body = stream.str();
-	std::cout << "************ RESPONSE ***********" << std::endl;
-	std::cout << this->resp_body << std::endl;
-	std::cout << "*********************************" << std::endl;
+	if (this->resp_body.length() < 1000){
+		std::cout << "************ RESPONSE ***********" << std::endl;
+		std::cout << this->resp_body << std::endl;
+		std::cout << "*********************************" << std::endl;
+	}
 	if (!(res = (char *)malloc(sizeof(char) * (this->resp_body.size() + 1))))
 		return (NULL);
 	std::copy(this->resp_body.begin(), this->resp_body.end(), res);
