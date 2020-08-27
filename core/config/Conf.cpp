@@ -1,6 +1,6 @@
 #include "Conf.hpp"
 
-const std::string    http::Conf::_http_methods[9] = {
+const std::string http::Conf::_http_methods[9] = {
     "GET",
     "POST",
     "HEAD",
@@ -12,243 +12,54 @@ const std::string    http::Conf::_http_methods[9] = {
     "PATCH"
 };
 
-http::Conf::Conf(const std::string &conf_file):
-            _filename(conf_file),
-            _log(DEFAULT_ACCESS_LOG, DEFAULT_ERROR_LOG)
+http::Conf::Conf(const std::string &conf_file) : _filename(conf_file),
+                                                 _log(DEFAULT_ACCESS_LOG, DEFAULT_ERROR_LOG)
 {
     if (!file_exists())
-    {
-        this->_log.makeLog(ERROR_LOG, "The entered configuration file doesn't exist");
-        exit(EXIT_FAILURE);
-    }
+        throw http::Conf::ConfFileNotExists();
     complex_parse(simple_parse());
+    for (size_t i = 0; i < this->_servers.size(); i++)
+    {
+        std::vector<http::Routes>   routes(this->_servers[i].getRoutes());
+        std::vector<http::Routes>   tmp;
+        for (std::vector<http::Routes>::iterator itr = routes.begin(); itr != routes.end(); itr++)
+        {
+            http::Routes    mm;
+            mm = this->check_inheritance(*itr, routes);
+            std::cout << mm << std::endl;
+            tmp.push_back(mm);
+        }
+        this->_servers[i].set_routes(tmp);
+    }
 }
 
-bool        http::Conf::file_exists(void)
+bool            http::Conf::file_exists(void)
 {
     this->_file.open(this->_filename);
     return (this->_file.is_open());
 }
 
-std::string        http::Conf::simple_parse(void)
+std::string     http::Conf::simple_parse(void)
 {
-    std::string     strr;
-    size_t          pos;
-    std::regex      comment("\\s*[#].*");
+    std::string         strr;
+    size_t              pos;
+    std::regex          comment("\\s*[#].*");
     std::stringstream   buf;
 
     while (std::getline(this->_file, strr))
-    {
         if (!std::regex_match(strr, comment) and strr.length() > 0)
         {
             if ((pos = strr.find("#")) != std::string::npos)
                 strr = strr.substr(0, pos);
             buf << http::trim(strr);
         }
-    }
     this->_file.close();
     return (buf.str());
 }
 
-http::Routes    http::Conf::save_location(std::string s)
+size_t get_BracketClose(std::string s)
 {
-    http::Routes        route;
-    std::stringstream   buf;
-    std::vector<std::string>    params;
-    size_t              count = 0;
-
-    s.erase(0, 9);
-    while (std::isspace(s[count]))
-        count++;
-    while (!std::isspace(s[count]))
-        buf << s[count++];
-    route.setLocation(buf.str()); // Save virtual directory location
-    while (std::isspace(s[count]))
-        count++;
-    if (!(s[count] == '{'))
-        throw Conf::UnrecognizedParameter();
-    s = s.substr(count + 1, s.find_last_of("}") - (count + 1));
-    buf.clear();
-    buf.str("");
-    //std::cout << s << std::endl;
-    params = http::special_split(s, ';');
-    for (size_t i = 0; i < params.size(); i++)
-    {
-        //std::cout << params[i] << std::endl;
-        if (!params[i].compare(0, 5, "root ")) // Existing directory path
-            route.setDirPath(params[i].substr(params[i].find_last_of(' ') + 1));
-        else if (!params[i].compare(0, 6, "index ")) // File index
-            route.setIndexFile(params[i].substr(params[i].find_last_of(' ') + 1));
-        else if (!params[i].compare(0, 10, "autoindex ")) // Activate autoindex (show files in a dir)
-        {
-            if (params[i].substr(params[i].find_last_of(' ') + 1) == "on")
-                route.allowAutoIndex();
-        }
-        else if (!params[i].compare(0, 7, "upload ")) // allow uploads files
-        {
-            if (params[i].substr(params[i].find_last_of(' ') + 1) == "on")
-                route.allowUpload();
-        }
-        else if (!params[i].compare(0, 12, "path_upload ")) // Path to save uploads
-            route.setUploadPath(params[i].substr(params[i].find_last_of(' ') + 1));
-        else if (!params[i].compare(0, 11, "auth_basic ")) // allow uploads files
-        {
-            route.allowAuth();
-            route.setAuthMessage(params[i].substr(11));
-        }
-        else if (!params[i].compare(0, 21, "auth_basic_user_file ")) // Path to save uploads
-            route.setPassAuthFile(params[i].substr(params[i].find_last_of(' ') + 1));
-        else if (!params[i].compare(0, 13, "http_methods ")) // methods allowed in a location
-        {
-            count = 13;
-            std::string     s_cmp;
-            std::string     to_str(params[i]);
-            while (count < to_str.length())
-            {
-                while (std::isspace(to_str[count]) && count < to_str.length())
-                    count++;
-                while (!std::isspace(to_str[count]) && count < to_str.length())
-                    buf << to_str[count++];
-                s_cmp = buf.str();
-                if (s_cmp != "GET" && s_cmp != "POST" && s_cmp != "HEAD" && s_cmp != "DELETE"
-                    && s_cmp != "CONNECT" && s_cmp != "OPTIONS" && s_cmp != "TRACE" && s_cmp != "PATCH")
-                    throw http::Conf::UnrecognizedParameter();
-                route.setMethods(s_cmp);                
-                buf.clear();
-                buf.str("");
-            }
-        }
-        else
-            throw Conf::UnrecognizedParameter();
-    }
-    return (route);
-}
-
-void        http::Conf::parse_types(std::string s)
-{
-	std::string value;
-	int i = 0;
-    int count;
-	while (i < (int)s.length())
-    {
-        count = 0;
-		while (!std::isspace(s[i + count]))
-			count++;
-		value = s.substr(i, count);
-		//std::cout << "value added: " << value << std::endl;
-		i += count;
-		while (s[i] != ';')
-        {
-			while (std::isspace(s[i]))
-				i++;
-			count = 0;
-			while (!std::isspace(s[i + count]) && s[i + count] != ';')
-				count++;
-			std::pair<std::string, std::string> pair(s.substr(i, count), value);
-			this->_mime_types.insert(pair);
-			//std::cout << "ha insertado " << s.substr(i, count) << std::endl;
-			i += count;
-		}
-		i++;
-	}
-}
-
-void        http::Conf::parse_server_conf(std::string s)
-{
-    http::ServerConf    new_server;
-    //std::cout << "SERVER" << std::endl;
-    //std::cout << s << std::endl;
-
-    std::vector<std::string>    params;
-
-    params = http::special_split(s, ';');
-
-    for (size_t i = 0; i < params.size(); i++)
-    {
-        //std::cout << params[i] << std::endl;
-        // Read Port
-        if (!params[i].compare(0, 7, "listen ")){
-            new_server.setPort(std::atoi(params[i].substr(params[i].find_last_of(' ') + 1).c_str()));
-			if (params[i].find("default_server") != std::string::npos){
-				new_server.setDefaultServer(true);
-			}
-			else{
-				new_server.setDefaultServer(false);
-			}
-		}
-
-        // Read Address
-        else if (!params[i].compare(0, 12, "server_addr "))
-            new_server.setServerAddr(params[i].substr(params[i].find_last_of(' ') + 1));
-        // Read ServerName
-        else if (!params[i].compare(0, 12, "server_name "))
-            new_server.setServerName(params[i].substr(params[i].find_last_of(' ') + 1));
-        // Read BodySize
-        else if (!params[i].compare(0, 21, "client_max_body_size "))
-            new_server.setBodySize(std::atoi(params[i].substr(params[i].find_last_of(' ') + 1).c_str()));
-        // Read Error Pages
-        else if (!params[i].compare(0, 11, "error_page "))
-            new_server.setErrorPage(params[i].substr(params[i].find_first_of(' ')));
-        // Add location
-        else if (!params[i].compare(0, 9, "location "))
-            new_server.add_route(check_inheritance(this->save_location(params[i]), new_server.getRoutes()));
-        else if (!params[i].compare(0, 11, "auth_basic ")) // allow uploads files
-        {
-            new_server.allowAuth();
-            new_server.setAuthMessage(params[i].substr(11));
-        }
-        else if (!params[i].compare(0, 21, "auth_basic_user_file ")) // Path to save uploads
-            new_server.setPassAuthFile(params[i].substr(params[i].find_last_of(' ') + 1));
-        else
-            throw Conf::UnrecognizedParameter();
-    }
-    this->_servers.push_back(new_server);
-}
-
-http::Routes    http::Conf::check_inheritance(http::Routes new_route, std::vector<http::Routes> all_routes)
-{
-    std::vector<http::Routes>::iterator father_location;
-    size_t  len = 0;
-    size_t  max_len = 0;
-    std::string path;
-    for (std::vector<http::Routes>::iterator it = all_routes.begin(); it != all_routes.end(); it++)
-    {
-        path = it->getVirtualLocation();
-        len = path.length();
-        if (new_route.getVirtualLocation().compare(0, len, path) == 0)
-        {
-            if (!max_len)
-            {
-                max_len = len;
-                father_location = it;
-            }
-            else if (len > max_len)
-            {
-                max_len = len;
-                father_location = it;
-            }
-        }
-    }
-    if (max_len)
-    {
-        // inheritance of HTTP METHODS
-        //for (size_t i = 0; i < 9; i++)
-        //    if (father_location->MethodAllow(this->_http_methods[i]))
-        //        new_route.setMethods(this->_http_methods[i]);
-        // inheritance of WWW-Authentication
-        if (father_location->needAuth() && !new_route.needAuth())
-        {
-            new_route.allowAuth();
-            new_route.setAuthMessage(father_location->getAuthMessage());
-            new_route.setPassAuthFile(father_location->getPassAuthFile());
-        }
-    }
-    return (new_route);
-}
-
-size_t      get_BracketClose(std::string s)
-{
-    size_t i = 0;
+    size_t  i = 0;
     int     level = 0;
 
     for (size_t i = 0; i < s.length(); i++)
@@ -265,17 +76,17 @@ size_t      get_BracketClose(std::string s)
     return (i);
 }
 
-void        http::Conf::complex_parse(std::string s)
+void            http::Conf::complex_parse(std::string s)
 {
-    size_t      i = 0;
-    size_t      bclose = 0;
-    std::string string_p;
+    size_t              i = 0;
+    size_t              bclose = 0;
+    std::string         string_p;
+    std::string         tmp;
+    std::stringstream   buf;
 
     if (std::count(s.begin(), s.end(), '{') != std::count(s.begin(), s.end(), '}'))
         throw Conf::UnclosedBracket();
-    if (!s.compare(0, 4, "http"))
-        std::cout << "namespace http found" << std::endl;
-    else
+    if (s.compare(0, 4, "http"))
         throw Conf::UnrecognizedParameter();
     i = 4;
     while (std::isspace(s[i]))
@@ -285,82 +96,422 @@ void        http::Conf::complex_parse(std::string s)
     string_p = s.substr(i + 1, s.find_last_of("}") - (i + 1));
     while (!string_p.empty())
     {
-        if (!string_p.compare(0, 6, "server"))
+        i = 0;
+        while (std::isspace(string_p[i]))
+            i++;
+        while (!std::isspace(string_p[i]) and string_p[i] != '{')
+            buf << string_p[i++];
+        while (std::isspace(string_p[i]))
+            i++;
+        tmp = buf.str();
+        if (tmp == "server" || tmp == "types")
         {
-            //std::cout << "namespace server found" << std::endl;
-            i = 6;
-            while (std::isspace(string_p[i]))
-                i++;
             if (!(string_p[i] == '{'))
                 throw Conf::UnrecognizedParameter();
             bclose = get_BracketClose(string_p);
-            this->parse_server_conf(string_p.substr(i + 1, bclose - (i + 1)));
+            if (tmp == "server")
+                this->parse_server_conf(string_p.substr(i + 1, bclose - (i + 1)));
+            else if (tmp == "types")
+                this->parse_types(string_p.substr(i + 1, bclose - (i + 1)));
             string_p = string_p.substr(bclose + 1);
         }
-		else if (!string_p.compare(0, 7, "include"))
+        else if (tmp == "include")
         {
-			//std::cout << "include found" << std::endl;
-			i = 7;
-			while (std::isspace(string_p[i]))
+            int aux = 0;
+            while (std::isalnum(string_p[i + aux]) || string_p[i + aux] == '.')
+                aux++;
+            this->_filename = string_p.substr(i, aux);
+            if (!file_exists())
+                throw http::Conf::ErrorInConf();
+            i += aux;
+            while (std::isspace(string_p[i]))
                 i++;
-			int aux = 0;
-			while (std::isalnum(string_p[i + aux]) || string_p[i + aux] == '.')
-				aux++;
-			this->_filename = string_p.substr(i, aux);
-			//std::cout << "file included: " << this->_filename << std::endl;
-			if (!file_exists())
-    		{
-        		this->_log.makeLog(ERROR_LOG, "Included file at configuration file doesn't exist");
-        		exit(EXIT_FAILURE);
-    		}
-			i += aux;
-			while (string_p[i] != ';')
-				i++;
-			string_p = string_p.substr(i + 1);
-			i = 0;
-			std::string include = simple_parse();
-			string_p = include + string_p;
-		}
-		else if (!string_p.compare(0, 5, "types"))
-        {
-			i = 5;
-			while (std::isspace(string_p[i]))
-                i++;
-			if (!(string_p[i] == '{'))
-                throw Conf::UnrecognizedParameter();
-            bclose = get_BracketClose(string_p);
-            this->parse_types(string_p.substr(i + 1, bclose - (i + 1)));
-			string_p = string_p.substr(bclose + 1);
-		}
+            if (!(string_p[i] == ';'))
+                throw Conf::SemicolonMissing();
+            string_p = string_p.substr(i + 1);
+            string_p = simple_parse() + string_p;
+        }
         else
             throw Conf::UnrecognizedParameter();
+        buf.clear();
+        buf.str("");
     }
 }
 
-std::vector<http::ServerConf>   http::Conf::getServers(void)
+void http::Conf::parse_types(std::string s)
+{
+    std::string value;
+    size_t      i = 0;
+    size_t      count;
+
+    while (i < s.length())
+    {
+        count = 0;
+        while (!std::isspace(s[i + count]))
+            count++;
+        value = s.substr(i, count);
+        i += count;
+        while (s[i] != ';')
+        {
+            while (std::isspace(s[i]))
+                i++;
+            count = 0;
+            while (!std::isspace(s[i + count]) && s[i + count] != ';')
+                count++;
+            this->_mime_types.insert(std::make_pair(s.substr(i, count), value));
+            i += count;
+        }
+        i++;
+    }
+}
+
+void http::Conf::parse_server_conf(std::string s)
+{
+    http::ServerConf    new_server;
+    std::stringstream   buf;
+    std::string         tmp;
+    size_t              i = 0;
+    size_t              count;
+
+    while (i < s.length())
+    {
+        count = 0;
+        while (std::isspace(s[i]))
+            i++;
+        while (!std::isspace(s[i]))
+            buf << s[i++];
+        tmp = buf.str();
+        buf.clear();
+        buf.str("");
+        if (tmp == "listen" or tmp == "server_addr" or tmp == "server_name" or
+            tmp == "client_max_body_size" or tmp == "auth_basic_user_file")
+        {
+            while (std::isspace(s[i]))
+                i++;
+            while (!std::isspace(s[i]) && s[i] != ';')
+                buf << s[i++];
+            if (buf.str().length() < 1)
+                throw Conf::UnrecognizedParameter();
+            if (tmp == "listen")
+            {
+                try
+                {
+                    new_server.setPort(std::atoi(buf.str().c_str()));
+                }
+                catch(const std::exception& e)
+                {
+                    std::cerr << e.what() << '\n';
+                }
+              if (buf.str().find("default_server") != std::string::npos){
+                new_server.setDefaultServer(true);
+              }
+              else{
+                new_server.setDefaultServer(false);
+              }
+            }
+            else if (tmp == "server_addr")
+                new_server.setServerAddr(buf.str());
+            else if (tmp == "server_name")
+                new_server.setServerName(buf.str());
+            else if (tmp == "client_max_body_size")
+            {
+                try
+                {
+                    new_server.setBodySize(std::atoi(buf.str().c_str()));
+                }
+                catch(const std::exception& e)
+                {
+                    std::cerr << e.what() << '\n';
+                }
+            }
+            else if (tmp == "auth_basic_user_file")
+            {
+                if (http::file_exists(buf.str()))
+                    throw http::Conf::ErrorInConf();
+                new_server.setPassAuthFile(buf.str());
+            }
+        }
+        else if (tmp == "auth_basic")
+        {
+            while (std::isspace(s[i]))
+                i++;
+            while (s[i] != ';')
+                buf << s[i++];
+            if (buf.str().length() < 1)
+                throw Conf::UnrecognizedParameter();
+            new_server.setAuthMessage(buf.str());
+        }
+        else if (tmp == "location")
+        {
+            std::stringstream   mod_opt;
+            std::stringstream   vpath;
+
+            while (std::isspace(s[i]))
+                i++;
+            while (!std::isspace(s[i]) && s[i] != '{')
+                mod_opt << s[i++];
+            while (std::isspace(s[i]))
+                i++;
+            while (!std::isspace(s[i]) && s[i] != '{')
+                vpath << s[i++];
+            while (std::isspace(s[i]))
+                i++;
+            if (mod_opt.str().length() < 1 || !(s[i] == '{'))
+                throw Conf::UnrecognizedParameter();
+            count = get_BracketClose(s.substr(i++));
+            new_server.add_route(this->save_location(s.substr(i, count - 1), mod_opt.str(), vpath.str()));
+            i += count;
+            continue ;
+        }
+        else if (tmp == "error_page")
+        {
+            std::vector<int>            codes;
+            bool                        is_code = true;
+            bool                        least = false;
+
+            while (is_code)
+            {
+                while (std::isspace(s[i]))
+                    i++;
+                if (std::isdigit(s[i]))
+                {
+                    least = true;
+                    while (std::isdigit(s[i]))
+                        buf << s[i++];
+                    try
+                    {
+                        codes.push_back(atoi(buf.str().c_str()));
+                    }
+                    catch(const std::exception& e)
+                    {
+                        std::cerr << e.what() << '\n';
+                    }
+                }
+                else
+                    is_code = false;;
+                buf.clear();
+                buf.str("");
+            }
+            while (!std::isspace(s[i]) && s[i] != ';')
+                buf << s[i++];
+            if (!least || http::file_exists(buf.str()))
+                throw http::Conf::ErrorInConf();
+            new_server.setErrorPage(codes, buf.str());
+        }
+        else
+            throw Conf::UnrecognizedParameter();
+        buf.clear();
+        buf.str("");
+        if (s[i] == ';')
+            i++;
+        else if (std::isspace(s[i]))
+        {
+            while (std::isspace(s[i]))
+                i++;
+            if (s[i] == ';')
+                i++;
+            else
+                throw http::Conf::SemicolonMissing();
+        }
+        else
+            throw http::Conf::SemicolonMissing();
+    }
+    this->_servers.push_back(new_server);
+}
+
+http::Routes http::Conf::save_location(std::string s, std::string opt, std::string vpath)
+{
+    http::Routes        route;
+    std::stringstream   buf;
+    std::string         tmp;
+    size_t              count;
+    size_t              i = 0;
+
+    if (vpath == "")
+    {
+        vpath = opt;
+        opt = std::string("");
+    }
+    route.setOptModifier(opt);
+    route.setLocation(vpath);
+    while (i < s.length())
+    {
+        count = 0;
+        while (std::isspace(s[i]))
+            i++;
+        while (!std::isspace(s[i]))
+            buf << s[i++];
+        tmp = buf.str();
+        buf.clear();
+        buf.str("");
+        if (tmp == "root" or tmp == "autoindex" or tmp == "upload" or tmp == "path_upload"
+            or tmp == "auth_basic_user_file")
+        {
+            while (std::isspace(s[i]))
+                i++;
+            while (!std::isspace(s[i]) && s[i] != ';')
+                buf << s[i++];
+            if (buf.str().length() < 1)
+                throw Conf::UnrecognizedParameter();
+            if (tmp == "root" or tmp == "path_upload" or tmp == "auth_basic_user_file")
+            {
+                if (http::file_exists(buf.str()))
+                    throw http::Conf::ErrorInConf();
+                if (tmp == "root")
+                    route.setDirPath(buf.str());
+                else if (tmp == "path_upload")
+                    route.setUploadPath(buf.str());
+                else if (tmp == "auth_basic_user_file")
+                    route.setPassAuthFile(buf.str());
+            }
+            else if (tmp == "autoindex" or tmp == "upload")
+            {
+                if (buf.str() != "on" && buf.str() != "off")
+                    throw Conf::UnrecognizedParameter();
+                if (tmp == "autoindex" && buf.str() == "on")
+                    route.allowAutoIndex();
+                else if (tmp == "upload" && buf.str() == "on")
+                    route.allowUpload();
+            }
+        }
+        else if (tmp == "auth_basic")
+        {
+            while (std::isspace(s[i]))
+                i++;
+            while (s[i] != ';' && i < s.length())
+                buf << s[i++];
+            if (buf.str().length() < 1)
+                throw Conf::UnrecognizedParameter();
+            route.setAuthMessage(buf.str());
+        }
+        else if (tmp == "index")
+        {
+            std::string s_cmp;
+
+            while (i < s.length() && s[i] != ';')
+            {
+                while (std::isspace(s[i]) && i < s.length())
+                    i++;
+                while (!std::isspace(s[i]) && i < s.length() && s[i] != ';')
+                    buf << s[i++];
+                s_cmp = buf.str();
+                if (s_cmp.substr(s_cmp.find(".") + 1).length() > 5)
+                    throw http::Conf::UnrecognizedParameter();
+                route.addIndexFile(s_cmp);
+                buf.clear();
+                buf.str("");
+            }
+        }
+        else if (tmp == "http_methods") // methods allowed in a location
+        {
+            std::string s_cmp;
+
+            while (i < s.length() && s[i] != ';')
+            {
+                while (std::isspace(s[i]) && i < s.length())
+                    i++;
+                while (!std::isspace(s[i]) && i < s.length() && s[i] != ';')
+                    buf << s[i++];
+                s_cmp = buf.str();
+                if (s_cmp != "GET" && s_cmp != "POST" && s_cmp != "HEAD" && s_cmp != "DELETE" &&
+                    s_cmp != "CONNECT" && s_cmp != "OPTIONS" && s_cmp != "TRACE" && s_cmp != "PATCH")
+                    throw http::Conf::UnrecognizedParameter();
+                route.setMethods(s_cmp);
+                buf.clear();
+                buf.str("");
+            }
+        }
+        else
+            throw Conf::UnrecognizedParameter();
+        buf.clear();
+        buf.str("");
+        if (s[i] == ';')
+            i++;
+        else if (std::isspace(s[i]))
+        {
+            while (std::isspace(s[i]))
+                i++;
+            if (s[i] == ';')
+                i++;
+            else
+                throw http::Conf::SemicolonMissing();
+        }
+        else
+            throw http::Conf::SemicolonMissing();
+    }
+    return (route);
+}
+
+http::Routes http::Conf::check_inheritance(http::Routes &new_route, std::vector<http::Routes> all_routes)
+{
+    std::vector<http::Routes>::iterator father_location;
+    size_t len = 0;
+    size_t max_len = 0;
+    std::string path;
+    for (std::vector<http::Routes>::iterator it = all_routes.begin(); it != all_routes.end(); it++)
+    {
+        path = it->getVirtualLocation();
+        len = path.length();
+        if (new_route.getVirtualLocation() == path || it->getOptModifier() == "=")
+            continue ;
+        if (new_route.getVirtualLocation().compare(0, len, path) == 0)
+        {
+            if (!max_len)
+            {
+                max_len = len;
+                father_location = it;
+            }
+            else if (len > max_len)
+            {
+                max_len = len;
+                father_location = it;
+            }
+        }
+    }
+    if (max_len)
+    {
+        // inheritance of WWW-Authentication
+        if (father_location->needAuth() && !new_route.needAuth())
+        {
+            new_route.allowAuth();
+            new_route.setAuthMessage(father_location->getAuthMessage());
+            new_route.setPassAuthFile(father_location->getPassAuthFile());
+        }
+    }
+    return (new_route);
+}
+
+std::vector<http::ServerConf> http::Conf::getServers(void)
 {
     return (this->_servers);
 }
 
-std::map<std::string, std::string>   http::Conf::get_mime_types(void)
+std::map<std::string, std::string> http::Conf::get_mime_types(void)
 {
-	return (this->_mime_types);
+    return (this->_mime_types);
 }
 
-const char* http::Conf::UnclosedBracket::what() const throw()
+const char *http::Conf::UnclosedBracket::what() const throw()
 {
-    //this->_log.makeLog(ERROR_LOG, "File Configuration Exception: Unclosed Bracket");
     return ("File Configuration Exception: Unclosed Bracket");
 }
 
-const char* http::Conf::UnrecognizedParameter::what() const throw()
+const char *http::Conf::UnrecognizedParameter::what() const throw()
 {
-    //this->_log.makeLog(ERROR_LOG, "File Configuration Exception: Unrecognized Parameter");
     return ("File Configuration Exception: Unrecognized Parameter");
 }
 
-const char* http::Conf::SemicolonMissing::what() const throw()
+const char *http::Conf::SemicolonMissing::what() const throw()
 {
-    //this->_log.makeLog(ERROR_LOG, "File Configuration Exception: Semicolon Missing");
     return ("File Configuration Exception: Semicolon Missing");
+}
+
+const char *http::Conf::ConfFileNotExists::what() const throw()
+{
+    return ("File Configuration Exception: Unclosed Bracket");
+}
+
+const char *http::Conf::ErrorInConf::what() const throw()
+{
+    return ("File Configuration Exception: Some error in Configuration File");
 }

@@ -131,22 +131,12 @@ public:
         return (this->_body_size);
     };
 
-    void        setErrorPage(std::string new_errpage)
+    void        setErrorPage(std::vector<int> codes, std::string file)
     {
-        std::string     file;
-        std::vector<std::string>    sp_str;
-        int              n_err;
+        size_t  i = 0;
 
-        sp_str = split(new_errpage, ' ');
-
-        file = sp_str.back();
-        sp_str.pop_back();
-        while (sp_str.size() > 0)
-        {
-            n_err = atoi(sp_str.back().c_str());
-            this->_err_pages[n_err] = file;
-            sp_str.pop_back();
-        }
+        while (i < codes.size())
+            this->_err_pages[codes[i++]] = file;
     };
 
     std::string getErrorPage(int code)
@@ -162,6 +152,11 @@ public:
     void        add_route(http::Routes new_route)
     {
         this->_routes.push_back(new_route);
+    };
+
+    void        set_routes(std::vector<http::Routes> all_route)
+    {
+        this->_routes = all_route;
     };
 
     std::vector<http::Routes>    getRoutes()
@@ -181,7 +176,7 @@ public:
 
     void        setAuthMessage(std::string auth_mess)
     {
-        auth_mess = trim(auth_mess);
+        this->allowAuth();
         this->_auth_message = trim2(auth_mess, "\"");
     };
 
@@ -258,10 +253,10 @@ inline std::ostream &operator<<(std::ostream &out, http::ServerConf &server)
     out << "Server Name: " << server.getServerName() << std::endl;
     out << "Server Address: " << server.getServerAddr() << std::endl;
     out << "Server BodySize: " << server.getBodySize() << std::endl;
-    out << "Error Pages: " << std::endl;
     out << "Location authentication: " << ((server.needAuth()) ? "on" : "off") << std::endl;
     out << "Location AuthMessage: " << server.getAuthMessage() << std::endl;
     out << "Location Password Auth File: " << server.getPassAuthFile() << std::endl;
+    out << "Error Pages: " << std::endl;
     std::map<int, std::string>::iterator it = server.getErrorPages().begin();
     std::map<int, std::string>::iterator itend = server.getErrorPages().end();
     for (; it != itend; it++)

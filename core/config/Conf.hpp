@@ -36,16 +36,8 @@ private:
     void            complex_parse(std::string s);
     void            parse_server_conf(std::string s);
 	void            parse_types(std::string s);
-    http::Routes    save_location(std::string s);
-    http::Routes    check_inheritance(http::Routes locat, std::vector<http::Routes> all_routes);
-
-public:
-
-    Conf(const std::string &conf_file);
-    virtual ~Conf(void) {};
-
-    std::vector<http::ServerConf>   getServers(void);
-	std::map<std::string, std::string> get_mime_types(void);
+    http::Routes    save_location(std::string s, std::string opt, std::string vpath);
+    http::Routes    check_inheritance(http::Routes &locat, std::vector<http::Routes> all_routes);
 
     class UnclosedBracket: public std::exception {
         virtual const char* what() const throw();
@@ -58,6 +50,23 @@ public:
     class SemicolonMissing: public std::exception {
         virtual const char* what() const throw();
     };
+
+    class ConfFileNotExists: public std::exception {
+        virtual const char* what() const throw();
+    };
+
+    class ErrorInConf: public std::exception {
+        virtual const char* what() const throw();
+    };
+
+public:
+
+    Conf(const std::string &conf_file);
+    virtual ~Conf(void) {};
+
+    std::vector<http::ServerConf>       getServers(void);
+	std::map<std::string, std::string>  get_mime_types(void);
+
 };
 
 } // namespace http
