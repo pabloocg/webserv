@@ -315,7 +315,7 @@ public:
                 throw ErrorOptionalMod();
             this->_extension = http::trim2(locat, "\\$");
             this->_location = this->_extension;
-            this->_extension = this->_extension.substr(locat.find(".") + 1);
+            this->_extension = this->_extension.substr(locat.find("."));
         }
     };
 
@@ -424,17 +424,26 @@ public:
 
     std::string &getFileTransformed(std::string &path_requested)
     {
-        path_requested.replace(0, this->getVirtualLocation().size(), this->getDirPath());
-	    if (path_requested == this->getDirPath())
+        if (!this->_is_prefix)
         {
-            std::string     tmp;
-            for (std::vector<std::string>::iterator it = this->_index_file.begin(); it < this->_index_file.end(); it++)
+            if (path_requested.front() == '/' && this->_directory_path.back() == '/')
+                path_requested.erase(path_requested.begin());
+            path_requested = this->_directory_path += path_requested;
+        }
+        else
+        {
+            path_requested.replace(0, this->getVirtualLocation().size(), this->getDirPath());
+            if (path_requested == this->getDirPath())
             {
-                tmp = std::string(path_requested);
-                tmp += *it;
-                if (!http::file_exists(tmp))
-		            path_requested += *it;
-                break ;
+                std::string     tmp;
+                for (std::vector<std::string>::iterator it = this->_index_file.begin(); it < this->_index_file.end(); it++)
+                {
+                    tmp = std::string(path_requested);
+                    tmp += *it;
+                    if (!http::file_exists(tmp))
+                        path_requested += *it;
+                    break ;
+                }
             }
         }
         return (path_requested);

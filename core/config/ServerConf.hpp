@@ -213,7 +213,7 @@ public:
         std::vector<http::Routes>::iterator father_location;
         std::string ext = std::string("");
         if (search_path.find(".") != std::string::npos)
-            ext = search_path.substr(search_path.find("."));
+            ext = search_path.substr(search_path.find(".") + 1);
         size_t  len = 0;
         size_t  max_len = 0;
         std::string path;
@@ -221,6 +221,7 @@ public:
         {
             path = it->getVirtualLocation();
             len = path.length();
+            std::cout << "ext -> " << ext << " is prefix? " << !it->isPrefix() << " extloca -> "<< it->getExtension() << std::endl;
             if (path == search_path)
             {
                 father_location = it;

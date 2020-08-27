@@ -94,9 +94,11 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	}
 	else
 		this->file_req = this->_req_URI;
+	std::cout << "******************" <<this->file_req << std::endl;
 	this->location = this->_server.getRoutebyPath(this->file_req);
-	if (this->location.isPrefix())
-		this->file_req = this->location.getFileTransformed(this->file_req);
+	std::cout << "******************" <<this->location << std::endl;
+	this->file_req = this->location.getFileTransformed(this->file_req);
+	std::cout << "******************" <<this->file_req << std::endl;
 	this->file_type = this->file_req.substr(file_req.find(".") + 1, file_req.size());
 	this->http_version = srequest[2];
 	this->_auth = "NULL";
@@ -128,6 +130,7 @@ void http::Request::add_basic_env_vars(void)
 	this->_env.push_back("SERVER_SOFTWARE=webserv/1.0");
 	this->_env.push_back("SERVER_PROTOCOL=HTTP/1.1");
 	this->_env.push_back("GATEWAY_INTERFACE=CGI/1.1");
+	this->_env.push_back("REDIRECT_STATUS=1");
 	this->_env.push_back("REQUEST_URI=" + this->_req_URI);
 	if (this->_req_content_type.size() > 0)
 		this->_env.push_back("CONTENT_TYPE=" + this->_req_content_type);
