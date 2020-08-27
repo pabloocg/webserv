@@ -12,15 +12,16 @@
 #include <sys/select.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <stdlib.h>
+# include <fcntl.h>
 
 #define ROOT_DIR "dir"
 
 namespace http
 {
-
-	inline int	file_exists(std::string file)
+	inline int file_exists(std::string file)
 	{
-		struct stat	buff;
+		struct stat buff;
 
 		return (stat(file.c_str(), &buff));
 	}
@@ -85,8 +86,8 @@ namespace http
 
 	inline std::string trim2(std::string s, std::string trimChars)
 	{
-		std::stringstream	buff;
-		size_t				i = 0;
+		std::stringstream buff;
+		size_t i = 0;
 		while (i < s.length())
 		{
 			if (trimChars.find(s[i]) == std::string::npos)
@@ -157,56 +158,64 @@ namespace http
 		return (NULL);
 	}
 
-	inline int sendall(int s, char *buf, int *len)
+	inline std::vector<std::string> charptrptrToVector(char **env)
 	{
-		int total = 0;		  
-		int bytesleft = *len;
-		int n;
-		int sended = 0;
-		while (total < *len)
+		std::vector<std::string> vec;
+		int i = -1;
+		while (env[++i])
 		{
-			if (sended){
-				fd_set writefds;
-				FD_ZERO(&writefds);
-				FD_SET(s, &writefds);
-				select(s + 1, NULL, &writefds, NULL, NULL);
-			}
-			n = send(s, buf + total, bytesleft, 0);
-			if (n == -1)
+			std::string word = "";
+			for (int j = 0; env[i][j]; j++)
 			{
-				break;
+				word += env[i][j];
 			}
-			total += n;
-			bytesleft -= n;
-			sended = 1;
-			std::cout << "sended " << n << " bytes, " << total << "/" << *len << ", left:" << bytesleft << std::endl;
+			vec.push_back(word);
 		}
-		*len = total;			 
-		return n == -1 ? -1 : 0;
+		return (vec);
+	}
+
+	inline char **vecToCharptrptr(std::vector<std::string> env)
+	{
+		char **ret;
+		if (!(ret = (char **)malloc(sizeof(char *) * (env.size() + 1))))
+		{
+			perror("malloc");
+		}
+		ret[env.size()] = NULL;
+		for (int i = 0; i < (int)env.size(); i++)
+		{
+			ret[i] = strdup(env[i].c_str());
+		}
+		return (ret);
 	}
 
 	typedef unsigned char uchar;
-	static const std::string b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";//=
-	inline std::string base64_decode(const std::string &in) {
+	static const std::string b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"; //=
+	inline std::string base64_decode(const std::string &in)
+	{
 
-    std::string out;
+		std::string out;
 
-    std::vector<int> T(256,-1);
-    for (int i=0; i<64; i++) T[b[i]] = i;
+		std::vector<int> T(256, -1);
+		for (int i = 0; i < 64; i++)
+			T[b[i]] = i;
 
-    int val=0, valb=-8;
-    for (int i = 0; i < (int)in.size(); i++) {
-		uchar c = (uchar)in[i];
-        if (T[c] == -1) break;
-        val = (val<<6) + T[c];
-        valb += 6;
-        if (valb>=0) {
-            out.push_back(char((val>>valb)&0xFF));
-            valb-=8;
-        }
-    }
-    return out;
-}
+		int val = 0, valb = -8;
+		for (int i = 0; i < (int)in.size(); i++)
+		{
+			uchar c = (uchar)in[i];
+			if (T[c] == -1)
+				break;
+			val = (val << 6) + T[c];
+			valb += 6;
+			if (valb >= 0)
+			{
+				out.push_back(char((val >> valb) & 0xFF));
+				valb -= 8;
+			}
+		}
+		return out;
+	}
 
 } // namespace http
 

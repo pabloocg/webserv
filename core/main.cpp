@@ -4,7 +4,7 @@
 
 #define DEFAULT_FILE_CONF "example.conf"
 
-int main(int argc, char *argv[])
+int main(int argc, char *argv[], char *env[])
 {
     std::string file_conf;
 
@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
     try
     {
         http::Conf                      config(file_conf);
-        http::ServerC serv(config.getServers(), config.get_mime_types());
+        http::ServerC serv(config.getServers(), config.get_mime_types(), env);
 
         serv.start();
         while (1)

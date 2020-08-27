@@ -202,6 +202,12 @@ void http::Conf::parse_server_conf(std::string s)
                 {
                     std::cerr << e.what() << '\n';
                 }
+              if (buf.str().find("default_server") != std::string::npos){
+                new_server.setDefaultServer(true);
+              }
+              else{
+                new_server.setDefaultServer(false);
+              }
             }
             else if (tmp == "server_addr")
                 new_server.setServerAddr(buf.str());

@@ -45,10 +45,13 @@ private:
 	std::map<std::string, std::string>	_mime_types;
 	std::map<int, int>					_client_server_map;
 	std::map<int, std::string>			_pending_reads;
+	std::string							_host_header;
+	std::vector<std::string> 			_env;
+	bool								_bad_request;
 
 public:
 
-	ServerC(std::vector<http::ServerConf> servers, std::map<std::string, std::string> mime_types);
+	ServerC(std::vector<http::ServerConf> servers, std::map<std::string, std::string> mime_types, char **env);
 	virtual ~ServerC() {};
 
 	void	start();
@@ -57,6 +60,8 @@ public:
 	void	manage_reads(int &sd);
 	void	manage_writes(int &sd);
 	bool	valid_req_format(std::string buffer);
+	http::ServerConf get_server(void);
+	http::ServerConf get_default_server(void);
 
 };
 

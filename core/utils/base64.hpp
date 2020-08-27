@@ -110,4 +110,4 @@ namespace base64
 		return decoded;
 	}
 }
-#endif /* _MACARON_BASE64_H_ */
+#endif

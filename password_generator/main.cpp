@@ -2,42 +2,26 @@
 #include<fstream>
 #include<unistd.h>
 #include <random>
-
-
-using namespace std;
-
-std::string generateSalt() {
-
-    const char alphanum[] =
-            "0123456789"
-            "!@#$%^&*"
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            "abcdefghijklmnopqrstuvwxyz"; //salt alphanum
-
-    std::random_device rd;  //Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-    std::uniform_int_distribution<> dis(0, sizeof(alphanum)-1); //Uniform distribution on an interval
-    char salt[22];          // 21 useful characters in salt (as in original code)
-    for(char& c: salt) {
-        c = alphanum[dis(gen)];
-    }
-    salt[21] = 0;
-    return std::string(salt);
-}
+#include "../core/utils/base64.hpp"
 
 /*====== MAIN ======*/
 int main(int argc, char** argv) {
 
-    string username, password, salt, hash;
+    std::string username, password, crypted;
 
-    cout << "Enter your username: ";
-    if (! getline(cin, username)) return 1;
-    cout << "Enter your password: ";
-    if (! getline(cin, password)) return 1;
-	salt = generateSalt();
+    std::cout << "Enter your username: ";
+    if (! std::getline(std::cin, username)) return 1;
+    std::cout << "Enter your password: ";
+    if (! std::getline(std::cin, password)) return 1;
 
-    hash = crypt(password.c_str(), "Y");
+	std::vector<unsigned char> vec;
 
-    std::cout << username << ":" << hash << ", with salt:" << salt;
+	for(int i = 0; i < (int)password.length(); i++){
+		vec.push_back((unsigned char)password[i]);
+	}
+
+    crypted = username + ":" + base64::encode(vec);
+
+    std::cout << "New password generated:\n" << crypted << "\nPaste it into your .htpasswd file" << std::endl;
     return 0;
 }
