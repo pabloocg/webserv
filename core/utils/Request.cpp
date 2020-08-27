@@ -44,6 +44,7 @@ void http::Request::save_header(std::string header)
 	}
 	else if (words[0] == "Transfer-Encoding:")
 	{
+		this->_transf_encoding = words[1];
 	}
 	else if (words[0] == "User-Agent:")
 	{
@@ -90,7 +91,6 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	if (this->_req_URI.find('?') != std::string::npos){
 		this->_query_string = this->_req_URI.substr(this->_req_URI.find("?") + 1);
 		this->file_req = this->_req_URI.substr(0, this->_req_URI.find("?"));
-		std::cout << "file req: " << this->file_req << std::endl;
 	}
 	else
 		this->file_req = this->_req_URI;
@@ -105,16 +105,21 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	{
 		this->save_header(sheader[i]);
 	}
+	if (atoi(this->_req_content_length.c_str()) > 0){
+		save_request_body();
+	}
 	if (this->file_req.find("php") != std::string::npos){ //(this->location.isCGI){
 		this->_isCGI = true;
 		this->_path_info = this->file_req.substr(this->file_req.find("php") + 3);
 		this->_script_name = this->file_req.substr(0, this->file_req.find("php") + 3);
+		this->file_req = this->_script_name;
 		add_basic_env_vars();
 	}
 }
 
 void http::Request::add_basic_env_vars(void)
 {
+	int start = (int)this->_env.size();
 	this->_env.push_back("SERVER_NAME=" + this->_server.getServerName());
 	this->_env.push_back("SERVER_PORT=" + std::to_string(this->_server.getPort()));
 	this->_env.push_back("SERVER_SOFTWARE=webserv/1.0");
@@ -124,7 +129,7 @@ void http::Request::add_basic_env_vars(void)
 	if (this->_req_content_type.size() > 0)
 		this->_env.push_back("CONTENT_TYPE=" + this->_req_content_type);
 	if (this->_req_content_length.size() > 0)
-		this->_env.push_back("CONTENT_TYPE=" + this->_req_content_length);
+		this->_env.push_back("CONTENT_LENGTH=" + this->_req_content_length);
 	else
 		this->_env.push_back("CONTENT_TYPE=NULL");
 	if (this->_auth != "NULL"){
@@ -160,7 +165,10 @@ void http::Request::add_basic_env_vars(void)
 		this->_env.push_back("PATH_TRANSLATED=http://" + this->_server.getServerName() + ":" + std::to_string(this->_server.getPort()) + this->_path_info);
 	}
 	this->_env.push_back("SCRIPT_NAME=" + this->_script_name);
-	for (int i = 0; i < (int)this->_env.size(); i++)
+	this->_env.push_back("SCRIPT_FILENAME=" + this->_script_name);
+
+	std::cout << "Added this env vars:" << std::endl;
+	for (int i = start; i < (int)this->_env.size(); i++)
 		std::cout << this->_env[i] << std::endl;
 	
 }
@@ -254,19 +262,23 @@ void http::Request::read_file_requested(void)
 	this->message_status = this->_error_mgs[code];
 	if (this->status != 200)
 	{
+		this->_isCGI = false;
 		this->file_req = this->_server.getErrorPage(code);
 		this->file_type = this->file_req.substr(file_req.find(".") + 1);
 	}
-	file.open(this->file_req);
-	if (file.is_open())
-	{
-		while (std::getline(file, buf))
-			stream << buf << "\n";
-		this->resp_body = stream.str();
-		file.close();
+	
+	if (!this->_isCGI){
+		file.open(this->file_req);
+		if (file.is_open() && !this->_isCGI)
+		{
+			while (std::getline(file, buf))
+				stream << buf << "\n";
+			this->resp_body = stream.str();
+			file.close();
+		}
+		else
+			throw "SERVER ERROR";
 	}
-	else
-		throw "SERVER ERROR";
 }
 
 char *http::Request::build_get(int *size, std::map<std::string, std::string> mime_types)
@@ -276,9 +288,15 @@ char *http::Request::build_get(int *size, std::map<std::string, std::string> mim
 	std::stringstream stream;
 
 	read_file_requested();
-	stream << "HTTP/1.1 " << this->status << " " << this->message_status << "\nContent-Type: "
-		   << get_content_type(this->file_type, mime_types) << "\nContent-Length: " << this->resp_body.length()
-		   << "\nServer: Webserv/1.0";
+	if (this->_isCGI){
+		startCGI();
+	}
+
+	stream << "HTTP/1.1 " << this->status << " " << this->message_status;
+
+	if (!this->_isCGI)
+		stream	<< "\nContent-Type: " << get_content_type(this->file_type, mime_types);
+		   
 	if (this->status == 405)
 	{
 		stream << "\nAllow:";
@@ -292,14 +310,19 @@ char *http::Request::build_get(int *size, std::map<std::string, std::string> mim
 	}
 	if (this->_www_auth_required == true)
 		stream << "\nWWW-Authenticate: Basic realm=\"" << this->_realm << "\"";
-	stream << "\n\n";
-	if (this->type == GET)
+	if (this->_isCGI){
+		for (int i = 0; i < (int)this->_CGI_headers.size(); i++){
+			stream << "\n" << this->_CGI_headers[i];
+		}
+	}
+	stream << "\nContent-Length: " << this->resp_body.length() << "\nServer: Webserv/1.0\n\n";
+	if (this->type != HEAD)
 		stream << this->resp_body;
 
 	this->resp_body = stream.str();
-	/*std::cout << "************ RESPONSE ***********" << std::endl;
+	std::cout << "************ RESPONSE ***********" << std::endl;
 	std::cout << this->resp_body << std::endl;
-	std::cout << "*********************************" << std::endl;*/
+	std::cout << "*********************************" << std::endl;
 	if (!(res = (char *)malloc(sizeof(char) * (this->resp_body.size() + 1))))
 		return (NULL);
 	std::copy(this->resp_body.begin(), this->resp_body.end(), res);
@@ -311,18 +334,69 @@ char *http::Request::build_get(int *size, std::map<std::string, std::string> mim
 
 char *http::Request::build_response(int *size, std::map<std::string, std::string> mime_types)
 {
-	if (this->_isCGI){
-		startCGI();
-	}
-	if (this->type == GET || this->type == HEAD)
+	if (this->type == GET || this->type > GET)//aqui entran todos
 	{
 		return (this->build_get(size, mime_types));
 	}
 	return (NULL);
 }
 
-void http::Request::startCGI(void){
-	//char **env;
+void http::Request::startCGI(void){ //Esto esta guarrisimo pero solo es para probar como funciona el CGI
+	char **env = http::vecToCharptrptr(this->_env);
+	char **args;
+	int ret = EXIT_SUCCESS;
+	int status;
+	int pipes[2];
+	int pipes_in[2];
+	if (pipe(pipes)){
+		perror("pipe");
+	}
+	if (this->_req_content_length.size() > 0){
+		if (pipe(pipes_in)){
+			perror("pipe");
+		}
+	}
+	if (!(args = (char **)malloc(sizeof(char *) * 2))){
+			perror("malloc");
+	}
+	args[0] = strdup("/usr/local/Cellar/php/7.4.9/bin/php-cgi");
+	args[1] = NULL;
+
+	pid_t pid = fork();
+	if (pid < 0){
+		perror("fork");
+	}
+	else if (pid == 0){
+		if (dup2(pipes[SIDE_IN], STDOUT) < 0){
+			perror("dup2");
+		}
+		if (this->_req_content_length.size() > 0){
+			if (dup2(pipes_in[SIDE_OUT], STDIN) < 0){
+				perror("dup2");
+			}
+			write(pipes_in[SIDE_IN], this->_request_body.c_str(), this->_request_body.size());
+			close(pipes_in[SIDE_IN]);
+		}
+		if ((ret = execve(args[0], args, env)) < 0){
+			perror("execve");
+		}
+		exit(ret);
+	}
+	else {
+		waitpid(pid, &status, 0);
+		close(pipes[SIDE_IN]);
+		if (this->_req_content_length.size() > 0){
+			close(pipes_in[SIDE_OUT]);
+		}
+		char buffer[30000] = {0};
+		read(pipes[SIDE_OUT], buffer, 30000);
+		this->_CGI_response = buffer;
+		decode_CGI_response();
+		close(pipes[SIDE_OUT]);
+		if(WIFEXITED(status)){
+			ret = WEXITSTATUS(status);
+		}
+	}
 
 }
 
@@ -365,4 +439,28 @@ bool http::Request::validate_password(std::string auth)
 		}
 	}
 	return (false);
+}
+
+void http::Request::save_request_body(void){
+	for (int i = 0; i < (int)this->request.length(); i++)
+	{
+		if (this->request[i] == '\n' && this->request[i + 2] == '\n')
+		{
+			this->_request_body =  this->request.substr(i + 3, atoi(this->_req_content_length.c_str()));
+		}
+	}
+}
+
+void http::Request::decode_CGI_response(void){
+	std::string tmp;
+
+	while(this->_CGI_response.find('\n') != std::string::npos){
+		tmp = this->_CGI_response.substr(0, this->_CGI_response.find('\n'));
+		this->_CGI_response = this->_CGI_response.substr(this->_CGI_response.find('\n') + 1);
+		if (tmp.length() == 1 && tmp[0] == '\r'){
+			this->resp_body = this->_CGI_response;
+			break;
+		}
+		this->_CGI_headers.push_back(tmp);
+	}
 }
