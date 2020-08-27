@@ -95,7 +95,8 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	else
 		this->file_req = this->_req_URI;
 	this->location = this->_server.getRoutebyPath(this->file_req);
-	this->file_req = this->location.getFileTransformed(this->file_req);
+	if (this->location.isPrefix())
+		this->file_req = this->location.getFileTransformed(this->file_req);
 	this->file_type = this->file_req.substr(file_req.find(".") + 1, file_req.size());
 	this->http_version = srequest[2];
 	this->_auth = "NULL";
@@ -108,10 +109,12 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	if (atoi(this->_req_content_length.c_str()) > 0){
 		save_request_body();
 	}
-	if (this->file_req.find("php") != std::string::npos){ //(this->location.isCGI){
+	//if (this->file_req.find("php") != std::string::npos){ //(this->location.isCGI){
+	if (this->location.isCgi())
+	{
 		this->_isCGI = true;
-		this->_path_info = this->file_req.substr(this->file_req.find("php") + 3);
-		this->_script_name = this->file_req.substr(0, this->file_req.find("php") + 3);
+		this->_path_info = this->file_req.substr(this->file_req.find(this->location.getExtension()) + 3);
+		this->_script_name = this->file_req.substr(0, this->file_req.find(this->location.getExtension()) + 3);
 		this->file_req = this->_script_name;
 		add_basic_env_vars();
 	}
@@ -361,7 +364,8 @@ void http::Request::startCGI(void){ //Esto esta guarrisimo pero solo es para pro
 	if (!(args = (char **)malloc(sizeof(char *) * 2))){
 			perror("malloc");
 	}
-	args[0] = strdup("/usr/local/Cellar/php/7.4.9/bin/php-cgi");
+	args[0] = strdup(this->location.getCgiExec().c_str());
+	//args[0] = strdup("/usr/local/Cellar/php/7.4.9/bin/php-cgi");
 	args[1] = NULL;
 
 	pid_t pid = fork();

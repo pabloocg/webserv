@@ -1,7 +1,5 @@
 Cosas por hacer:
 
--Implementar CGI  //para implementar el CGI hay que 
--Gestion de errores en el archivo de configuracion
 -Implementar el autoindex
 -Implementar timeout si una request se queda colgada (Creo que se hace en el select)
 -Implementar codigos de error de cliente (4XX)
@@ -22,11 +20,8 @@ Metodos HTTP:
 -Implementar POST
 -Implementar PUT
 -Implementar DELETE
--Implementar CONNECT hay que hacerlo??
 -Implementar OPTIONS
--Implementar TRACE hay que hacerlo??
 -Implementar PATCH hay que hacerlo??
-- En el GET habría que ver si nos pasan parametros &clave=valor en la ruta concatenados
 
 Implementar Headers:
 
@@ -58,11 +53,6 @@ Hay tres casos principales en que se utiliza este encabezado:
         indica cuánto tiempo se debe esperar antes de realizar una nueva solicitud.
     -Cuando se envía con una respuesta de redireccionamiento, como 301 (Moved Permanently),
         esto indica el tiempo mínimo que se le pide al agente de usuario que espere antes de emitir la solicitud redirigida.
-
-- Date (Lo manda el servidor). Fecha y hora en formato GMT
-    Formato:
-    #Date: <day-name>, <day> <month> <year> <hour>:<minute>:<second> GMT
-    #Date: Wed, 21 Oct 2015 07:28:00 GMT
 
 - Transfer-Encoding (Lo manda el servidor). Especifica la forma de codificación utilizada para transferir de forma segura la respuesta al usuario
     Cuando está presente en una respuesta a una solicitud HEAD que no tiene cuerpo, indica el valor que se habría aplicado al mensaje GET correspondiente.

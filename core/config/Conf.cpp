@@ -345,7 +345,7 @@ http::Routes http::Conf::save_location(std::string s, std::string opt, std::stri
         buf.clear();
         buf.str("");
         if (tmp == "root" or tmp == "autoindex" or tmp == "upload" or tmp == "path_upload"
-            or tmp == "auth_basic_user_file")
+            or tmp == "auth_basic_user_file" or tmp == "cgi_exec")
         {
             while (std::isspace(s[i]))
                 i++;
@@ -353,7 +353,7 @@ http::Routes http::Conf::save_location(std::string s, std::string opt, std::stri
                 buf << s[i++];
             if (buf.str().length() < 1)
                 throw Conf::UnrecognizedParameter();
-            if (tmp == "root" or tmp == "path_upload" or tmp == "auth_basic_user_file")
+            if (tmp == "root" or tmp == "path_upload" or tmp == "auth_basic_user_file" or tmp == "cgi_exec")
             {
                 if (http::file_exists(buf.str()))
                     throw http::Conf::ErrorInConf();
@@ -363,6 +363,8 @@ http::Routes http::Conf::save_location(std::string s, std::string opt, std::stri
                     route.setUploadPath(buf.str());
                 else if (tmp == "auth_basic_user_file")
                     route.setPassAuthFile(buf.str());
+                else if (tmp == "cgi_exec")
+                    route.setCgiExec(buf.str());
             }
             else if (tmp == "autoindex" or tmp == "upload")
             {

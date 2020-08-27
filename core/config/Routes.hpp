@@ -35,6 +35,10 @@ private:
         bool _PATCH;
     }               t_httpMethods;
 
+    bool            _is_prefix;
+
+    std::string     _extension;
+
     std::string     _optional_modifier;
 
     //Virtual location of the directory
@@ -52,9 +56,10 @@ private:
     // Default file to answer if the request is a directory
     std::vector<std::string>     _index_file;
 
-    /*
-        CGI parameters must also be implemented here
-    */
+    // CGI Parameters
+    bool            _is_cgi;
+
+    std::string     _cgi_exec;
 
     // Make the route able to accept uploaded files. Default false
     bool            _uploads;
@@ -77,6 +82,10 @@ private:
 public:
     Routes()
     {
+        this->_is_prefix = false;
+        this->_is_cgi = false;
+        this->_cgi_exec = std::string("");
+        this->_extension = std::string("");
         this->_optional_modifier = std::string("");
         this->_location = std::string("");
         this->_directory_path = std::string("");
@@ -100,6 +109,10 @@ public:
 
     Routes(const http::Routes &other)
     {
+        this->_is_prefix = other._is_prefix;
+        this->_is_cgi = other._is_cgi;
+        this->_cgi_exec = other._cgi_exec;
+        this->_extension = other._extension;
         this->_optional_modifier = other._optional_modifier;
         this->_location = other._location;
         this->_directory_path = other._directory_path;
@@ -124,6 +137,10 @@ public:
 
     Routes      &operator=(const http::Routes &other)
     {
+        this->_is_prefix = other._is_prefix;
+        this->_is_cgi = other._is_cgi;
+        this->_cgi_exec = other._cgi_exec;
+        this->_extension = other._extension;
         this->_optional_modifier = other._optional_modifier;
         this->_location = other._location;
         this->_directory_path = other._directory_path;
@@ -153,6 +170,13 @@ public:
         const char *what() const throw()
         {
             return ("File Configuration Exception: Optional Modifier Unrecognized");
+        }
+    };
+
+    class ErrorLocation: public std::exception {
+        const char *what() const throw()
+        {
+            return ("File Configuration Exception: Location Extension Unrecognized");
         }
     };
 
@@ -225,6 +249,47 @@ public:
         return (false);
     };
 
+    void        setPrefix()
+    {
+        this->_is_prefix = true;
+    };
+
+    bool        isPrefix()
+    {
+        return (this->_is_prefix);
+    };
+
+    void        setCgi()
+    {
+        this->_is_cgi = true;
+    };
+
+    bool        isCgi()
+    {
+        return (this->_is_cgi);
+    };
+
+    void        setCgiExec(std::string path_exec)
+    {
+        this->setCgi();
+        this->_cgi_exec = path_exec;
+    };
+
+    std::string &getCgiExec()
+    {
+        return (this->_cgi_exec);
+    };
+
+    void        setExtension(std::string ext)
+    {
+        this->_extension = ext;
+    };
+
+    std::string &getExtension()
+    {
+        return (this->_extension);
+    };
+
     void        setOptModifier(std::string opt)
     {
         if (opt != "~" && opt != "=" && opt != "~*" && opt == "^~")
@@ -239,7 +304,19 @@ public:
 
     void        setLocation(std::string locat)
     {
-        this->_location = locat;
+        if (locat.front() == '/')
+        {
+            this->setPrefix();
+            this->_location = locat;
+        }
+        else
+        {
+            if (locat.find(".") == std::string::npos)
+                throw ErrorOptionalMod();
+            this->_extension = http::trim2(locat, "\\$");
+            this->_location = this->_extension;
+            this->_extension = this->_extension.substr(locat.find(".") + 1);
+        }
     };
 
     std::string &getVirtualLocation()
@@ -369,7 +446,11 @@ inline std::ostream &operator<<(std::ostream &out, http::Routes &route)
     std::vector<std::string>::iterator it = route.getIndexFile().begin();
     std::vector<std::string>::iterator itend = route.getIndexFile().end();
     out << "\nLocation VirtualDirectory: " << route.getVirtualLocation() << std::endl;
-    out << "\nLocation OptionalModifier: " << route.getOptModifier() << std::endl;
+    out << "Location isPrefix: " << ((route.isPrefix()) ? "on": "off") << std::endl;
+    out << "Location isCGI: " << ((route.isCgi()) ? "on": "off") << std::endl;
+    out << "Location CGI EXEC: " << route.getCgiExec() << std::endl;
+    out << "Location Extension: " << route.getExtension() << std::endl;
+    out << "Location OptionalModifier: " << route.getOptModifier() << std::endl;
     out << "Location RootPath: " << route.getDirPath() << std::endl;
     out << "Location indexFile: ";
     for (; it != itend; it++)

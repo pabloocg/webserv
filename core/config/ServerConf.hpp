@@ -211,6 +211,9 @@ public:
         std::vector<http::Routes>::iterator it = this->_routes.begin();
         std::vector<http::Routes>::iterator itend = this->_routes.end();
         std::vector<http::Routes>::iterator father_location;
+        std::string ext = std::string("");
+        if (search_path.find(".") != std::string::npos)
+            ext = search_path.substr(search_path.find("."));
         size_t  len = 0;
         size_t  max_len = 0;
         std::string path;
@@ -219,6 +222,12 @@ public:
             path = it->getVirtualLocation();
             len = path.length();
             if (path == search_path)
+            {
+                father_location = it;
+                max_len = len;
+                break ;
+            }
+            else if (ext != "" && !it->isPrefix() && it->getExtension() == ext)
             {
                 father_location = it;
                 max_len = len;
