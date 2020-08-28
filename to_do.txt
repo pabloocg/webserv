@@ -17,10 +17,6 @@ Cosas por hacer:
 *No se si esos habrá que hacerlos ya que parece que es solo para proxys
 
 Metodos HTTP:
--Implementar POST
--Implementar PUT
--Implementar DELETE
--Implementar OPTIONS
 -Implementar PATCH hay que hacerlo??
 
 Implementar Headers:

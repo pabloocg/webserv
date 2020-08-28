@@ -69,9 +69,7 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	this->_allow.clear();
 	this->_www_auth_required = false;
 	if (bad_request == true)
-	{
 		this->status = 400;
-	}
 
 	std::vector<std::string> sheader;
 	std::vector<std::string> srequest;
@@ -89,6 +87,8 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 		this->type = POST;
 	else if (srequest[0] == "PUT")
 		this->type = PUT;
+	else if (srequest[0] == "DELETE")
+		this->type = DELETE;
 
 	this->_req_URI = srequest[1];
 	this->http_version = srequest[2];
@@ -117,7 +117,7 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 		this->file_req = this->_script_name;
 		add_basic_env_vars();
 	}
-	read_file_requested();
+	set_status();
 }
 
 void http::Request::add_basic_env_vars(void)
@@ -227,14 +227,10 @@ void http::Request::get_allowed_methods(void)
 		this->_allow.push_back("TRACE");
 }
 
-void http::Request::read_file_requested(void)
+void http::Request::set_status(void)
 {
-	std::ifstream file;
-	std::stringstream stream;
-	std::string buf;
-	int code;
+	int	code = 0;
 
-	code = 0;
 	if (this->location.MethodAllow(this->type))
 	{
 		if (needs_auth(this->location))
@@ -249,14 +245,12 @@ void http::Request::read_file_requested(void)
 		}
 		if (!http::file_exists(this->file_req))
 		{
-			if (code == 0){
-				if (this->type == OPTIONS){
+			if (code == 0)
+			{
+				if (this->type == OPTIONS)
 					code = 204;
-					get_allowed_methods();
-				}
-				else{
+				else
 					code = 200;
-				}
 			}
 		}
 		else if (http::file_exists(this->file_req) && this->type == PUT)
@@ -282,36 +276,16 @@ void http::Request::read_file_requested(void)
 		this->file_req = this->_server.getErrorPage(code);
 		this->file_type = this->file_req.substr(file_req.find(".") + 1);
 	}
-	
-	if (this->status != 204 && this->status != 201 && !this->_isCGI)
-	{
-		file.open(this->file_req);
-		if (file.is_open())
-		{
-			while (std::getline(file, buf))
-				stream << buf << "\n";
-			this->resp_body = stream.str();
-			file.close();
-		}
-		else
-			throw "SERVER ERROR";
-	}
 }
 
-char *http::Request::build_get(int *size, std::map<std::string, std::string> mime_types)
+char *http::Request::getResponse(int *size, std::map<std::string, std::string> mime_types)
 {
 	char				*res;
 	std::stringstream	stream;
 
-	if (this->_isCGI){
-		startCGI();
-	}
-
 	stream << "HTTP/1.1 " << this->status << " " << this->message_status;
-
-	if (!this->_isCGI && this->status != 204)
+	if (!this->_isCGI && this->status != 204 && this->type != PUT)
 		stream	<< "\nContent-Type: " << get_content_type(this->file_type, mime_types);
-		   
 	if (this->status == 405 || (this->status == 204 && this->type == OPTIONS))
 	{
 		stream << "\nAllow:";
@@ -325,23 +299,18 @@ char *http::Request::build_get(int *size, std::map<std::string, std::string> mim
 	}
 	if (this->_www_auth_required == true)
 		stream << "\nWWW-Authenticate: Basic realm=\"" << this->_realm << "\"";
-	if (this->_isCGI){
-		for (int i = 0; i < (int)this->_CGI_headers.size(); i++){
+	if (this->_isCGI)
+		for (int i = 0; i < (int)this->_CGI_headers.size(); i++)
 			stream << "\n" << this->_CGI_headers[i];
-		}
-	}
 	stream << "\nDate: " << http::get_actual_date();
-
-	if (this->status != 204)
+	if (this->status != 204 && this->type != PUT)
 		stream << "\nContent-Length: " << this->resp_body.length();
-
 	stream << "\nServer: Webserv/1.0\n\n";
-
-	if ((this->type != HEAD || this->status != 200) && this->status != 204)
+	if ((this->type != HEAD || this->status != 200) && this->status != 204 && this->type != PUT)
 		stream << this->resp_body;
-
 	this->resp_body = stream.str();
-	if (this->resp_body.length() < 1000){
+	if (this->resp_body.length() < 1000)
+	{
 		std::cout << "************ RESPONSE ***********" << std::endl;
 		std::cout << this->resp_body << std::endl;
 		std::cout << "*********************************" << std::endl;
@@ -353,60 +322,73 @@ char *http::Request::build_get(int *size, std::map<std::string, std::string> mim
 	*size = this->resp_body.size();
 	std::cout << "Sending " << this->file_req << std::endl;
 	return (res);
+
 }
 
-char *http::Request::build_put(int *size)
+void	http::Request::build_get(void)
+{
+	std::ifstream		file;
+	std::stringstream	stream;
+	std::string			buf;
+
+	if (this->status != 204 && this->status != 201 && !this->_isCGI)
+	{
+		file.open(this->file_req);
+		if (file.is_open())
+		{
+			while (std::getline(file, buf))
+				stream << buf << "\n";
+			this->resp_body = stream.str();
+		}
+		file.close();
+	}
+	this->build_post();
+}
+
+void	http::Request::build_post(void)
+{
+	if (this->_isCGI)
+		startCGI();
+}
+
+void	http::Request::build_put(void)
 {
 	std::ofstream	f(this->file_req);
-	char				*res;
-	std::stringstream	stream;
 
 	if (f.good())
 		f << this->_request_body << std::endl;
 	else
 		f << "error" << std::endl;
 	f.close();
+}
 
-	stream << "HTTP/1.1 " << this->status << " " << this->message_status;
-	if (this->status == 405)
-	{
-		stream << "\nAllow:";
-		for (int i = 0; i < (int)this->_allow.size(); i++)
-		{
-			if (i < (int)this->_allow.size() - 1)
-				stream << " " << this->_allow[i] << ",";
-			else
-				stream << " " << this->_allow[i];
-		}
-	}
-	if (this->_www_auth_required == true)
-		stream << "\nWWW-Authenticate: Basic realm=\"" << this->_realm << "\"";
-	
-	stream << "\nServer: Webserv/1.0\n\n";
+void	http::Request::build_delete(void)
+{
+	std::stringstream	stream;
 
+	unlink(this->file_req.c_str());
+	stream << "<html>\n<body>\n<h1>File deleted.</h1>\n</body>\n</html>" << std::endl;
 	this->resp_body = stream.str();
-	if (this->resp_body.length() < 1000){
-		std::cout << "************ RESPONSE ***********" << std::endl;
-		std::cout << this->resp_body << std::endl;
-		std::cout << "*********************************" << std::endl;
-	}
-	if (!(res = (char *)malloc(sizeof(char) * (this->resp_body.size() + 1))))
-		return (NULL);
-	std::copy(this->resp_body.begin(), this->resp_body.end(), res);
-	res[this->resp_body.size()] = '\0';
-	*size = this->resp_body.size();
-	std::cout << "Created " << this->file_req << std::endl;
-	return (res);
+}
+
+void	http::Request::build_options(void)
+{
+	get_allowed_methods();
 }
 
 char *http::Request::build_response(int *size, std::map<std::string, std::string> mime_types)
 {
-	if (this->type == PUT && !this->_isCGI)
-		return (this->build_put(size));
-	else{
-		return (this->build_get(size, mime_types));
-	}
-	return (NULL);
+	if (this->type == GET || this->status >= 400)
+		this->build_get();
+	else if (this->type == POST)
+		this->build_post();
+	else if (this->type == PUT && !this->_isCGI)
+		this->build_put();
+	else if (this->type == DELETE)
+		this->build_delete();
+	else if (this->type == OPTIONS)
+		this->build_options();
+	return (getResponse(size, mime_types));
 }
 
 void http::Request::startCGI(void){

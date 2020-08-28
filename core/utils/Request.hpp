@@ -61,12 +61,16 @@ namespace http
 	std::string message_status;
 	std::string resp_body;
 
-	char *build_get(int *size, std::map<std::string, std::string> mime_types);
-	char *build_put(int *size);
+	void	build_get(void);
+	void	build_post(void);
+	void	build_put(void);
+	void	build_delete(void);
+	void	build_options(void);
+	char	*getResponse(int *size, std::map<std::string, std::string> mime_types);
 	std::string get_content_type(std::string file_type, std::map<std::string, std::string> mime_types);
 	bool needs_auth(http::Routes  routes);
 	bool validate_password(std::string auth);
-	void read_file_requested(void);
+	void set_status(void);
 	void get_allowed_methods(void);
 	void add_basic_env_vars(void);
 	void startCGI(void);
@@ -78,6 +82,7 @@ namespace http
 
 		m[200] = "OK";
 		m[201] = "Created";
+		m[202] = "Accepted";
 		m[204] = "No Content";
 		m[400] = "Bad Request";
 		m[401] = "Unauthorized";

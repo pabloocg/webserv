@@ -221,7 +221,6 @@ public:
         {
             path = it->getVirtualLocation();
             len = path.length();
-            std::cout << "ext -> " << ext << " is prefix? " << !it->isPrefix() << " extloca -> "<< it->getExtension() << std::endl;
             if (path == search_path)
             {
                 father_location = it;
