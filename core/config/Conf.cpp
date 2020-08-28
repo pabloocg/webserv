@@ -386,10 +386,12 @@ http::Routes http::Conf::save_location(std::string s, std::string opt, std::stri
                 throw Conf::UnrecognizedParameter();
             route.setAuthMessage(buf.str());
         }
-        else if (tmp == "index")
+        else if (tmp == "index" || tmp == "languajes")
         {
             std::string s_cmp;
 
+            if (tmp == "languajes")
+                route.setLanguajes();
             while (i < s.length() && s[i] != ';')
             {
                 while (std::isspace(s[i]) && i < s.length())
@@ -397,9 +399,12 @@ http::Routes http::Conf::save_location(std::string s, std::string opt, std::stri
                 while (!std::isspace(s[i]) && i < s.length() && s[i] != ';')
                     buf << s[i++];
                 s_cmp = buf.str();
-                if (s_cmp.substr(s_cmp.find(".") + 1).length() > 5)
+                if (tmp == "index" && s_cmp.substr(s_cmp.find(".") + 1).length() > 5)
                     throw http::Conf::UnrecognizedParameter();
-                route.addIndexFile(s_cmp);
+                if (tmp == "index")
+                    route.addIndexFile(s_cmp);
+                else if (tmp == "languajes")
+                    route.addnewLanguaje(s_cmp);
                 buf.clear();
                 buf.str("");
             }

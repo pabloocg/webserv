@@ -63,6 +63,7 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	this->request = req;
 	this->_server = server;
 	this->_env = env;
+	this->is_autoindex = false;
 	this->_isCGI = false;
 	this->status = 0;
 	this->_auth = "NULL";
@@ -95,13 +96,20 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 
 	if (this->_req_URI.find('?') != std::string::npos){
 		this->_query_string = this->_req_URI.substr(this->_req_URI.find("?") + 1);
-		this->file_req = this->_req_URI.substr(0, this->_req_URI.find("?"));
+		this->file_bef_req = this->_req_URI.substr(0, this->_req_URI.find("?"));
 	}
 	else
-		this->file_req = this->_req_URI;
-	this->location = this->_server.getRoutebyPath(this->file_req); //si file_req = * me pasas la location del server entero
-	this->file_req = this->location.getFileTransformed(this->file_req);
-	this->file_type = this->file_req.substr(file_req.find(".") + 1, file_req.size());
+		this->file_bef_req = this->_req_URI;
+	if (this->file_bef_req.find(".") == std::string::npos && this->file_bef_req.back() != '/')
+		this->file_bef_req += '/';
+	this->location = this->_server.getRoutebyPath(this->file_bef_req); //si file_req = * me pasas la location del server entero
+	std::cout << "File before getFileTransformed: " << this->file_bef_req << std::endl;
+	this->file_req = this->location.getFileTransformed(this->file_bef_req);
+	std::cout << "File after getFileTransformed: " << this->file_req << std::endl;
+	if (this->file_req.find(".") != std::string::npos)
+		this->file_type = this->file_req.substr(file_req.find(".") + 1, file_req.size());
+	else if (this->location.getAutoIndex())
+		this->is_autoindex = true;
 	for (int i = 1; i < (int)sheader.size(); i++)
 	{
 		this->save_header(sheader[i]);
@@ -109,7 +117,7 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	if (atoi(this->_req_content_length.c_str()) > 0){
 		save_request_body();
 	}
-	if (this->location.isCgi() && this->type != OPTIONS)
+	if (!this->is_autoindex && this->location.isCgi() && this->type != OPTIONS)
 	{
 		this->_isCGI = true;
 		this->_path_info = this->file_req.substr(this->file_req.find(this->location.getExtension()) + 3);
@@ -259,7 +267,10 @@ void http::Request::set_status(void)
 				code = 201;
 		}
 		else
+		{
 			code = 404;
+			this->is_autoindex = false;
+		}
 	}
 	else
 	{
@@ -284,8 +295,10 @@ char *http::Request::getResponse(int *size, std::map<std::string, std::string> m
 	std::stringstream	stream;
 
 	stream << "HTTP/1.1 " << this->status << " " << this->message_status;
-	if (!this->_isCGI && this->status != 204 && this->type != PUT)
+	if (!this->_isCGI && this->status != 204 && this->type != PUT && !this->is_autoindex)
 		stream	<< "\nContent-Type: " << get_content_type(this->file_type, mime_types);
+	else if (this->is_autoindex)
+		stream	<< "\nContent-Type: text/html";
 	if (this->status == 405 || (this->status == 204 && this->type == OPTIONS))
 	{
 		stream << "\nAllow:";
@@ -333,16 +346,80 @@ void	http::Request::build_get(void)
 
 	if (this->status != 204 && this->status != 201 && !this->_isCGI)
 	{
-		file.open(this->file_req);
-		if (file.is_open())
+		if (this->is_autoindex)
 		{
-			while (std::getline(file, buf))
-				stream << buf << "\n";
+			DIR				*dirp;
+ 			struct dirent	*direntp;
+			struct stat 	buff;
+			std::string		tmp;
+			std::string		tmp_p;
+			long int		size;
+			char			buftime[30];
+
+			stream << "<html>\n<head><title>Index of " << this->file_bef_req <<"</title></head><body>\n";
+			stream << "<h1>Index of " << this->file_bef_req << "</h1>" << std::endl;
+			stream << "<hr><pre>" << std::endl;
+			stream << "<br>" << std::endl;
+			dirp = opendir(this->file_req.c_str());
+			if (dirp == NULL)
+			{
+ 				std::cerr << "Error opening directory" << this->file_req << std::endl;
+ 				exit(2);
+			}
+			while ((direntp = readdir(dirp)) != NULL)
+			{
+				if (!strncmp(direntp->d_name, ".", strlen(direntp->d_name)))
+					continue ;
+				tmp = this->file_bef_req + direntp->d_name;
+				tmp_p = this->file_req + direntp->d_name;
+				if (!strncmp(direntp->d_name, "..", strlen(direntp->d_name)))
+					stream << "<a href=\"" << tmp << "\">"<< direntp->d_name << "/</a>";
+				else
+				{
+					stream << "<a href=\"" << tmp << "\">"<< direntp->d_name << "</a>";
+					stat(tmp_p.c_str(), &buff);
+					ssize_t written = -1;
+					struct tm *gm = gmtime(&buff.st_mtimespec.tv_sec);
+					if (gm)
+					{
+						written = (ssize_t)strftime(buftime, sizeof(buftime), "%d-%b-%Y %H:%M", gm);
+						if (!(written > 0))
+							perror("strftime");
+					}
+					for (size_t i = 0; i < 20; i++)
+						stream << "&nbsp;";
+					stream << buftime;
+					for (size_t i = 0; i < 8; i++)
+						stream << "&nbsp;";
+					if (S_ISDIR(buff.st_mode))
+						stream << "-";
+					else
+					{
+						size = http::file_size(tmp_p);
+						stream << size;
+					}
+				}
+				stream << "<br>" << std::endl;
+			}
+			stream << "</pre><hr>" << std::endl;
+			stream << "</body>\n</html>\n";
+			closedir(dirp);
 			this->resp_body = stream.str();
 		}
-		file.close();
+		else
+		{
+			file.open(this->file_req);
+			if (file.is_open())
+			{
+				while (std::getline(file, buf))
+					stream << buf << "\n";
+				this->resp_body = stream.str();
+			}
+			file.close();
+		}
 	}
-	this->build_post();
+	if (this->_isCGI)
+		startCGI();
 }
 
 void	http::Request::build_post(void)

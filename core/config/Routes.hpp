@@ -56,6 +56,10 @@ private:
     // Default file to answer if the request is a directory
     std::vector<std::string>     _index_file;
 
+    bool            _support_languajes;
+    // Suported languajes in a location
+    std::vector<std::string>     _languajes;
+
     // CGI Parameters
     bool            _is_cgi;
 
@@ -82,6 +86,7 @@ private:
 public:
     Routes()
     {
+        this->_support_languajes = false;
         this->_is_prefix = false;
         this->_is_cgi = false;
         this->_cgi_exec = std::string("");
@@ -109,6 +114,7 @@ public:
 
     Routes(const http::Routes &other)
     {
+        this->_support_languajes = other._support_languajes;
         this->_is_prefix = other._is_prefix;
         this->_is_cgi = other._is_cgi;
         this->_cgi_exec = other._cgi_exec;
@@ -127,6 +133,7 @@ public:
         this->_httpMethods._TRACE = other._httpMethods._TRACE;
         this->_autoindex = other._autoindex;
         this->_index_file = other._index_file;
+        this->_languajes = other._languajes;
         this->_uploads = other._uploads;
         this->_upload_path = other._upload_path;
         this->_is_auth = other._is_auth;
@@ -137,6 +144,7 @@ public:
 
     Routes      &operator=(const http::Routes &other)
     {
+        this->_support_languajes = other._support_languajes;
         this->_is_prefix = other._is_prefix;
         this->_is_cgi = other._is_cgi;
         this->_cgi_exec = other._cgi_exec;
@@ -155,6 +163,7 @@ public:
         this->_httpMethods._TRACE = other._httpMethods._TRACE;
         this->_autoindex = other._autoindex;
         this->_index_file = other._index_file;
+        this->_languajes = other._languajes;
         this->_uploads = other._uploads;
         this->_upload_path = other._upload_path;
         this->_is_auth = other._is_auth;
@@ -247,6 +256,16 @@ public:
         if (method == PATCH)
             return (this->_httpMethods._PATCH);
         return (false);
+    };
+
+    void        setLanguajes()
+    {
+        this->_support_languajes = true;
+    };
+
+    bool        supportLanguajes()
+    {
+        return (this->_support_languajes);
     };
 
     void        setPrefix()
@@ -354,6 +373,16 @@ public:
         return (this->_index_file);
     };
 
+    void        addnewLanguaje(std::string lang)
+    {
+        this->_languajes.push_back(lang);
+    };
+
+    std::vector<std::string> getLanguajes()
+    {
+        return (this->_languajes);
+    };
+
     void        allowUpload()
     {
         this->_uploads = true;
@@ -422,7 +451,7 @@ public:
         return (this->_path_auth);
     };
 
-    std::string &getFileTransformed(std::string &path_requested)
+    std::string getFileTransformed(std::string path_requested)
     {
         if (!this->_is_prefix)
         {
@@ -433,8 +462,8 @@ public:
         else
         {
             path_requested.replace(0, this->getVirtualLocation().size(), this->getDirPath());
-            if (path_requested == this->getDirPath())
-            {
+            //if (path_requested == this->getDirPath())
+            //{
                 std::string     tmp;
                 for (std::vector<std::string>::iterator it = this->_index_file.begin(); it < this->_index_file.end(); it++)
                 {
@@ -444,16 +473,18 @@ public:
                         path_requested += *it;
                     break ;
                 }
-            }
+            //}
         }
+        if (path_requested.find(".") == std::string::npos && path_requested.back() != '/')
+            path_requested += '/';
         return (path_requested);
     };
 };
 
 inline std::ostream &operator<<(std::ostream &out, http::Routes &route)
 {
-    std::vector<std::string>::iterator it = route.getIndexFile().begin();
-    std::vector<std::string>::iterator itend = route.getIndexFile().end();
+    std::vector<std::string>::iterator it;
+    std::vector<std::string>::iterator itend;
     out << "\nLocation VirtualDirectory: " << route.getVirtualLocation() << std::endl;
     out << "Location isPrefix: " << ((route.isPrefix()) ? "on": "off") << std::endl;
     out << "Location isCGI: " << ((route.isCgi()) ? "on": "off") << std::endl;
@@ -462,6 +493,15 @@ inline std::ostream &operator<<(std::ostream &out, http::Routes &route)
     out << "Location OptionalModifier: " << route.getOptModifier() << std::endl;
     out << "Location RootPath: " << route.getDirPath() << std::endl;
     out << "Location indexFile: ";
+    it = route.getIndexFile().begin();
+    itend = route.getIndexFile().end();
+    for (; it != itend; it++)
+        out << *it << " ";
+    out << std::endl;
+    out << "Location SupportLanguajes: " << ((route.supportLanguajes()) ? "on": "off") << std::endl;
+    out << "Location SupportLanguajes: ";
+    it = route.getLanguajes().begin();
+    itend = route.getLanguajes().end();
     for (; it != itend; it++)
         out << *it << " ";
     out << std::endl;

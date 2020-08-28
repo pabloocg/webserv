@@ -5,6 +5,9 @@
 # include <unistd.h>
 # include <string.h>
 # include <stdlib.h>
+# include <dirent.h>
+# include <sys/stat.h>
+# include <time.h>
 # include <errno.h>
 # include <iostream>
 # include <vector>
@@ -27,10 +30,11 @@ namespace http
 	class Request
 	{
 	private:
-
+	bool	is_autoindex;
 	//Request variables
 	int type;
 	std::string file_req;
+	std::string file_bef_req;
 	std::string file_type;
 	std::string request;
 	std::string http_version;

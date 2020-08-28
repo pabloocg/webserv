@@ -23,9 +23,19 @@ namespace http
 {
 	inline int file_exists(std::string file)
 	{
-		struct stat buff;
+		struct stat st;
 
-		return (stat(file.c_str(), &buff));
+		return (stat(file.c_str(), &st));
+	}
+
+	inline long int file_size(std::string file)
+	{
+		struct stat st;
+		
+		if (!stat(file.c_str(), &st))
+			return (st.st_size);
+		else
+			return -1;
 	}
 
 	inline std::vector<std::string> special_split(std::string str, char delimiter)
