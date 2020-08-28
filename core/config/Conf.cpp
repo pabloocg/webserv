@@ -399,7 +399,7 @@ http::Routes http::Conf::save_location(std::string s, std::string opt, std::stri
                 while (!std::isspace(s[i]) && i < s.length() && s[i] != ';')
                     buf << s[i++];
                 s_cmp = buf.str();
-                if (tmp == "index" && s_cmp.substr(s_cmp.find(".") + 1).length() > 5)
+                if (tmp == "index" && s_cmp.substr(s_cmp.find(".") + 1).length() > 13)
                     throw http::Conf::UnrecognizedParameter();
                 if (tmp == "index")
                     route.addIndexFile(s_cmp);

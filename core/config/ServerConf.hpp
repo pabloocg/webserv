@@ -229,9 +229,42 @@ public:
             }
             else if (ext != "" && !it->isPrefix() && it->getExtension() == ext)
             {
+                std::cout << "sufix in" << std::endl;
                 father_location = it;
                 max_len = len;
-                break ;
+                size_t  len2 = 0;
+                size_t  max_len2 = 0;
+                std::vector<http::Routes>::iterator itl = this->_routes.begin();
+                std::vector<http::Routes>::iterator itlend = this->_routes.end();
+                std::vector<http::Routes>::iterator father_location2;
+                for (; itl != itlend; itl++)
+                {
+                    path = itl->getVirtualLocation();
+                    std::cout << "search path: " << search_path << " route path: " << path << std::endl;
+                    len2 = path.length();
+                    if (search_path.compare(0, len2, path) == 0)
+                    {
+                        std::cout << "IN" << std::endl;
+                        if (!max_len2)
+                        {
+                            max_len2 = len2;
+                            father_location2 = itl;
+                        }
+                        else if (len2 > max_len2)
+                        {
+                            max_len2 = len2;
+                            father_location2 = itl;
+                        }
+                    }
+                }
+                std::cout << "sufix out" << std::endl;
+                if (max_len2)
+                {
+                    father_location2->setCgiExec(father_location->getCgiExec());
+                    return (*father_location2);
+                }
+                else
+                    return (*father_location);
             }
             else if (search_path.compare(0, len, path) == 0)
             {
