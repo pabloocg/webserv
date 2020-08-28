@@ -450,7 +450,6 @@ public:
     {
         return (this->_path_auth);
     };
-
     std::string getFileTransformed(std::string path_requested, std::vector<std::string> languages)
     {
 		std::string language_path = "";
@@ -477,18 +476,23 @@ public:
         else
         {
             path_requested.replace(0, this->getVirtualLocation().size() + language_path.size(), this->getDirPath() + language_path);
-            //if (path_requested == this->getDirPath())
-            //{
-                std::string     tmp;
-                for (std::vector<std::string>::iterator it = this->_index_file.begin(); it < this->_index_file.end(); it++)
+            std::cout << "Change path prefix" << std::endl;
+            if (path_requested.find(".") == std::string::npos)
+            {
+                for (std::vector<std::string>::iterator it = this->_index_file.begin(); it != this->_index_file.end(); it++)
                 {
-                    tmp = std::string(path_requested);
-                    tmp += *it;
-                    if (!http::file_exists(tmp))
-                        path_requested += *it;
-                    break ;
+                    //tmp = std::string(path_requested);
+                    std::cout << path_requested << "IT: "<< *it << std::endl;
+                    if (it->front() == '/' && path_requested.back() == '/')
+                        path_requested.erase(path_requested.begin());
+                    else if (path_requested.back() != '/' && it->front() != '/')
+                        path_requested += '/';
+                    path_requested += *it;
+                    std::cout << path_requested << "IT: "<< *it << std::endl;
+                    if (!http::file_exists(path_requested))
+                        break ;
                 }
-            //}
+            }
         }
         if (path_requested.find(".") == std::string::npos && path_requested.back() != '/')
             path_requested += '/';
@@ -535,6 +539,7 @@ inline std::ostream &operator<<(std::ostream &out, http::Routes &route)
     out << "\tOPTIONS: " << ((route.MethodAllow("OPTIONS")) ? "on": "off") << std::endl;
     out << "\tTRACE: " << ((route.MethodAllow("TRACE")) ? "on": "off") << std::endl;
     out << "\tPATCH: " << ((route.MethodAllow("PATCH")) ? "on": "off") << std::endl;
+    out << "\PUT: " << ((route.MethodAllow("PUT")) ? "on": "off") << std::endl;
     return (out);
 };
 

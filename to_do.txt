@@ -1,6 +1,8 @@
 Cosas por hacer:
 
--Implementar el autoindex
+- max_body dentro de los Location
+- root y index dentro de server
+
 -Implementar timeout si una request se queda colgada (Creo que se hace en el select)
 -Implementar codigos de error de cliente (4XX)
     - 406 Not Acceptable. El recurso solicitado solo genera contenido no aceptado de acuerdo con los headers Accept enviados en el request.
@@ -19,6 +21,7 @@ Cosas por hacer:
 Metodos HTTP:
 -Implementar PATCH hay que hacerlo??
 -Implementar POST
+- Al hacer PUT que los archivos se guarden en un directorio especifico del uploads_path
 
 Implementar Headers:
 

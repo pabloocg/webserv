@@ -71,11 +71,15 @@ void http::ServerC::wait_for_connection()
 	fd_set writefds;
 	SA_IN address;
 
+	max_sd = 0;
 	FD_ZERO(&readfds);
 	FD_ZERO(&writefds);
 	readfds = _master_read;
 	writefds = _master_write;
-	max_sd = _server_socket[1];
+	for (int i = 0; i < (int)_server_socket.size(); i++)
+		if (_server_socket[i] > max_sd)
+			max_sd = _server_socket[i];
+	//max_sd = _server_socket[1];
 	for (int i = 0; i < _max_client; i++)
 		if (_client_socket[i] > max_sd)
 			max_sd = _client_socket[i];
@@ -224,6 +228,7 @@ void http::ServerC::wait_for_connection()
 }
 bool http::ServerC::valid_req_format(std::string buffer)
 {
+	std::cout << buffer << std::endl;
 	std::vector<std::string> splitted_req;
 	int body_size = 0;
 	bool chunked;
@@ -246,10 +251,10 @@ bool http::ServerC::valid_req_format(std::string buffer)
 		{
 			chunked = true;
 		}
-		if (splitted_req[i].find("Host:") != std::string::npos){
-			if (this->_host_header == "NULL"){
+		if (splitted_req[i].find("Host:") != std::string::npos)
+		{
+			if (this->_host_header == "NULL")
 				this->_host_header = splitted_req[i].substr(6, splitted_req[i].length() - 7);
-			}
 			else
 				this->_bad_request = true;
 		}

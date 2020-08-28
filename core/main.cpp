@@ -2,7 +2,7 @@
 #include "config/Conf.hpp"
 #include "network/ServerC.hpp"
 
-#define DEFAULT_FILE_CONF "example.conf"
+#define DEFAULT_FILE_CONF "tests/example.conf"
 
 int main(int argc, char *argv[], char *env[])
 {

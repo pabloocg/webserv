@@ -107,6 +107,7 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	if (this->file_bef_req.find(".") == std::string::npos && this->file_bef_req.back() != '/')
 		this->file_bef_req += '/';
 	this->location = this->_server.getRoutebyPath(this->file_bef_req); //si file_req = * me pasas la location del server entero
+	std::cout << this->location << std::endl;
 	std::cout << "File before getFileTransformed: " << this->file_bef_req << std::endl;
 	this->file_req = this->location.getFileTransformed(this->file_bef_req, this->_languages_accepted);
 	std::cout << "File after getFileTransformed: " << this->file_req << std::endl;
@@ -114,6 +115,8 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 		this->file_type = this->file_req.substr(file_req.find(".") + 1, file_req.size());
 	else if (this->location.getAutoIndex())
 		this->is_autoindex = true;
+	else
+		this->status = 404;
 	for (int i = 1; i < (int)sheader.size(); i++)
 	{
 		this->save_header(sheader[i]);
@@ -284,8 +287,8 @@ void http::Request::set_status(void)
 		code = 405;
 		get_allowed_methods();
 	}
-	if (this->status == 400)
-		code = 400;
+	if (this->status >= 400)
+		code = this->status;
 	this->status = code;
 	this->message_status = this->_error_mgs[code];
 	if (this->status >= 400)
@@ -425,7 +428,7 @@ void	http::Request::build_get(void)
 			file.close();
 		}
 	}
-	if (this->_isCGI)
+	if (!this->is_autoindex && this->_isCGI)
 		startCGI();
 }
 
