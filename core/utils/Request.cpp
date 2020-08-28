@@ -108,7 +108,7 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 		this->file_bef_req += '/';
 	this->location = this->_server.getRoutebyPath(this->file_bef_req); //si file_req = * me pasas la location del server entero
 	std::cout << "File before getFileTransformed: " << this->file_bef_req << std::endl;
-	this->file_req = this->location.getFileTransformed(this->file_bef_req);
+	this->file_req = this->location.getFileTransformed(this->file_bef_req, this->_languages_accepted);
 	std::cout << "File after getFileTransformed: " << this->file_req << std::endl;
 	if (this->file_req.find(".") != std::string::npos)
 		this->file_type = this->file_req.substr(file_req.find(".") + 1, file_req.size());
@@ -623,12 +623,18 @@ void http::Request::decode_CGI_response(void){
 void http::Request::get_languages_vector(void){
 	this->_languages_accepted = http::split(this->_language_header, ',');
 	for(int i = 0; i < (int)this->_languages_accepted.size(); i++){
-
+		int min = 0;
+		if (this->_languages_accepted[i][0] == ' ')
+			min = 1;
 		if (this->_languages_accepted[i].find(';') != std::string::npos){
-			this->_languages_accepted[i] = this->_languages_accepted[i].substr(1, this->_languages_accepted[i].find(';') - 1);
+			this->_languages_accepted[i] = this->_languages_accepted[i].substr(min, this->_languages_accepted[i].find(';') - 1);
 		}
 		else
-			this->_languages_accepted[i] = this->_languages_accepted[i].substr(1);
+			if (this->_languages_accepted[i][this->_languages_accepted[i].length() - 1] == '\r')
+				this->_languages_accepted[i] = this->_languages_accepted[i].substr(min, this->_languages_accepted[i].length() - 1 - min);
+			else{
+				this->_languages_accepted[i] = this->_languages_accepted[i].substr(min);
+			}
 		std::cout << "language: " << this->_languages_accepted[i] << std::endl;
 	}
 }
