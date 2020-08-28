@@ -11,13 +11,11 @@ void http::Request::save_header(std::string header)
 	}
 	else if (words[0] == "Accept-Language:")
 	{
+		this->_language_header = header.substr(16);
 	}
 	else if (words[0] == "Authorization:")
 	{
 		this->_auth = words[2];
-	}
-	else if (words[0] == "Content-Language:")
-	{
 	}
 	else if (words[0] == "Content-Location:")
 	{
@@ -93,6 +91,12 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	this->_req_URI = srequest[1];
 	this->http_version = srequest[2];
 
+	for (int i = 1; i < (int)sheader.size(); i++)
+	{
+		this->save_header(sheader[i]);
+	}
+	get_languages_vector();
+
 	if (this->_req_URI.find('?') != std::string::npos){
 		this->_query_string = this->_req_URI.substr(this->_req_URI.find("?") + 1);
 		this->file_req = this->_req_URI.substr(0, this->_req_URI.find("?"));
@@ -100,12 +104,8 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	else
 		this->file_req = this->_req_URI;
 	this->location = this->_server.getRoutebyPath(this->file_req); //si file_req = * me pasas la location del server entero
-	this->file_req = this->location.getFileTransformed(this->file_req);
+	this->file_req = this->location.getFileTransformed(this->file_req);//, this
 	this->file_type = this->file_req.substr(file_req.find(".") + 1, file_req.size());
-	for (int i = 1; i < (int)sheader.size(); i++)
-	{
-		this->save_header(sheader[i]);
-	}
 	if (atoi(this->_req_content_length.c_str()) > 0){
 		save_request_body();
 	}
@@ -536,5 +536,18 @@ void http::Request::decode_CGI_response(void){
 			break;
 		}
 		this->_CGI_headers.push_back(tmp);
+	}
+}
+
+void http::Request::get_languages_vector(void){
+	this->_languages_accepted = http::split(this->_language_header, ',');
+	for(int i = 0; i < (int)this->_languages_accepted.size(); i++){
+
+		if (this->_languages_accepted[i].find(';') != std::string::npos){
+			this->_languages_accepted[i] = this->_languages_accepted[i].substr(1, this->_languages_accepted[i].find(';') - 1);
+		}
+		else
+			this->_languages_accepted[i] = this->_languages_accepted[i].substr(1);
+		std::cout << "language: " << this->_languages_accepted[i] << std::endl;
 	}
 }

@@ -422,13 +422,28 @@ public:
         return (this->_path_auth);
     };
 
-    std::string &getFileTransformed(std::string &path_requested)
+    std::string &getFileTransformed(std::string &path_requested) //, std::vector<std::string> languages
     {
+		/*
+		std::string language_path = "";
+		if (this->location_languages.size() > 0){
+			for (int i = 0; i < languages.size(); i++){
+				for (int j = 0; j < this->location_languages.size(); j++){
+					if (this->location_languages[j] == languages[i]){
+						language_path = languages[i] + "/";
+					}
+				}
+			}
+			if (language_path.length() == 0){
+				language_path = this->location_languages[0];
+			}
+		}
+		*/
         if (!this->_is_prefix)
         {
             if (path_requested.front() == '/' && this->_directory_path.back() == '/')
                 path_requested.erase(path_requested.begin());
-            path_requested = this->_directory_path += path_requested;
+            //path_requested = this->_directory_path + languaje_path + path_requested;
         }
         else
         {
