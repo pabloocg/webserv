@@ -56,9 +56,9 @@ private:
     // Default file to answer if the request is a directory
     std::vector<std::string>     _index_file;
 
-    bool            _support_languajes;
-    // Suported languajes in a location
-    std::vector<std::string>     _languajes;
+    bool            _support_languages;
+    // Suported languages in a location
+    std::vector<std::string>     _languages;
 
     // CGI Parameters
     bool            _is_cgi;
@@ -86,7 +86,7 @@ private:
 public:
     Routes()
     {
-        this->_support_languajes = false;
+        this->_support_languages = false;
         this->_is_prefix = false;
         this->_is_cgi = false;
         this->_cgi_exec = std::string("");
@@ -114,7 +114,7 @@ public:
 
     Routes(const http::Routes &other)
     {
-        this->_support_languajes = other._support_languajes;
+        this->_support_languages = other._support_languages;
         this->_is_prefix = other._is_prefix;
         this->_is_cgi = other._is_cgi;
         this->_cgi_exec = other._cgi_exec;
@@ -133,7 +133,7 @@ public:
         this->_httpMethods._TRACE = other._httpMethods._TRACE;
         this->_autoindex = other._autoindex;
         this->_index_file = other._index_file;
-        this->_languajes = other._languajes;
+        this->_languages = other._languages;
         this->_uploads = other._uploads;
         this->_upload_path = other._upload_path;
         this->_is_auth = other._is_auth;
@@ -144,7 +144,7 @@ public:
 
     Routes      &operator=(const http::Routes &other)
     {
-        this->_support_languajes = other._support_languajes;
+        this->_support_languages = other._support_languages;
         this->_is_prefix = other._is_prefix;
         this->_is_cgi = other._is_cgi;
         this->_cgi_exec = other._cgi_exec;
@@ -163,7 +163,7 @@ public:
         this->_httpMethods._TRACE = other._httpMethods._TRACE;
         this->_autoindex = other._autoindex;
         this->_index_file = other._index_file;
-        this->_languajes = other._languajes;
+        this->_languages = other._languages;
         this->_uploads = other._uploads;
         this->_upload_path = other._upload_path;
         this->_is_auth = other._is_auth;
@@ -258,14 +258,14 @@ public:
         return (false);
     };
 
-    void        setLanguajes()
+    void        setLanguages()
     {
-        this->_support_languajes = true;
+        this->_support_languages = true;
     };
 
-    bool        supportLanguajes()
+    bool        supportLanguages()
     {
-        return (this->_support_languajes);
+        return (this->_support_languages);
     };
 
     void        setPrefix()
@@ -373,14 +373,14 @@ public:
         return (this->_index_file);
     };
 
-    void        addnewLanguaje(std::string lang)
+    void        addnewLanguage(std::string lang)
     {
-        this->_languajes.push_back(lang);
+        this->_languages.push_back(lang);
     };
 
-    std::vector<std::string> getLanguajes()
+    std::vector<std::string> getLanguages()
     {
-        return (this->_languajes);
+        return (this->_languages);
     };
 
     void        allowUpload()
@@ -450,34 +450,33 @@ public:
     {
         return (this->_path_auth);
     };
-
-    std::string getFileTransformed(std::string path_requested) //, std::vector<std::string> languages
+    std::string getFileTransformed(std::string path_requested, std::vector<std::string> languages)
     {
-		/*
 		std::string language_path = "";
-		if (this->location_languages.size() > 0){
-			for (int i = 0; i < languages.size(); i++){
-				for (int j = 0; j < this->location_languages.size(); j++){
-					if (this->location_languages[j] == languages[i]){
+		if (this->_languages.size() > 0){
+			for (int i = 0; i < (int)languages.size(); i++){
+				for (int j = 0; j < (int)this->_languages.size(); j++){
+					std::cout << "compara " << this->_languages[j] << " con " << languages[i] << std::endl; 
+					if (this->_languages[j].find(languages[i]) != std::string::npos){
+						std::cout << "son los mismos" << std::endl;
 						language_path = languages[i] + "/";
 					}
 				}
 			}
 			if (language_path.length() == 0){
-				language_path = this->location_languages[0];
+				language_path = this->_languages[0];
 			}
 		}
-		*/
         if (!this->_is_prefix)
         {
             if (path_requested.front() == '/' && this->_directory_path.back() == '/')
                 path_requested.erase(path_requested.begin());
-            //path_requested = this->_directory_path + languaje_path + path_requested;
+            path_requested = this->_directory_path + path_requested;
         }
         else
         {
+            path_requested.replace(0, this->getVirtualLocation().size() + language_path.size(), this->getDirPath() + language_path);
             std::cout << "Change path prefix" << std::endl;
-            path_requested.replace(0, this->getVirtualLocation().size(), this->getDirPath());
             if (path_requested.find(".") == std::string::npos)
             {
                 for (std::vector<std::string>::iterator it = this->_index_file.begin(); it != this->_index_file.end(); it++)
@@ -518,10 +517,10 @@ inline std::ostream &operator<<(std::ostream &out, http::Routes &route)
     for (; it != itend; it++)
         out << *it << " ";
     out << std::endl;
-    out << "Location SupportLanguajes: " << ((route.supportLanguajes()) ? "on": "off") << std::endl;
-    out << "Location SupportLanguajes: ";
-    it = route.getLanguajes().begin();
-    itend = route.getLanguajes().end();
+    out << "Location SupportLanguages: " << ((route.supportLanguages()) ? "on": "off") << std::endl;
+    out << "Location SupportLanguages: ";
+    it = route.getLanguages().begin();
+    itend = route.getLanguages().end();
     for (; it != itend; it++)
         out << *it << " ";
     out << std::endl;
