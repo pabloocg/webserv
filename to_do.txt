@@ -18,6 +18,7 @@ Cosas por hacer:
 
 Metodos HTTP:
 -Implementar PATCH hay que hacerlo??
+-Implementar POST
 
 Implementar Headers:
 
@@ -49,29 +50,6 @@ Hay tres casos principales en que se utiliza este encabezado:
         indica cuánto tiempo se debe esperar antes de realizar una nueva solicitud.
     -Cuando se envía con una respuesta de redireccionamiento, como 301 (Moved Permanently),
         esto indica el tiempo mínimo que se le pide al agente de usuario que espere antes de emitir la solicitud redirigida.
-
-- Transfer-Encoding (Lo manda el servidor). Especifica la forma de codificación utilizada para transferir de forma segura la respuesta al usuario
-    Cuando está presente en una respuesta a una solicitud HEAD que no tiene cuerpo, indica el valor que se habría aplicado al mensaje GET correspondiente.
-    #Transfer-Encoding: gzip
-    #Transfer-Encoding: gzip, chunked
-    Tipos de Encoding:
-        - chunked
-            Los datos se envían en una serie de fragmentos.
-            En este caso, se omite el encabezado Content-Length y al comienzo de cada fragmento 
-            se debe agregar la longitud del fragmento actual en formato hexadecimal,
-            seguido de '\r\n' y luego el fragmento en sí, seguido de otro '\r\n'.
-            El fragmento de terminación es un fragmento regular, con la excepción de que su longitud es cero.
-            Le sigue el tráiler, que consiste en una secuencia (posiblemente vacía) de campos de encabezado de entidad.
-        - gzip
-            Un formato que usa Lempel-Ziv coding (LZ77), con un CRC de 32 bits.
-            Este es originalmente el formato del programa gzip de UNIX.
-            El estándar HTTP/1.1 también recomienda que los servidores que soporten esta codificación también deberían reconocer x-gzip como un alias por motivos de compatibilidad.
-        - deflate
-            Usa la estructura zlib (definida en RFC 1950), con el algoritmo de compresión deflate (definido en RFC 1951).
-        - identity
-            Indica la función de identidad (es decir, sin compresión ni modificación).
-            Este símbolo, excepto si se especifica explícitamente, siempre se considera aceptable.
-
 
 No me quedan claros
 - Location (Lo manda el servidor?). Indica la URL a la que redirigir una página.

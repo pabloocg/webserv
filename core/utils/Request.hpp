@@ -57,7 +57,9 @@ namespace http
 	std::string					_transf_encoding;
 	std::string					_request_body;
 	std::string					_CGI_response;
+	std::string					_language_header;
 	std::vector<std::string>	_CGI_headers;
+	std::vector<std::string>	_languages_accepted;
 	bool						_isCGI;
 
 	//Response variables
@@ -80,6 +82,8 @@ namespace http
 	void startCGI(void);
 	void save_request_body(void);
 	void decode_CGI_response(void);
+	void decode_chunked(void);
+	void get_languages_vector(void);
 	std::map<int, std::string> create_map()
 	{
 		std::map<int, std::string> m;
