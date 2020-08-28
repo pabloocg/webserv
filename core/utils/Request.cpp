@@ -109,6 +109,9 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	if (atoi(this->_req_content_length.c_str()) > 0){
 		save_request_body();
 	}
+	if(this->_transf_encoding.find("chunked") != std::string::npos){
+		decode_chunked();
+	}
 	if (this->location.isCgi() && this->type != OPTIONS)
 	{
 		this->_isCGI = true;
@@ -499,6 +502,27 @@ void http::Request::save_request_body(void){
 			this->_request_body =  this->request.substr(i + 3, atoi(this->_req_content_length.c_str()));
 		}
 	}
+}
+
+void http::Request::decode_chunked(void){
+	std::string tmp;
+	std::vector<std::string> chunked_vec;
+	for (int i = 0; i < (int)this->request.length(); i++){
+		if (this->request[i] == '\n' && this->request[i + 2] == '\n')
+		{
+			chunked_vec = http::split(this->request.substr(i + 3), '\n');
+			break;
+		}
+	}
+	int i = 0;
+	int ret = 0;
+	int body_length = 0;;
+	while((ret = stoi(chunked_vec[i], 0, 16)) > 0){
+		body_length += ret;
+		this->_request_body += chunked_vec[++i].substr(0, ret);
+		i++;
+	}
+	this->_req_content_length = std::to_string(body_length);
 }
 
 void http::Request::decode_CGI_response(void){

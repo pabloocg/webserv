@@ -55,13 +55,6 @@ Hay tres casos principales en que se utiliza este encabezado:
     #Transfer-Encoding: gzip
     #Transfer-Encoding: gzip, chunked
     Tipos de Encoding:
-        - chunked
-            Los datos se envían en una serie de fragmentos.
-            En este caso, se omite el encabezado Content-Length y al comienzo de cada fragmento 
-            se debe agregar la longitud del fragmento actual en formato hexadecimal,
-            seguido de '\r\n' y luego el fragmento en sí, seguido de otro '\r\n'.
-            El fragmento de terminación es un fragmento regular, con la excepción de que su longitud es cero.
-            Le sigue el tráiler, que consiste en una secuencia (posiblemente vacía) de campos de encabezado de entidad.
         - gzip
             Un formato que usa Lempel-Ziv coding (LZ77), con un CRC de 32 bits.
             Este es originalmente el formato del programa gzip de UNIX.
