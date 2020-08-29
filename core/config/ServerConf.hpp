@@ -261,6 +261,7 @@ public:
                 if (max_len2)
                 {
                     father_location2->setCgiExec(father_location->getCgiExec());
+					father_location2->setExtension(father_location->getExtension());
                     return (*father_location2);
                 }
                 else

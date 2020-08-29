@@ -12,6 +12,7 @@ void http::Request::save_header(std::string header)
 	else if (words[0] == "Accept-Language:")
 	{
 		this->_language_header = header.substr(16);
+		this->_language_header = this->_language_header.substr(0, this->_language_header.length() - 1);
 	}
 	else if (words[0] == "Authorization:")
 	{
@@ -96,6 +97,12 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	{
 		this->save_header(sheader[i]);
 	}
+	if (atoi(this->_req_content_length.c_str()) > 0){
+		save_request_body();
+	}
+	if(this->_transf_encoding.find("chunked") != std::string::npos){
+		decode_chunked();
+	}
 	get_languages_vector();
 
 	if (this->_req_URI.find('?') != std::string::npos){
@@ -104,37 +111,30 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	}
 	else
 		this->file_bef_req = this->_req_URI;
-	if (this->file_bef_req.find(".") == std::string::npos && this->file_bef_req.back() != '/')
+	if (this->file_bef_req.find(".") == std::string::npos && this->file_bef_req.back() != '/' && this->type != PUT)
 		this->file_bef_req += '/';
 	this->location = this->_server.getRoutebyPath(this->file_bef_req); //si file_req = * me pasas la location del server entero
 	std::cout << this->location << std::endl;
 	std::cout << "File before getFileTransformed: " << this->file_bef_req << std::endl;
-	this->file_req = this->location.getFileTransformed(this->file_bef_req, this->_languages_accepted);
+	this->file_req = this->location.getFileTransformed(this->file_bef_req, this->_languages_accepted, this->type);
 	std::cout << "File after getFileTransformed: " << this->file_req << std::endl;
-	if (this->file_req.find(".") != std::string::npos)
-		this->file_type = this->file_req.substr(file_req.find(".") + 1, file_req.size());
-	else if (this->location.getAutoIndex())
-		this->is_autoindex = true;
-	else
-		this->status = 404;
-	for (int i = 1; i < (int)sheader.size(); i++)
-	{
-		this->save_header(sheader[i]);
-	}
-	if (atoi(this->_req_content_length.c_str()) > 0){
-		save_request_body();
-	}
-	if(this->_transf_encoding.find("chunked") != std::string::npos){
-		decode_chunked();
-	}
 	if (!this->is_autoindex && this->location.isCgi() && this->type != OPTIONS)
 	{
 		this->_isCGI = true;
+		std::cout << "extension =" << this->location.getExtension() << std::endl;
 		this->_path_info = this->file_req.substr(this->file_req.find(this->location.getExtension()) + 3);
 		this->_script_name = this->file_req.substr(0, this->file_req.find(this->location.getExtension()) + 3);
 		this->file_req = this->_script_name;
 		add_basic_env_vars();
 	}
+	std::cout << "File after CGI Transformation: " << this->file_req << std::endl;
+	if (this->file_req.find(".") != std::string::npos || this->type == PUT)
+		this->file_type = this->file_req.substr(file_req.find(".") + 1, file_req.size());
+	else if (this->location.getAutoIndex())
+		this->is_autoindex = true;
+	else
+		this->status = 404;
+	
 	set_status();
 }
 
@@ -146,7 +146,6 @@ void http::Request::add_basic_env_vars(void)
 	this->_env.push_back("SERVER_SOFTWARE=webserv/1.0");
 	this->_env.push_back("SERVER_PROTOCOL=HTTP/1.1");
 	this->_env.push_back("GATEWAY_INTERFACE=CGI/1.1");
-	this->_env.push_back("REDIRECT_STATUS=1");
 	this->_env.push_back("REQUEST_URI=" + this->_req_URI);
 	if (this->_req_content_type.size() > 0)
 		this->_env.push_back("CONTENT_TYPE=" + this->_req_content_type);
@@ -186,8 +185,14 @@ void http::Request::add_basic_env_vars(void)
 		this->_env.push_back("PATH_INFO=" + this->_path_info);
 		this->_env.push_back("PATH_TRANSLATED=http://" + this->_server.getServerName() + ":" + std::to_string(this->_server.getPort()) + this->_path_info);
 	}
+	else{
+		this->_env.push_back("PATH_INFO=");
+		this->_env.push_back("PATH_TRANSLATED=");
+	}
 	this->_env.push_back("SCRIPT_NAME=" + this->_script_name);
 	this->_env.push_back("SCRIPT_FILENAME=" + this->_script_name);
+	this->_env.push_back("REMOTE_ADDR=127.0.0.1");
+	this->_env.push_back("REMOTE_IDENT=local");
 
 	std::cout << "Added this env vars:" << std::endl;
 	for (int i = start; i < (int)this->_env.size(); i++)
@@ -328,6 +333,9 @@ char *http::Request::getResponse(int *size, std::map<std::string, std::string> m
 	stream << "\nDate: " << http::get_actual_date();
 	if (this->status != 204 && this->type != PUT)
 		stream << "\nContent-Length: " << this->resp_body.length();
+	else{
+		stream << "\nContent-Length: 0";
+	}
 	stream << "\nServer: Webserv/1.0\n\n";
 	if ((this->type != HEAD || this->status != 200) && this->status != 204 && this->type != PUT)
 		stream << this->resp_body;
@@ -627,17 +635,15 @@ void http::Request::get_languages_vector(void){
 	this->_languages_accepted = http::split(this->_language_header, ',');
 	for(int i = 0; i < (int)this->_languages_accepted.size(); i++){
 		int min = 0;
+		std::cout << "language antes de tratarlo: " << this->_languages_accepted[i] << std::endl;
 		if (this->_languages_accepted[i][0] == ' ')
 			min = 1;
 		if (this->_languages_accepted[i].find(';') != std::string::npos){
-			this->_languages_accepted[i] = this->_languages_accepted[i].substr(min, this->_languages_accepted[i].find(';') - 1);
+			this->_languages_accepted[i] = this->_languages_accepted[i].substr(min, this->_languages_accepted[i].find(';'));
 		}
-		else
-			if (this->_languages_accepted[i][this->_languages_accepted[i].length() - 1] == '\r')
-				this->_languages_accepted[i] = this->_languages_accepted[i].substr(min, this->_languages_accepted[i].length() - 1 - min);
-			else{
+		else{
 				this->_languages_accepted[i] = this->_languages_accepted[i].substr(min);
-			}
+		}
 		std::cout << "language: " << this->_languages_accepted[i] << std::endl;
 	}
 }

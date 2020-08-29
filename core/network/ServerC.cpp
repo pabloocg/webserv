@@ -1,9 +1,9 @@
 #include "ServerC.hpp"
 
 http::ServerC::ServerC(std::vector<http::ServerConf> servers, std::map<std::string, std::string> mime_types, char **env) : _client_socket(30, 0),
-																											   _log(DEFAULT_ACCESS_LOG, DEFAULT_ERROR_LOG),
-																											   _servers(servers),
-																											   _mime_types(mime_types)
+																														   _log(DEFAULT_ACCESS_LOG, DEFAULT_ERROR_LOG),
+																														   _servers(servers),
+																														   _mime_types(mime_types)
 {
 	this->_max_client = 30;
 	this->_server_socket.resize(this->_servers.size());
@@ -79,7 +79,6 @@ void http::ServerC::wait_for_connection()
 	for (int i = 0; i < (int)_server_socket.size(); i++)
 		if (_server_socket[i] > max_sd)
 			max_sd = _server_socket[i];
-	//max_sd = _server_socket[1];
 	for (int i = 0; i < _max_client; i++)
 		if (_client_socket[i] > max_sd)
 			max_sd = _client_socket[i];
@@ -228,15 +227,30 @@ void http::ServerC::wait_for_connection()
 }
 bool http::ServerC::valid_req_format(std::string buffer)
 {
-	std::cout << buffer << std::endl;
 	std::vector<std::string> splitted_req;
+	long long buf_len = buffer.length();
+	std::string headers;
 	int body_size = 0;
+	int end_headers;
 	bool chunked;
 	chunked = false;
+
+	for (int i = 0; i < buf_len; i++)
+	{
+		if (i == buf_len - 1)
+		{
+			return (false);
+		}
+		if (buffer[i] == '\n' && buffer[i + 2] == '\n')
+		{
+			splitted_req = http::split(buffer.substr(0, i), '\n');
+			end_headers = i;
+			break;
+		}
+	}
 	std::string chunked_str;
 	this->_host_header = "NULL";
 	this->_bad_request = false;
-	splitted_req = http::split(buffer, '\n');
 	if (splitted_req.size() < 2)
 	{
 		return (false);
@@ -247,11 +261,11 @@ bool http::ServerC::valid_req_format(std::string buffer)
 		{
 			body_size = std::atoi(splitted_req[i].substr(16, splitted_req[i].length() - 16).c_str());
 		}
-		if (splitted_req[i].find("Transfer-Encoding: chunked") != std::string::npos)
+		else if (splitted_req[i].find("Transfer-Encoding: chunked") != std::string::npos)
 		{
 			chunked = true;
 		}
-		if (splitted_req[i].find("Host:") != std::string::npos)
+		else if (splitted_req[i].find("Host:") != std::string::npos)
 		{
 			if (this->_host_header == "NULL")
 				this->_host_header = splitted_req[i].substr(6, splitted_req[i].length() - 7);
@@ -259,37 +273,32 @@ bool http::ServerC::valid_req_format(std::string buffer)
 				this->_bad_request = true;
 		}
 	}
-	for (int i = 0; i < (int)buffer.length(); i++)
+
+	if (chunked == true)
 	{
-		if (i == (int)buffer.length() - 1)
+		if (buffer[buf_len - 5] == '0' && buffer[buf_len - 2] == '\r')
 		{
-			return (false);
+			return (true);
 		}
-		if (buffer[i] == '\n' && buffer[i + 2] == '\n')
-		{
-			if (chunked == true){
-				std::cout << "las of 0:" << buffer.find_last_of('0') << " length:" << (int)buffer.length() << std::endl;
-				if (buffer.find_last_of('0') == buffer.length() - 5){
-					return (true);
-				}
-			}
-			if (chunked == false && (i + 3 + body_size == (int)buffer.length() || i + 3 + body_size == (int)buffer.length() - 2))
-			{
-				if (this->_host_header == "NULL")
-					this->_bad_request = true;
-				return (true);
-			}
-			break;
-		}
+	}
+	if (chunked == false && (end_headers + 3 + body_size == (int)buffer.length() || end_headers + 3 + body_size == (int)buffer.length() - 2))
+	{
+		if (this->_host_header == "NULL")
+			this->_bad_request = true;
+		return (true);
 	}
 	return (false);
 }
 
-http::ServerConf http::ServerC::get_server(void){
-	for(int i = 0; i < (int)this->_servers.size(); i++){
+http::ServerConf http::ServerC::get_server(void)
+{
+	for (int i = 0; i < (int)this->_servers.size(); i++)
+	{
 		std::vector<std::string> names = this->_servers[i].get_server_host_names();
-		for (int j = 0; j < (int)names.size(); j++){
-			if (this->_host_header == names[j]){
+		for (int j = 0; j < (int)names.size(); j++)
+		{
+			if (this->_host_header == names[j])
+			{
 				return (this->_servers[i]);
 			}
 		}
@@ -297,9 +306,12 @@ http::ServerConf http::ServerC::get_server(void){
 	return (get_default_server());
 }
 
-http::ServerConf http::ServerC::get_default_server(void){
-	for(int i = 0; i < (int)this->_servers.size(); i++){
-		if (this->_servers[i].isDefault()){
+http::ServerConf http::ServerC::get_default_server(void)
+{
+	for (int i = 0; i < (int)this->_servers.size(); i++)
+	{
+		if (this->_servers[i].isDefault())
+		{
 			return (this->_servers[i]);
 		}
 	}
