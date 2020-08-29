@@ -450,20 +450,22 @@ public:
     {
         return (this->_path_auth);
     };
-    std::string getFileTransformed(std::string path_requested, std::vector<std::string> languages)
+    std::string getFileTransformed(std::string path_requested, std::vector<std::string> languages, int type)
     {
 		std::string language_path = "";
+		bool language_setted = false;
 		if (this->_languages.size() > 0){
-			for (int i = 0; i < (int)languages.size(); i++){
-				for (int j = 0; j < (int)this->_languages.size(); j++){
-					std::cout << "compara " << this->_languages[j] << " con " << languages[i] << std::endl; 
+			for (int i = 0; i < (int)languages.size() && !language_setted; i++){
+				for (int j = 0; j < (int)this->_languages.size() && !language_setted; j++){
+					std::cout << "compara " << this->_languages[j] << this->_languages[j].length() << " con " << languages[i] << languages[i].length() << std::endl; 
 					if (this->_languages[j].find(languages[i]) != std::string::npos){
 						std::cout << "son los mismos" << std::endl;
-						language_path = languages[i] + "/";
+						language_path = this->_languages[j] + "/";
+						language_setted = true;
 					}
 				}
 			}
-			if (language_path.length() == 0){
+			if (!language_setted){
 				language_path = this->_languages[0];
 			}
 		}
@@ -475,26 +477,27 @@ public:
         }
         else
         {
-            path_requested.replace(0, this->getVirtualLocation().size() + language_path.size(), this->getDirPath() + language_path);
-            std::cout << "Change path prefix" << std::endl;
-            if (path_requested.find(".") == std::string::npos)
+            path_requested.replace(0, this->getVirtualLocation().size(), this->getDirPath() + language_path);
+			std::cout << "cambia por " << path_requested << std::endl;
+            if (path_requested.find(".") == std::string::npos && type != PUT)
             {
                 for (std::vector<std::string>::iterator it = this->_index_file.begin(); it != this->_index_file.end(); it++)
                 {
-                    //tmp = std::string(path_requested);
-                    std::cout << path_requested << "IT: "<< *it << std::endl;
+                    std::cout << path_requested << ", IT: "<< *it << std::endl;
                     if (it->front() == '/' && path_requested.back() == '/')
                         path_requested.erase(path_requested.begin());
                     else if (path_requested.back() != '/' && it->front() != '/')
                         path_requested += '/';
                     path_requested += *it;
-                    std::cout << path_requested << "IT: "<< *it << std::endl;
+                    std::cout << path_requested << ", IT: "<< *it << std::endl;
                     if (!http::file_exists(path_requested))
+						std::cout << "exists " << path_requested << std::endl;
                         break ;
+					path_requested = path_requested.substr(0, path_requested.length() - (*it).length());
                 }
             }
         }
-        if (path_requested.find(".") == std::string::npos && path_requested.back() != '/')
+        if (path_requested.find(".") == std::string::npos && path_requested.back() != '/' && type != PUT)
             path_requested += '/';
         return (path_requested);
     };
@@ -539,7 +542,7 @@ inline std::ostream &operator<<(std::ostream &out, http::Routes &route)
     out << "\tOPTIONS: " << ((route.MethodAllow("OPTIONS")) ? "on": "off") << std::endl;
     out << "\tTRACE: " << ((route.MethodAllow("TRACE")) ? "on": "off") << std::endl;
     out << "\tPATCH: " << ((route.MethodAllow("PATCH")) ? "on": "off") << std::endl;
-    out << "\PUT: " << ((route.MethodAllow("PUT")) ? "on": "off") << std::endl;
+    out << "\tPUT: " << ((route.MethodAllow("PUT")) ? "on": "off") << std::endl;
     return (out);
 };
 
