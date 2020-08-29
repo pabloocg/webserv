@@ -3,7 +3,7 @@
 
 # include <string>
 # include <iostream>
-
+# include "../utils/params.hpp"
 
 #define GET 0
 #define HEAD 1
@@ -43,6 +43,9 @@ private:
 
     //Virtual location of the directory
     std::string     _location;
+
+    // Limit client body size
+    unsigned int    _body_size;
 
     // Path of a existing directory
     std::string     _directory_path;
@@ -94,6 +97,7 @@ public:
         this->_optional_modifier = std::string("");
         this->_location = std::string("");
         this->_directory_path = std::string("");
+        this->_body_size = DEFAULT_BODY_SIZE_MEGABYTES;
         this->_httpMethods._CONNECT = false;
         this->_httpMethods._DELETE = false;
         this->_httpMethods._GET = false;
@@ -121,6 +125,7 @@ public:
         this->_extension = other._extension;
         this->_optional_modifier = other._optional_modifier;
         this->_location = other._location;
+        this->_body_size = other._body_size;
         this->_directory_path = other._directory_path;
         this->_httpMethods._CONNECT = other._httpMethods._CONNECT;
         this->_httpMethods._DELETE = other._httpMethods._DELETE;
@@ -151,6 +156,7 @@ public:
         this->_extension = other._extension;
         this->_optional_modifier = other._optional_modifier;
         this->_location = other._location;
+        this->_body_size = other._body_size;
         this->_directory_path = other._directory_path;
         this->_httpMethods._CONNECT = other._httpMethods._CONNECT;
         this->_httpMethods._DELETE = other._httpMethods._DELETE;
@@ -297,6 +303,21 @@ public:
     std::string &getCgiExec()
     {
         return (this->_cgi_exec);
+    };
+
+    void        setBodySize(unsigned int new_body_size)
+    {
+        this->_body_size = new_body_size;
+    };
+
+    unsigned int &getBodySize(void)
+    {
+        return (this->_body_size);
+    };
+
+    unsigned long long getBodySizeinBytes(void)
+    {
+        return (this->_body_size * 1000000);
     };
 
     void        setExtension(std::string ext)
@@ -450,24 +471,29 @@ public:
     {
         return (this->_path_auth);
     };
+
     std::string getFileTransformed(std::string path_requested, std::vector<std::string> languages, int type)
     {
 		std::string language_path = "";
 		bool language_setted = false;
-		if (this->_languages.size() > 0){
-			for (int i = 0; i < (int)languages.size() && !language_setted; i++){
-				for (int j = 0; j < (int)this->_languages.size() && !language_setted; j++){
-					std::cout << "compara " << this->_languages[j] << this->_languages[j].length() << " con " << languages[i] << languages[i].length() << std::endl; 
-					if (this->_languages[j].find(languages[i]) != std::string::npos){
-						std::cout << "son los mismos" << std::endl;
+
+		if (this->_languages.size() > 0)
+        {
+			for (int i = 0; i < (int)languages.size() && !language_setted; i++)
+            {
+				for (int j = 0; j < (int)this->_languages.size() && !language_setted; j++)
+                {
+					//std::cout << "compara " << this->_languages[j] << this->_languages[j].length() << " con " << languages[i] << languages[i].length() << std::endl; 
+					if (this->_languages[j].find(languages[i]) != std::string::npos)
+                    {
+						//std::cout << "son los mismos" << std::endl;
 						language_path = this->_languages[j] + "/";
 						language_setted = true;
 					}
 				}
 			}
-			if (!language_setted){
+			if (!language_setted)
 				language_path = this->_languages[0];
-			}
 		}
         if (!this->_is_prefix)
         {
@@ -477,8 +503,13 @@ public:
         }
         else
         {
-            path_requested.replace(0, this->getVirtualLocation().size(), this->getDirPath() + language_path);
-			std::cout << "cambia por " << path_requested << std::endl;
+            std::string tmp = this->getDirPath();
+            if (this->getVirtualLocation().back() == '/' && tmp.back() != '/')
+                tmp += "/";
+            path_requested.replace(0, this->getVirtualLocation().size(), tmp + language_path);
+			//std::cout << "cambia por " << path_requested << std::endl;
+            if (type == POST && !this->_is_cgi)
+                return (path_requested);
             if (path_requested.find(".") == std::string::npos && type != PUT)
             {
                 for (std::vector<std::string>::iterator it = this->_index_file.begin(); it != this->_index_file.end(); it++)
@@ -489,10 +520,12 @@ public:
                     else if (path_requested.back() != '/' && it->front() != '/')
                         path_requested += '/';
                     path_requested += *it;
-                    std::cout << path_requested << ", IT: "<< *it << std::endl;
+                    std::cout << path_requested << std::endl;
                     if (!http::file_exists(path_requested))
+                    {
 						std::cout << "exists " << path_requested << std::endl;
                         break ;
+                    }
 					path_requested = path_requested.substr(0, path_requested.length() - (*it).length());
                 }
             }

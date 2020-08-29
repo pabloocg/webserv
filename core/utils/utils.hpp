@@ -21,11 +21,35 @@
 
 namespace http
 {
+	inline bool is_dir(std::string file)
+	{
+		struct stat st;
+
+		stat(file.c_str(), &st);
+		return (S_ISDIR(st.st_mode));
+	}
+
 	inline int file_exists(std::string file)
 	{
 		struct stat st;
 
 		return (stat(file.c_str(), &st));
+	}
+
+	inline std::string file_content(std::string file)
+	{
+		std::string			buf;
+		std::ifstream		fd;
+		std::stringstream	stream;
+
+		fd.open(file);
+		if (fd.is_open())
+		{
+			while (std::getline(fd, buf))
+				stream << buf << "\n";
+			fd.close();
+		}
+		return (stream.str());
 	}
 
 	inline long int file_size(std::string file)

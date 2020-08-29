@@ -1,13 +1,9 @@
 Cosas por hacer:
 
-- max_body dentro de los Location
-- root y index dentro de server
-
 -Implementar timeout si una request se queda colgada (Creo que se hace en el select)
 -Implementar codigos de error de cliente (4XX)
     - 406 Not Acceptable. El recurso solicitado solo genera contenido no aceptado de acuerdo con los headers Accept enviados en el request.
     - 411 Length Required. El request no especificó la longitud del contenido, la cual es requerida por el recurso solicitado.
-    - 413 Request Entity Too Large. El request es más largo que el que está dispuesto a aceptar el servidor.
     - 429 Too Many Requests. Indica que el usuario ha enviado demasiadas solicitudes en un período de tiempo determinado.
 -Implementar codigos de error de servidor (50X)
     - 500 Internal Server Error. Error genérico, cuando se ha dado una condición no esperada y no se puede concretar el mensaje.
@@ -20,8 +16,6 @@ Cosas por hacer:
 
 Metodos HTTP:
 -Implementar PATCH hay que hacerlo??
--Implementar POST
-- Al hacer PUT que los archivos se guarden en un directorio especifico del uploads_path
 
 Implementar Headers:
 

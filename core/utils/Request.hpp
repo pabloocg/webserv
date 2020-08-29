@@ -16,38 +16,34 @@
 # include <string>
 # include <algorithm>
 # include <map>
-#include <fcntl.h>
+# include <fcntl.h>
 # include "../config/ServerConf.hpp"
-#define STDIN 0
-#define STDOUT 1
-#define STDERR 2
+# define STDIN 0
+# define STDOUT 1
+# define STDERR 2
 
-#define SIDE_OUT 0
-#define SIDE_IN 1
+# define SIDE_OUT 0
+# define SIDE_IN 1
 
 namespace http
 {
-	class Request
-	{
-	private:
-	bool	is_autoindex;
+class Request
+{
+private:
 	//Request variables
-	int type;
-	std::string file_req;
-	std::string file_bef_req;
-	std::string file_type;
-	std::string request;
-	std::string http_version;
-	std::string _auth;
-	std::string _realm;
-	std::string _auth_file_path;
-	http::Routes location;
-	http::ServerConf	_server;
-	bool	_www_auth_required;
-	std::map<int,std::string>	_error_mgs;
-	std::vector<std::string> _allow;
-	std::string				_client_info;
-	std::vector<std::string> _env;
+	bool						_is_autoindex;
+	bool						_www_auth_required;
+	bool						_isCGI;
+	int							_type;
+	std::string					_file_req;
+	std::string					_file_bef_req;
+	std::string					_file_type;
+	std::string					_request;
+	std::string					_http_version;
+	std::string					_auth;
+	std::string					_realm;
+	std::string					_auth_file_path;
+	std::string					_client_info;
 	std::string					_req_content_type;
 	std::string					_req_content_length;
 	std::string					_req_URI;
@@ -58,32 +54,41 @@ namespace http
 	std::string					_request_body;
 	std::string					_CGI_response;
 	std::string					_language_header;
+	http::Routes				_location;
+	http::ServerConf			_server;
+	std::map<int, std::string>	_error_mgs;
+	std::vector<std::string>	_allow;
+	std::vector<std::string>	_env;
 	std::vector<std::string>	_CGI_headers;
 	std::vector<std::string>	_languages_accepted;
-	bool						_isCGI;
 
 	//Response variables
-	int status;
-	std::string message_status;
-	std::string resp_body;
+	int			_status;
+	std::string _message_status;
+	std::string _resp_body;
 
-	void	build_get(void);
-	void	build_post(void);
-	void	build_put(void);
-	void	build_delete(void);
-	void	build_options(void);
-	char	*getResponse(int *size, std::map<std::string, std::string> mime_types);
-	std::string get_content_type(std::string file_type, std::map<std::string, std::string> mime_types);
-	bool needs_auth(http::Routes  routes);
-	bool validate_password(std::string auth);
-	void set_status(void);
-	void get_allowed_methods(void);
-	void add_basic_env_vars(void);
-	void startCGI(void);
-	void save_request_body(void);
-	void decode_CGI_response(void);
-	void decode_chunked(void);
-	void get_languages_vector(void);
+	// HTTP Methods
+	void		build_get(void);
+	void		build_put(void);
+	void		build_post(void);
+	void		build_delete(void);
+	void		build_options(void);
+
+	void		startCGI(void);
+	void		set_status(void);
+	void		decode_chunked(void);
+	void		save_request(void);
+	void		save_header(std::string header);
+	void		save_request_body(void);
+	void		add_basic_env_vars(void);
+	void		get_allowed_methods(void);
+	void		decode_CGI_response(void);
+	void		get_languages_vector(void);
+	bool		needs_auth(http::Routes routes);
+	bool		validate_password(std::string auth);
+	char		*getResponse(int *size, std::map<std::string, std::string> mime_types);
+	std::string	build_autoindex(void);
+	std::string	get_content_type(std::string file_type, std::map<std::string, std::string> mime_types);
 	std::map<int, std::string> create_map()
 	{
 		std::map<int, std::string> m;
@@ -97,15 +102,16 @@ namespace http
 		m[403] = "Forbidden";
 		m[404] = "Not Found";
 		m[405] = "Not Allowed";
+		m[413] = "Payload Too Large";
 		return (m);
 	};
 
-	public:
-		Request(std::string req, http::ServerConf server, bool bad_request, std::vector<std::string> env);
+public:
 
-		char *build_response(int *size, std::map<std::string, std::string> mime_types);
-		void save_header(std::string header);
-	};
+	Request(std::string req, http::ServerConf server, bool bad_request, std::vector<std::string> env);
+
+	char		*build_response(int *size, std::map<std::string, std::string> mime_types);
+};
 } // namespace http
 
 #endif

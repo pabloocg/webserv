@@ -37,7 +37,7 @@ private:
     void            parse_server_conf(std::string s);
 	void            parse_types(std::string s);
     http::Routes    save_location(std::string s, std::string opt, std::string vpath);
-    http::Routes    check_inheritance(http::Routes &locat, std::vector<http::Routes> all_routes);
+    http::Routes    check_inheritance(http::Routes &locat, std::vector<http::Routes> all_routes, int i_server);
 
     class UnclosedBracket: public std::exception {
         virtual const char* what() const throw();

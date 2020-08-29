@@ -36,6 +36,11 @@ private:
     // Limit client body size
     unsigned int    _body_size;
 
+    std::string                 _root;
+
+    // Default file to answer if the request is a directory
+    std::vector<std::string>     _index_file;
+
     SA_IN           _address;
 
     // Define a directory to the specific route. the route / is mandatory.
@@ -64,7 +69,9 @@ public:
         this->_err_pages[405] = DEFAULT_ERROR_PAGE_405;
         this->_err_pages[500] = DEFAULT_ERROR_PAGE_50X;
         this->_is_auth = false;
+        this->_default_server = false;
         this->_auth_message = std::string("");
+        this->_root = std::string("");
         this->_path_auth = std::string("");
         this->_address.sin_family = AF_INET;
         this->_address.sin_addr.s_addr = inet_addr(this->_server_addr.c_str());
@@ -101,17 +108,38 @@ public:
         return (this->_server_addr);
     };
 
-	void		setDefaultServer(bool b){
-		this->_default_server = b;
+	void		setDefaultServer()
+    {
+		this->_default_server = true;
 	}
 
-	bool		isDefault(void){
+	bool		isDefault(void)
+    {
 		return (this->_default_server);
 	}
 
+    void        setRootDir(std::string dir_path)
+    {
+        this->_root = dir_path;
+    };
+
+    std::string &getRootDir()
+    {
+        return (this->_root);
+    };
+
+    void        addIndexFile(std::string index_file)
+    {
+        this->_index_file.push_back(index_file);
+    };
+
+    std::vector<std::string> getIndexFile()
+    {
+        return (this->_index_file);
+    };
+
     void        setServerName(std::string new_servername)
     {
-        //std::cout << "New server name -> " << new_servername << std::endl;
         this->_server_name = new_servername;
     };
 
@@ -122,13 +150,17 @@ public:
 
     void        setBodySize(unsigned int new_body_size)
     {
-        //std::cout << "New server bodysize -> " << new_body_size << std::endl;
         this->_body_size = new_body_size;
     };
 
     unsigned int &getBodySize(void)
     {
         return (this->_body_size);
+    };
+
+    unsigned long long getBodySizeinBytes(void)
+    {
+        return (this->_body_size * 1000000);
     };
 
     void        setErrorPage(std::vector<int> codes, std::string file)
@@ -195,94 +227,96 @@ public:
         return (this->_path_auth);
     };
 
-	std::vector<std::string> get_server_host_names(){
+	std::vector<std::string> get_server_host_names()
+    {
 		std::vector<std::string> host_names;
-		if (this->getPort() == 80 && this->getServerName() == "localhost"){
+
+		if (this->getPort() == 80 && this->getServerName() == "localhost")
 			host_names.push_back("localhost");
-		}
 		host_names.push_back(this->getServerName() + ":" + std::to_string(this->getPort()));
 		host_names.push_back(this->getServerAddr() + ":" + std::to_string(this->getPort()));
 		host_names.push_back("localhost:" + std::to_string(this->getPort()));
 		return (host_names);
 	}
 
-    http::Routes    &getRoutebyPath(std::string  &search_path)
+    http::Routes    getRoutebyPath(std::string  &search_path)
     {
         std::vector<http::Routes>::iterator it = this->_routes.begin();
         std::vector<http::Routes>::iterator itend = this->_routes.end();
-        std::vector<http::Routes>::iterator father_location;
-        std::string ext = std::string("");
+        http::Routes                        father_location;
+        std::string                         ext = std::string("");
+        std::string                         path;
+        size_t                              len = 0;
+        size_t                              max_len = 0;
+
         if (search_path.find(".") != std::string::npos)
             ext = search_path.substr(search_path.find(".") + 1);
-        size_t  len = 0;
-        size_t  max_len = 0;
-        std::string path;
         for (; it != itend; it++)
         {
             path = it->getVirtualLocation();
             len = path.length();
             if (path == search_path)
             {
-                father_location = it;
+                father_location = *it;
                 max_len = len;
                 break ;
             }
             else if (ext != "" && !it->isPrefix() && it->getExtension() == ext)
             {
-                std::cout << "sufix in" << std::endl;
-                father_location = it;
-                max_len = len;
-                size_t  len2 = 0;
-                size_t  max_len2 = 0;
                 std::vector<http::Routes>::iterator itl = this->_routes.begin();
                 std::vector<http::Routes>::iterator itlend = this->_routes.end();
-                std::vector<http::Routes>::iterator father_location2;
+                http::Routes                        father_location2;
+                size_t                              len2 = 0;
+                size_t                              max_len2 = 0;
+                //std::cout << "sufix in" << std::endl;
+                father_location = *it;
+                max_len = len;
                 for (; itl != itlend; itl++)
                 {
                     path = itl->getVirtualLocation();
-                    std::cout << "search path: " << search_path << " route path: " << path << std::endl;
                     len2 = path.length();
+                    //std::cout << "search path: " << search_path << " route path: " << path << std::endl;
                     if (search_path.compare(0, len2, path) == 0)
                     {
-                        std::cout << "IN" << std::endl;
+                        //std::cout << "IN" << std::endl;
                         if (!max_len2)
                         {
                             max_len2 = len2;
-                            father_location2 = itl;
+                            father_location2 = *itl;
                         }
                         else if (len2 > max_len2)
                         {
                             max_len2 = len2;
-                            father_location2 = itl;
+                            father_location2 = *itl;
                         }
                     }
                 }
-                std::cout << "sufix out" << std::endl;
+                //std::cout << "sufix out" << std::endl;
                 if (max_len2)
                 {
-                    father_location2->setCgiExec(father_location->getCgiExec());
-					father_location2->setExtension(father_location->getExtension());
-                    return (*father_location2);
+                    father_location2.setCgiExec(father_location.getCgiExec());
+					father_location2.setExtension(father_location.getExtension());
+                    return (father_location2);
                 }
                 else
-                    return (*father_location);
+                    return (father_location);
             }
             else if (search_path.compare(0, len, path) == 0)
             {
                 if (!max_len)
                 {
                     max_len = len;
-                    father_location = it;
+                    father_location = *it;
                 }
                 else if (len > max_len)
                 {
                     max_len = len;
-                    father_location = it;
+                    father_location = *it;
                 }
             }
         }
         if (max_len)
-            return (*father_location);
+            return (father_location);
         else
             return (*itend);
     };
@@ -292,18 +326,28 @@ public:
 
 inline std::ostream &operator<<(std::ostream &out, http::ServerConf &server)
 {
+    std::vector<std::string>::iterator it;
+    std::vector<std::string>::iterator  itend;
+
     out << "\nServer Port: " << server.getPort() << std::endl;
     out << "Server Name: " << server.getServerName() << std::endl;
     out << "Server Address: " << server.getServerAddr() << std::endl;
     out << "Server BodySize: " << server.getBodySize() << std::endl;
+    out << "Location Root: " << server.getRootDir() << std::endl;
+    out << "Location indexFile: ";
+    it = server.getIndexFile().begin();
+    itend = server.getIndexFile().end();
+    for (; it != itend; it++)
+        out << *it << " ";
+    out << std::endl;
     out << "Location authentication: " << ((server.needAuth()) ? "on" : "off") << std::endl;
     out << "Location AuthMessage: " << server.getAuthMessage() << std::endl;
     out << "Location Password Auth File: " << server.getPassAuthFile() << std::endl;
     out << "Error Pages: " << std::endl;
-    std::map<int, std::string>::iterator it = server.getErrorPages().begin();
-    std::map<int, std::string>::iterator itend = server.getErrorPages().end();
-    for (; it != itend; it++)
-        out << "\t" << it->first << " -> " << it->second << std::endl;
+    std::map<int, std::string>::iterator itl = server.getErrorPages().begin();
+    std::map<int, std::string>::iterator itlend = server.getErrorPages().end();
+    for (; itl != itlend; itl++)
+        out << "\t" << itl->first << " -> " << itl->second << std::endl;
     return (out);
 };
 

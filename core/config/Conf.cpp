@@ -25,8 +25,8 @@ http::Conf::Conf(const std::string &conf_file) : _filename(conf_file),
         for (std::vector<http::Routes>::iterator itr = routes.begin(); itr != routes.end(); itr++)
         {
             http::Routes    mm;
-            mm = this->check_inheritance(*itr, routes);
-            std::cout << mm << std::endl;
+            mm = this->check_inheritance(*itr, routes, i);
+            //std::cout << mm << std::endl;
             tmp.push_back(mm);
         }
         this->_servers[i].set_routes(tmp);
@@ -184,7 +184,7 @@ void http::Conf::parse_server_conf(std::string s)
         buf.clear();
         buf.str("");
         if (tmp == "listen" or tmp == "server_addr" or tmp == "server_name" or
-            tmp == "client_max_body_size" or tmp == "auth_basic_user_file")
+            tmp == "client_max_body_size" or tmp == "auth_basic_user_file" or tmp == "root")
         {
             while (std::isspace(s[i]))
                 i++;
@@ -202,15 +202,13 @@ void http::Conf::parse_server_conf(std::string s)
                 {
                     std::cerr << e.what() << '\n';
                 }
-              if (buf.str().find("default_server") != std::string::npos){
-                new_server.setDefaultServer(true);
-              }
-              else{
-                new_server.setDefaultServer(false);
-              }
+                if (buf.str().find("default_server") != std::string::npos)
+                    new_server.setDefaultServer();
             }
             else if (tmp == "server_addr")
                 new_server.setServerAddr(buf.str());
+            else if (tmp == "root")
+                new_server.setRootDir(buf.str());
             else if (tmp == "server_name")
                 new_server.setServerName(buf.str());
             else if (tmp == "client_max_body_size")
@@ -298,6 +296,25 @@ void http::Conf::parse_server_conf(std::string s)
                 throw http::Conf::ErrorInConf();
             new_server.setErrorPage(codes, buf.str());
         }
+        else if (tmp == "index")
+        {
+            std::string s_cmp;
+
+            while (i < s.length() && s[i] != ';')
+            {
+                while (std::isspace(s[i]) && i < s.length())
+                    i++;
+                while (!std::isspace(s[i]) && i < s.length() && s[i] != ';')
+                    buf << s[i++];
+                s_cmp = buf.str();
+                if (tmp == "index" && s_cmp.substr(s_cmp.find(".") + 1).length() > 13)
+                    throw http::Conf::UnrecognizedParameter();
+                if (tmp == "index")
+                    new_server.addIndexFile(s_cmp);
+                buf.clear();
+                buf.str("");
+            }
+        }
         else
             throw Conf::UnrecognizedParameter();
         buf.clear();
@@ -345,7 +362,7 @@ http::Routes http::Conf::save_location(std::string s, std::string opt, std::stri
         buf.clear();
         buf.str("");
         if (tmp == "root" or tmp == "autoindex" or tmp == "upload" or tmp == "path_upload"
-            or tmp == "auth_basic_user_file" or tmp == "cgi_exec")
+            or tmp == "auth_basic_user_file" or tmp == "cgi_exec" or tmp == "client_max_body_size")
         {
             while (std::isspace(s[i]))
                 i++;
@@ -374,6 +391,17 @@ http::Routes http::Conf::save_location(std::string s, std::string opt, std::stri
                     route.allowAutoIndex();
                 else if (tmp == "upload" && buf.str() == "on")
                     route.allowUpload();
+            }
+            else if (tmp == "client_max_body_size")
+            {
+                try
+                {
+                    route.setBodySize(std::atoi(buf.str().c_str()));
+                }
+                catch(const std::exception& e)
+                {
+                    std::cerr << e.what() << '\n';
+                }
             }
         }
         else if (tmp == "auth_basic")
@@ -449,12 +477,13 @@ http::Routes http::Conf::save_location(std::string s, std::string opt, std::stri
     return (route);
 }
 
-http::Routes http::Conf::check_inheritance(http::Routes &new_route, std::vector<http::Routes> all_routes)
+http::Routes http::Conf::check_inheritance(http::Routes &new_route, std::vector<http::Routes> all_routes, int i_server)
 {
     std::vector<http::Routes>::iterator father_location;
-    size_t len = 0;
-    size_t max_len = 0;
-    std::string path;
+    size_t                              len = 0;
+    size_t                              max_len = 0;
+    std::string                         path;
+
     for (std::vector<http::Routes>::iterator it = all_routes.begin(); it != all_routes.end(); it++)
     {
         path = it->getVirtualLocation();
@@ -485,6 +514,8 @@ http::Routes http::Conf::check_inheritance(http::Routes &new_route, std::vector<
             new_route.setPassAuthFile(father_location->getPassAuthFile());
         }
     }
+    if (new_route.getDirPath() == "" && this->_servers[i_server].getRootDir() != "")
+        new_route.setDirPath(this->_servers[i_server].getRootDir());
     return (new_route);
 }
 

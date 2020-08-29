@@ -8,8 +8,7 @@ http::ServerC::ServerC(std::vector<http::ServerConf> servers, std::map<std::stri
 	this->_max_client = 30;
 	this->_server_socket.resize(this->_servers.size());
 	this->_env = http::charptrptrToVector(env);
-	for (
-		struct {std::vector<http::ServerConf>::iterator it; int i; } v = {this->_servers.begin(), 0}; v.it != this->_servers.end(); v.it++, v.i++)
+	for (struct {std::vector<http::ServerConf>::iterator it; int i; } v = {this->_servers.begin(), 0}; v.it != this->_servers.end(); v.it++, v.i++)
 	{
 		std::cout << "SERVER " << v.i << std::endl;
 		std::cout << *v.it << std::endl;
@@ -70,6 +69,10 @@ void http::ServerC::wait_for_connection()
 	fd_set readfds;
 	fd_set writefds;
 	SA_IN address;
+	timeval	tm;
+
+	tm.tv_sec = 1;
+	tm.tv_usec = 0;
 
 	max_sd = 0;
 	FD_ZERO(&readfds);
@@ -83,7 +86,7 @@ void http::ServerC::wait_for_connection()
 		if (_client_socket[i] > max_sd)
 			max_sd = _client_socket[i];
 	std::cout << "Waiting for select" << std::endl;
-	activity = select(max_sd + 1, &readfds, &writefds, NULL, NULL);
+	activity = select(max_sd + 1, &readfds, &writefds, NULL, &tm);
 	if (activity > 0)
 		std::cout << "Number of reads/writes possible " << activity << std::endl;
 	if ((activity < 0) && (errno != EINTR))
