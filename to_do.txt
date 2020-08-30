@@ -11,7 +11,6 @@ Cosas por hacer:
     - 503 Service Unavailable. El servidor está actualmente no disponible, ya sea por mantenimiento o por sobrecarga.
         (Por ejemplo cuando todos los fd de un server esten llenos)
     *- 504 Gateway Timeout. El servidor estaba actuando como puerta de entrada o proxy y no recibió una respuesta oportuna por parte del servidor upstream.
-    - 505 HTTP Version Not Supported. El servidor no soporta la versión del protocolo HTTP usada en el request.
 *No se si esos habrá que hacerlos ya que parece que es solo para proxys
 
 Metodos HTTP:

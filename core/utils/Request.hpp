@@ -103,6 +103,7 @@ private:
 		m[404] = "Not Found";
 		m[405] = "Not Allowed";
 		m[413] = "Payload Too Large";
+		m[505] = "HTTP Version Not Supported";
 		return (m);
 	};
 

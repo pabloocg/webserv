@@ -67,7 +67,9 @@ public:
         this->_err_pages[403] = DEFAULT_ERROR_PAGE_403;
         this->_err_pages[404] = DEFAULT_ERROR_PAGE_404;
         this->_err_pages[405] = DEFAULT_ERROR_PAGE_405;
+        this->_err_pages[413] = DEFAULT_ERROR_PAGE_413;
         this->_err_pages[500] = DEFAULT_ERROR_PAGE_50X;
+        this->_err_pages[505] = DEFAULT_ERROR_PAGE_505;
         this->_is_auth = false;
         this->_default_server = false;
         this->_auth_message = std::string("");

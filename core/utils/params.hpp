@@ -13,6 +13,8 @@
 #define DEFAULT_ERROR_PAGE_403 "error_pages/403.html"
 #define DEFAULT_ERROR_PAGE_404 "error_pages/404.html"
 #define DEFAULT_ERROR_PAGE_405 "error_pages/405.html"
+#define DEFAULT_ERROR_PAGE_413 "error_pages/413.html"
+#define DEFAULT_ERROR_PAGE_505 "error_pages/505.html"
 #define DEFAULT_ERROR_PAGE_50X "error_pages/50x.html"
 #define DEFAULT_ERROR_LOG "tmp/logs/error.log"
 #define DEFAULT_ACCESS_LOG "tmp/logs/access.log"

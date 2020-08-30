@@ -33,8 +33,6 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 		this->_file_type = this->_file_req.substr(_file_req.find(".") + 1, _file_req.size());
 	else if (this->_location.getAutoIndex())
 		this->_is_autoindex = true;
-	else if (!this->_status)
-		this->_status = 404;
 	set_status();
 }
 
@@ -130,6 +128,8 @@ void http::Request::set_status(void)
 {
 	int code = 0;
 
+	if (!this->_http_version.compare("HTTP/1.1"))
+		this->_status = 505;
 	if (!this->_status && this->_location.MethodAllow(this->_type))
 	{
 		if (needs_auth(this->_location))
@@ -144,7 +144,7 @@ void http::Request::set_status(void)
 		}
 		if (this->_request_body.size() > this->_location.getBodySizeinBytes() && !code)
 			code = 413;
-		else if (!http::file_exists(this->_file_req))
+		else if (!http::file_exists(this->_file_req) && !http::is_dir(this->_file_req))
 		{
 			if (!code)
 			{
@@ -156,6 +156,8 @@ void http::Request::set_status(void)
 		}
 		else if (http::file_exists(this->_file_req) && (this->_type == PUT or (this->_type == POST && !this->_isCGI)) && !code)
 			code = 201;
+		//else if (http::is_dir(this->_file_req))
+		//	code = 403;
 		else
 		{
 			code = 404;
@@ -169,9 +171,6 @@ void http::Request::set_status(void)
 	}
 	if (!this->_status)
 		this->_status = code;
-	//if (this->_status >= 400)
-	//	code = this->_status;
-	//this->_status = code;
 	this->_message_status = this->_error_mgs[this->_status];
 	if (this->_status >= 400)
 	{
@@ -190,6 +189,7 @@ void http::Request::add_basic_env_vars(void)
 	this->_env.push_back("SERVER_SOFTWARE=webserv/1.0");
 	this->_env.push_back("SERVER_PROTOCOL=HTTP/1.1");
 	this->_env.push_back("GATEWAY_INTERFACE=CGI/1.1");
+	//this->_env.push_back("REDIRECT_STATUS=200");
 	this->_env.push_back("REQUEST_URI=" + this->_req_URI);
 	if (this->_req_content_type.size() > 0)
 		this->_env.push_back("CONTENT_TYPE=" + this->_req_content_type);
@@ -310,15 +310,13 @@ char *http::Request::getResponse(int *size, std::map<std::string, std::string> m
 		stream << "\nWWW-Authenticate: Basic realm=\"" << this->_realm << "\"";
 	if (this->_isCGI)
 		for (int i = 0; i < (int)this->_CGI_headers.size(); i++)
-			stream << "\n"
-				   << this->_CGI_headers[i];
+			stream << "\n" << this->_CGI_headers[i];
 	stream << "\nDate: " << http::get_actual_date();
+	stream << "\nContent-Location: " << this->_file_bef_req;
 	if (this->_status != 204 && this->_type != PUT)
 		stream << "\nContent-Length: " << this->_resp_body.length();
 	else
-	{
 		stream << "\nContent-Length: 0";
-	}
 	stream << "\nServer: Webserv/1.0\n\n";
 	if ((this->_type != HEAD || this->_status != 200) && this->_status != 204 && this->_type != PUT)
 		stream << this->_resp_body;
