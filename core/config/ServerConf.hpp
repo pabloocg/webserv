@@ -241,6 +241,19 @@ public:
 		return (host_names);
 	}
 
+    bool            validLocation(http::Routes new_route)
+    {
+        std::vector<http::Routes>::iterator it = this->_routes.begin();
+        std::vector<http::Routes>::iterator itend = this->_routes.end();
+
+        for (; it != itend; it++)
+        {
+            if (new_route.getVirtualLocation() == it->getVirtualLocation())
+                return (false);
+        }
+        return (true);
+    }
+
     http::Routes    getRoutebyPath(std::string  &search_path)
     {
         std::vector<http::Routes>::iterator it = this->_routes.begin();

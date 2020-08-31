@@ -39,26 +39,6 @@ private:
     http::Routes    save_location(std::string s, std::string opt, std::string vpath);
     http::Routes    check_inheritance(http::Routes &locat, std::vector<http::Routes> all_routes, int i_server);
 
-    class UnclosedBracket: public std::exception {
-        virtual const char* what() const throw();
-    };
-
-    class UnrecognizedParameter: public std::exception {
-        virtual const char* what() const throw();
-    };
-
-    class SemicolonMissing: public std::exception {
-        virtual const char* what() const throw();
-    };
-
-    class ConfFileNotExists: public std::exception {
-        virtual const char* what() const throw();
-    };
-
-    class ErrorInConf: public std::exception {
-        virtual const char* what() const throw();
-    };
-
 public:
 
     Conf(const std::string &conf_file);
@@ -66,6 +46,18 @@ public:
 
     std::vector<http::ServerConf>       getServers(void);
 	std::map<std::string, std::string>  get_mime_types(void);
+    class		ConfError: public std::exception
+	{
+		private:
+			std::string		_error;
+
+		public:
+			ConfError(void);
+            ConfError(std::string error);
+			ConfError(std::string function, std::string error);
+			virtual				~ConfError(void) throw() {};
+			virtual const char	*what(void) const throw();
+	};
 
 };
 

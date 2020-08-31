@@ -16,19 +16,14 @@ http::Conf::Conf(const std::string &conf_file) : _filename(conf_file),
                                                  _log(DEFAULT_ACCESS_LOG, DEFAULT_ERROR_LOG)
 {
     if (!file_exists())
-        throw http::Conf::ConfFileNotExists();
+        throw ConfError("The configuration file entered does not exist");
     complex_parse(simple_parse());
     for (size_t i = 0; i < this->_servers.size(); i++)
     {
         std::vector<http::Routes>   routes(this->_servers[i].getRoutes());
         std::vector<http::Routes>   tmp;
         for (std::vector<http::Routes>::iterator itr = routes.begin(); itr != routes.end(); itr++)
-        {
-            http::Routes    mm;
-            mm = this->check_inheritance(*itr, routes, i);
-            //std::cout << mm << std::endl;
-            tmp.push_back(mm);
-        }
+            tmp.push_back(this->check_inheritance(*itr, routes, i));
         this->_servers[i].set_routes(tmp);
     }
 }
@@ -85,14 +80,14 @@ void            http::Conf::complex_parse(std::string s)
     std::stringstream   buf;
 
     if (std::count(s.begin(), s.end(), '{') != std::count(s.begin(), s.end(), '}'))
-        throw Conf::UnclosedBracket();
+        throw ConfError("Unclosed Bracket");
     if (s.compare(0, 4, "http"))
-        throw Conf::UnrecognizedParameter();
+        throw ConfError("http directive not found");
     i = 4;
     while (std::isspace(s[i]))
         i++;
     if (!(s[i] == '{'))
-        throw Conf::UnrecognizedParameter();
+        throw ConfError(std::string(1, s[i]), "Open Bracket Missing");
     string_p = s.substr(i + 1, s.find_last_of("}") - (i + 1));
     while (!string_p.empty())
     {
@@ -107,7 +102,7 @@ void            http::Conf::complex_parse(std::string s)
         if (tmp == "server" || tmp == "types")
         {
             if (!(string_p[i] == '{'))
-                throw Conf::UnrecognizedParameter();
+                throw ConfError(std::string(1, s[i]), "Open Bracket Missing");
             bclose = get_BracketClose(string_p);
             if (tmp == "server")
                 this->parse_server_conf(string_p.substr(i + 1, bclose - (i + 1)));
@@ -122,17 +117,17 @@ void            http::Conf::complex_parse(std::string s)
                 aux++;
             this->_filename = string_p.substr(i, aux);
             if (!file_exists())
-                throw http::Conf::ErrorInConf();
+                throw ConfError("File " + this->_filename + " don't exists");
             i += aux;
             while (std::isspace(string_p[i]))
                 i++;
             if (!(string_p[i] == ';'))
-                throw Conf::SemicolonMissing();
+                throw ConfError(std::string(1, string_p[i]), "Semicolon missing");
             string_p = string_p.substr(i + 1);
             string_p = simple_parse() + string_p;
         }
         else
-            throw Conf::UnrecognizedParameter();
+            throw ConfError(tmp, "Unrecognized parameter");
         buf.clear();
         buf.str("");
     }
@@ -191,17 +186,13 @@ void http::Conf::parse_server_conf(std::string s)
             while (!std::isspace(s[i]) && s[i] != ';')
                 buf << s[i++];
             if (buf.str().length() < 1)
-                throw Conf::UnrecognizedParameter();
+                throw ConfError(tmp, "Unrecognized parameter");
             if (tmp == "listen")
             {
-                try
-                {
-                    new_server.setPort(std::atoi(buf.str().c_str()));
-                }
-                catch(const std::exception& e)
-                {
-                    std::cerr << e.what() << '\n';
-                }
+                for (size_t i = 0; i < buf.str().length(); i++)
+                    if (!std::isdigit(buf.str()[i]))
+                        throw ConfError(tmp, "must be a number port valid");
+                new_server.setPort(std::atoi(buf.str().c_str()));
                 if (buf.str().find("default_server") != std::string::npos)
                     new_server.setDefaultServer();
             }
@@ -213,19 +204,15 @@ void http::Conf::parse_server_conf(std::string s)
                 new_server.setServerName(buf.str());
             else if (tmp == "client_max_body_size")
             {
-                try
-                {
-                    new_server.setBodySize(std::atoi(buf.str().c_str()));
-                }
-                catch(const std::exception& e)
-                {
-                    std::cerr << e.what() << '\n';
-                }
+                for (size_t i = 0; i < buf.str().length(); i++)
+                    if (!std::isdigit(buf.str()[i]))
+                        throw ConfError(tmp, "must be a number");
+                new_server.setBodySize(std::atoi(buf.str().c_str()));
             }
             else if (tmp == "auth_basic_user_file")
             {
                 if (http::file_exists(buf.str()))
-                    throw http::Conf::ErrorInConf();
+                    throw ConfError(buf.str(), "The include file entered doesn't exist");
                 new_server.setPassAuthFile(buf.str());
             }
         }
@@ -236,13 +223,14 @@ void http::Conf::parse_server_conf(std::string s)
             while (s[i] != ';')
                 buf << s[i++];
             if (buf.str().length() < 1)
-                throw Conf::UnrecognizedParameter();
+                throw ConfError(tmp, "Unrecognized parameter");
             new_server.setAuthMessage(buf.str());
         }
         else if (tmp == "location")
         {
             std::stringstream   mod_opt;
             std::stringstream   vpath;
+            http::Routes        new_route;
 
             while (std::isspace(s[i]))
                 i++;
@@ -255,9 +243,13 @@ void http::Conf::parse_server_conf(std::string s)
             while (std::isspace(s[i]))
                 i++;
             if (mod_opt.str().length() < 1 || !(s[i] == '{'))
-                throw Conf::UnrecognizedParameter();
+                throw ConfError(std::string(1, s[i]), "Open Bracket Missing");
             count = get_BracketClose(s.substr(i++));
-            new_server.add_route(this->save_location(s.substr(i, count - 1), mod_opt.str(), vpath.str()));
+            new_route = this->save_location(s.substr(i, count - 1), mod_opt.str(), vpath.str());
+            if (new_server.validLocation(new_route))
+                new_server.add_route(new_route);
+            else
+                throw ConfError(new_route.getVirtualLocation(), "Location cannot be repeated");
             i += count;
             continue ;
         }
@@ -276,24 +268,17 @@ void http::Conf::parse_server_conf(std::string s)
                     least = true;
                     while (std::isdigit(s[i]))
                         buf << s[i++];
-                    try
-                    {
-                        codes.push_back(atoi(buf.str().c_str()));
-                    }
-                    catch(const std::exception& e)
-                    {
-                        std::cerr << e.what() << '\n';
-                    }
+                    codes.push_back(atoi(buf.str().c_str()));
                 }
                 else
-                    is_code = false;;
+                    is_code = false;
                 buf.clear();
                 buf.str("");
             }
             while (!std::isspace(s[i]) && s[i] != ';')
                 buf << s[i++];
             if (!least || http::file_exists(buf.str()))
-                throw http::Conf::ErrorInConf();
+                throw ConfError(buf.str(), "The error page file entered doesn't exist");
             new_server.setErrorPage(codes, buf.str());
         }
         else if (tmp == "index")
@@ -308,7 +293,7 @@ void http::Conf::parse_server_conf(std::string s)
                     buf << s[i++];
                 s_cmp = buf.str();
                 if (tmp == "index" && s_cmp.substr(s_cmp.find(".") + 1).length() > 13)
-                    throw http::Conf::UnrecognizedParameter();
+                    throw ConfError(s_cmp, "Unrecognized parameter");
                 if (tmp == "index")
                     new_server.addIndexFile(s_cmp);
                 buf.clear();
@@ -316,7 +301,7 @@ void http::Conf::parse_server_conf(std::string s)
             }
         }
         else
-            throw Conf::UnrecognizedParameter();
+            throw ConfError(tmp, "Unrecognized parameter");
         buf.clear();
         buf.str("");
         if (s[i] == ';')
@@ -328,10 +313,10 @@ void http::Conf::parse_server_conf(std::string s)
             if (s[i] == ';')
                 i++;
             else
-                throw http::Conf::SemicolonMissing();
+                throw ConfError(tmp, "Semicolon missing");
         }
         else
-            throw http::Conf::SemicolonMissing();
+            throw ConfError(tmp, "Semicolon missing");
     }
     this->_servers.push_back(new_server);
 }
@@ -369,11 +354,11 @@ http::Routes http::Conf::save_location(std::string s, std::string opt, std::stri
             while (!std::isspace(s[i]) && s[i] != ';')
                 buf << s[i++];
             if (buf.str().length() < 1)
-                throw Conf::UnrecognizedParameter();
+                throw ConfError(tmp, "Unrecognized parameter");
             if (tmp == "root" or tmp == "path_upload" or tmp == "auth_basic_user_file" or tmp == "cgi_exec")
             {
                 if (http::file_exists(buf.str()))
-                    throw http::Conf::ErrorInConf();
+                    throw ConfError(tmp, "The file " + buf.str() + " entered doesn't exist");
                 if (tmp == "root")
                     route.setDirPath(buf.str());
                 else if (tmp == "path_upload")
@@ -386,7 +371,7 @@ http::Routes http::Conf::save_location(std::string s, std::string opt, std::stri
             else if (tmp == "autoindex" or tmp == "upload")
             {
                 if (buf.str() != "on" && buf.str() != "off")
-                    throw Conf::UnrecognizedParameter();
+                    throw ConfError(tmp, "Unrecognized parameter " + buf.str());
                 if (tmp == "autoindex" && buf.str() == "on")
                     route.allowAutoIndex();
                 else if (tmp == "upload" && buf.str() == "on")
@@ -394,14 +379,10 @@ http::Routes http::Conf::save_location(std::string s, std::string opt, std::stri
             }
             else if (tmp == "client_max_body_size")
             {
-                try
-                {
-                    route.setBodySize(std::atoi(buf.str().c_str()));
-                }
-                catch(const std::exception& e)
-                {
-                    std::cerr << e.what() << '\n';
-                }
+                for (size_t i = 0; i < buf.str().length(); i++)
+                    if (!std::isdigit(buf.str()[i]))
+                        throw ConfError(tmp, "must be a number");
+                route.setBodySize(std::atoi(buf.str().c_str()));
             }
         }
         else if (tmp == "auth_basic")
@@ -411,7 +392,7 @@ http::Routes http::Conf::save_location(std::string s, std::string opt, std::stri
             while (s[i] != ';' && i < s.length())
                 buf << s[i++];
             if (buf.str().length() < 1)
-                throw Conf::UnrecognizedParameter();
+                throw ConfError(tmp, "Unrecognized parameter");
             route.setAuthMessage(buf.str());
         }
         else if (tmp == "index" || tmp == "languages")
@@ -428,7 +409,7 @@ http::Routes http::Conf::save_location(std::string s, std::string opt, std::stri
                     buf << s[i++];
                 s_cmp = buf.str();
                 if (tmp == "index" && s_cmp.substr(s_cmp.find(".") + 1).length() > 13)
-                    throw http::Conf::UnrecognizedParameter();
+                    throw ConfError(s_cmp, "Unrecognized parameter");
                 if (tmp == "index")
                     route.addIndexFile(s_cmp);
                 else if (tmp == "languages")
@@ -450,14 +431,14 @@ http::Routes http::Conf::save_location(std::string s, std::string opt, std::stri
                 s_cmp = buf.str();
                 if (s_cmp != "GET" && s_cmp != "POST" && s_cmp != "HEAD" && s_cmp != "DELETE" &&
                     s_cmp != "OPTIONS" && s_cmp != "PATCH" && s_cmp != "PUT")
-                    throw http::Conf::UnrecognizedParameter();
+                    throw ConfError(tmp, "Unrecognized parameter " + s_cmp);
                 route.setMethods(s_cmp);
                 buf.clear();
                 buf.str("");
             }
         }
         else
-            throw Conf::UnrecognizedParameter();
+            throw ConfError(tmp, "Unrecognized parameter");
         buf.clear();
         buf.str("");
         if (s[i] == ';')
@@ -469,10 +450,10 @@ http::Routes http::Conf::save_location(std::string s, std::string opt, std::stri
             if (s[i] == ';')
                 i++;
             else
-                throw http::Conf::SemicolonMissing();
+                throw ConfError(std::string(1, s[i]), "Semicolon missing");
         }
         else
-            throw http::Conf::SemicolonMissing();
+            throw ConfError(std::string(1, s[i]), "Semicolon missing");
     }
     return (route);
 }
@@ -529,27 +510,22 @@ std::map<std::string, std::string> http::Conf::get_mime_types(void)
     return (this->_mime_types);
 }
 
-const char *http::Conf::UnclosedBracket::what() const throw()
+http::Conf::ConfError::ConfError(void)
 {
-    return ("File Configuration Exception: Unclosed Bracket");
+	this->_error = "Exception in class Conf: Some error in Configuration File.";
 }
 
-const char *http::Conf::UnrecognizedParameter::what() const throw()
+http::Conf::ConfError::ConfError(std::string error)
 {
-    return ("File Configuration Exception: Unrecognized Parameter");
+	this->_error = "Exception in class Conf: " + error + ".";
 }
 
-const char *http::Conf::SemicolonMissing::what() const throw()
+http::Conf::ConfError::ConfError(std::string param, std::string error)
 {
-    return ("File Configuration Exception: Semicolon Missing");
+	this->_error = "Exception in class Conf: " + param + " \"" + error + "\".";
 }
 
-const char *http::Conf::ConfFileNotExists::what() const throw()
+const char			*http::Conf::ConfError::what(void) const throw()
 {
-    return ("File Configuration Exception: Unclosed Bracket");
-}
-
-const char *http::Conf::ErrorInConf::what() const throw()
-{
-    return ("File Configuration Exception: Some error in Configuration File");
+	return (this->_error.c_str());
 }
