@@ -472,12 +472,12 @@ public:
         return (this->_path_auth);
     };
 
-    std::string getFileTransformed(std::string path_requested, std::vector<std::string> languages, int type)
+    std::string getFileTransformed(std::string path_requested, std::vector<std::string> languages, int type, std::string &language_set)
     {
 		std::string language_path = "";
 		bool language_setted = false;
 
-		if (this->_languages.size() > 0)
+		if (this->_languages.size() > 0 && languages.size() > 0)
         {
 			for (int i = 0; i < (int)languages.size() && !language_setted; i++)
             {
@@ -487,13 +487,15 @@ public:
 					if (this->_languages[j].find(languages[i]) != std::string::npos)
                     {
 						//std::cout << "son los mismos" << std::endl;
-						language_path = this->_languages[j] + "/";
+						language_path = this->_languages[j];
 						language_setted = true;
 					}
 				}
 			}
 			if (!language_setted)
 				language_path = this->_languages[0];
+			language_set = language_path;
+			language_path += "/";
 		}
         if (!this->_is_prefix)
         {

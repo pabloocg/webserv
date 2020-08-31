@@ -35,6 +35,7 @@ private:
 	bool						_www_auth_required;
 	bool						_isCGI;
 	int							_type;
+	std::string					_language_setted;
 	std::string					_file_req;
 	std::string					_file_bef_req;
 	std::string					_file_type;

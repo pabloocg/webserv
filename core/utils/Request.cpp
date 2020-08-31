@@ -12,9 +12,11 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 						_env(env),
 						_status(0)
 {
+	if (req.length() < 1000){
 	std::cout << "************ REQUEST ************" << std::endl;
 	std::cout << req << std::endl;
 	std::cout << "*********************************" << std::endl;
+	}
 	this->_allow.clear();
 	if (bad_request == true)
 		this->_status = 400;
@@ -74,11 +76,11 @@ void	http::Request::save_request()
 	if (this->_file_bef_req.find(".") == std::string::npos && this->_file_bef_req.back() != '/' && this->_type != PUT && this->_type != POST)
 		this->_file_bef_req += '/';
 	this->_location = this->_server.getRoutebyPath(this->_file_bef_req);
-	std::cout << this->_location << std::endl;
+	std::cout << "Location: " << this->_location.getVirtualLocation() << std::endl;
 	std::cout << "File before getFileTransformed: " << this->_file_bef_req << std::endl;
-	this->_file_req = this->_location.getFileTransformed(this->_file_bef_req, this->_languages_accepted, this->_type);
+	this->_file_req = this->_location.getFileTransformed(this->_file_bef_req, this->_languages_accepted, this->_type, this->_language_setted);
 	std::cout << "File after getFileTransformed: " << this->_file_req << std::endl;
-}	
+}
 
 void http::Request::save_header(std::string header)
 {
@@ -88,7 +90,7 @@ void http::Request::save_header(std::string header)
 	{
 	}
 	else if (words[0] == "Accept-Language:")
-		this->_language_header = header.substr(16).substr(0, this->_language_header.length() - 1);
+		this->_language_header = header.substr(16, header.length() - 17);
 	else if (words[0] == "Authorization:")
 		this->_auth = words[2];
 	else if (words[0] == "Content-Location:")
@@ -312,19 +314,23 @@ char *http::Request::getResponse(int *size, std::map<std::string, std::string> m
 		for (int i = 0; i < (int)this->_CGI_headers.size(); i++)
 			stream << "\n" << this->_CGI_headers[i];
 	stream << "\nDate: " << http::get_actual_date();
-	stream << "\nContent-Location: " << this->_file_bef_req;
+	//stream << "\nContent-Location: " << this->_file_bef_req;
 	if (this->_status != 204 && this->_type != PUT)
 		stream << "\nContent-Length: " << this->_resp_body.length();
 	else
 		stream << "\nContent-Length: 0";
-	stream << "\nServer: Webserv/1.0\n\n";
-	if ((this->_type != HEAD || this->_status != 200) && this->_status != 204 && this->_type != PUT)
+	if (this->_language_setted.length() > 0)
+		stream << "\nContent-Language: " << this->_language_setted;
+	if (this->_status == 201)
+		stream << "\nLocation: " << this->_file_req;
+	stream << "\nServer: Webserv/1.0\r\n\r\n";
+	if (this->_type != HEAD && this->_status != 204 && this->_type != PUT)
 		stream << this->_resp_body;
 	this->_resp_body = stream.str();
 	if (this->_resp_body.length() < 1000)
 	{
 		std::cout << "************ RESPONSE ***********" << std::endl;
-		std::cout << this->_resp_body << std::endl;
+		std::cout << this->_resp_body;
 		std::cout << "*********************************" << std::endl;
 	}
 	if (!(res = (char *)malloc(sizeof(char) * (this->_resp_body.size() + 1))))
@@ -468,9 +474,12 @@ void http::Request::startCGI(void)
 
 	if (pipe(pipes))
 		perror("pipe");
-	if (this->_req_content_length.size() > 0)
+	if (this->_req_content_length.size() > 0){
 		if (pipe(pipes_in))
 			perror("pipe");
+			fcntl(pipes_in[SIDE_OUT], F_SETFL, O_NONBLOCK);
+			fcntl(pipes_in[SIDE_IN], F_SETFL, O_NONBLOCK);
+	}
 	if (!(args = (char **)malloc(sizeof(char *) * 2)))
 		perror("malloc");
 	args[0] = strdup(this->_location.getCgiExec().c_str());
@@ -495,6 +504,7 @@ void http::Request::startCGI(void)
 	}
 	else
 	{
+		//añadir aqui el bucle que mira si el hijo se ha quedado parado
 		waitpid(pid, &status, 0);
 		close(pipes[SIDE_IN]);
 		if (this->_req_content_length.size() > 0)
