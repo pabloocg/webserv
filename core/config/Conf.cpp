@@ -437,6 +437,24 @@ http::Routes http::Conf::save_location(std::string s, std::string opt, std::stri
                 buf.str("");
             }
         }
+        else if (tmp == "return")
+        {
+            route.setRedirect();
+            while (std::isspace(s[i]))
+                i++;
+            while (!std::isspace(s[i]) && std::isdigit(s[i]))
+                buf << s[i++];
+            if (buf.str().length() < 1)
+                throw ConfError(tmp, "Unrecognized parameter");
+            route.setCodeRedirect(atoi(buf.str().c_str()));
+            buf.clear();
+            buf.str("");
+            while (std::isspace(s[i]))
+                i++;
+            while (!std::isspace(s[i]) && s[i] != ';')
+                buf << s[i++];
+            route.setPathRedirect(buf.str());
+        }
         else
             throw ConfError(tmp, "Unrecognized parameter");
         buf.clear();

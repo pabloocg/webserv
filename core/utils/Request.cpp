@@ -21,7 +21,7 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	if (bad_request == true)
 		this->_status = 400;
 	this->save_request();
-	if (!this->_is_autoindex && this->_location.isCgi() && this->_type != OPTIONS)
+	if (!this->_is_autoindex && this->_location.isCgi() && this->_type != OPTIONS && !this->_location.isRedirect())
 	{
 		this->_isCGI = true;
 		std::cout << "extension =" << this->_location.getExtension() << std::endl;
@@ -29,12 +29,15 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 		this->_script_name = this->_file_req.substr(0, this->_file_req.find(this->_location.getExtension()) + 3);
 		this->_file_req = this->_script_name;
 		add_basic_env_vars();
+		std::cout << "File after CGI Transformation: " << this->_file_req << std::endl;
 	}
-	std::cout << "File after CGI Transformation: " << this->_file_req << std::endl;
-	if (!http::is_dir(this->_file_req) || this->_type == PUT)
-		this->_file_type = this->_file_req.substr(_file_req.find(".") + 1, _file_req.size());
-	else if (this->_location.getAutoIndex())
-		this->_is_autoindex = true;
+	if (!this->_location.isRedirect())
+	{
+		if (!http::is_dir(this->_file_req) || this->_type == PUT)
+			this->_file_type = this->_file_req.substr(_file_req.find(".") + 1, _file_req.size());
+		else if (this->_location.getAutoIndex())
+			this->_is_autoindex = true;
+	}
 	set_status();
 }
 
@@ -77,9 +80,14 @@ void	http::Request::save_request()
 		this->_file_bef_req += '/';
 	this->_location = this->_server.getRoutebyPath(this->_file_bef_req);
 	std::cout << "Location: " << this->_location.getVirtualLocation() << std::endl;
-	std::cout << "File before getFileTransformed: " << this->_file_bef_req << std::endl;
-	this->_file_req = this->_location.getFileTransformed(this->_file_bef_req, this->_languages_accepted, this->_type, this->_language_setted);
-	std::cout << "File after getFileTransformed: " << this->_file_req << std::endl;
+	if (this->_location.isRedirect())
+		this->_file_bef_req = this->_location.getPathRedirect();
+	else
+	{
+		std::cout << "File before getFileTransformed: " << this->_file_bef_req << std::endl;
+		this->_file_req = this->_location.getFileTransformed(this->_file_bef_req, this->_languages_accepted, this->_type, this->_language_setted);
+		std::cout << "File after getFileTransformed: " << this->_file_req << std::endl;
+	}
 }
 
 void http::Request::save_header(std::string header)
@@ -144,7 +152,9 @@ void http::Request::set_status(void)
 			else if (!validate_password(this->_auth))
 				code = 403;
 		}
-		if (this->_request_body.size() > this->_location.getBodySizeinBytes() && !code)
+		if (this->_location.isRedirect())
+			code = this->_location.getCodeRedirect();
+		else if (this->_request_body.size() > this->_location.getBodySizeinBytes() && !code)
 			code = 413;
 		else if (!http::file_exists(this->_file_req) && !http::is_dir(this->_file_req))
 		{
@@ -191,7 +201,7 @@ void http::Request::add_basic_env_vars(void)
 	this->_env.push_back("SERVER_SOFTWARE=webserv/1.0");
 	this->_env.push_back("SERVER_PROTOCOL=HTTP/1.1");
 	this->_env.push_back("GATEWAY_INTERFACE=CGI/1.1");
-	//this->_env.push_back("REDIRECT_STATUS=200");
+	this->_env.push_back("REDIRECT_STATUS=200");
 	this->_env.push_back("REQUEST_URI=" + this->_req_URI);
 	if (this->_req_content_type.size() > 0)
 		this->_env.push_back("CONTENT_TYPE=" + this->_req_content_type);
@@ -321,8 +331,8 @@ char *http::Request::getResponse(int *size, std::map<std::string, std::string> m
 		stream << "\nContent-Length: 0";
 	if (this->_language_setted.length() > 0)
 		stream << "\nContent-Language: " << this->_language_setted;
-	if (this->_status == 201)
-		stream << "\nLocation: " << this->_file_req;
+	if (this->_status == 201 or this->_status == 301 or this->_status == 302)
+		stream << "\nLocation: " << this->_file_bef_req;
 	stream << "\nServer: Webserv/1.0\r\n\r\n";
 	if (this->_type != HEAD && this->_status != 204 && this->_type != PUT)
 		stream << this->_resp_body;
@@ -460,6 +470,29 @@ char *http::Request::build_response(int *size, std::map<std::string, std::string
 		this->build_options();
 	return (getResponse(size, mime_types));
 }
+int		g_child_fail = 0;
+
+void	handle_child(int signal)
+{
+	if (signal == SIGCHLD)
+	{
+		pid_t	pid;
+		int		wstat;
+
+		std::cout << "Catch sigchld" << std::endl;
+		g_child_fail = 1;
+		while (1)
+		{
+			pid = wait3(&wstat, WNOHANG, (struct rusage *)NULL );
+			if (pid == 0)
+				return;
+			else if (pid == -1)
+				return;
+			else
+				std::cout << "Return code: " << wstat << std::endl;
+		}
+	}
+}
 
 void http::Request::startCGI(void)
 {
@@ -474,11 +507,12 @@ void http::Request::startCGI(void)
 
 	if (pipe(pipes))
 		perror("pipe");
-	if (this->_req_content_length.size() > 0){
+	if (this->_req_content_length.size() > 0)
+	{
 		if (pipe(pipes_in))
 			perror("pipe");
-			fcntl(pipes_in[SIDE_OUT], F_SETFL, O_NONBLOCK);
-			fcntl(pipes_in[SIDE_IN], F_SETFL, O_NONBLOCK);
+		fcntl(pipes_in[SIDE_OUT], F_SETFL, O_NONBLOCK);
+		fcntl(pipes_in[SIDE_IN], F_SETFL, O_NONBLOCK);
 	}
 	if (!(args = (char **)malloc(sizeof(char *) * 2)))
 		perror("malloc");
@@ -504,7 +538,8 @@ void http::Request::startCGI(void)
 	}
 	else
 	{
-		//añadir aqui el bucle que mira si el hijo se ha quedado parado
+		signal(SIGCHLD, handle_child);
+		//signal(SIGCHLD, SIG_IGN);
 		waitpid(pid, &status, 0);
 		close(pipes[SIDE_IN]);
 		if (this->_req_content_length.size() > 0)
@@ -582,6 +617,12 @@ void http::Request::decode_CGI_response(void)
 {
 	std::string tmp;
 
+	if (g_child_fail)
+	{
+		this->_resp_body = "";
+		g_child_fail = 0;
+		return ;
+	}
 	while (this->_CGI_response.find('\n') != std::string::npos)
 	{
 		tmp = this->_CGI_response.substr(0, this->_CGI_response.find('\n'));

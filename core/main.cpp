@@ -4,6 +4,15 @@
 
 #define DEFAULT_FILE_CONF "tests/example.conf"
 
+void			handle_signal(int signal)
+{
+	if (signal == SIGINT or signal == SIGQUIT)
+    {
+        std::cout << "\nStopping webserv..." << std::endl;
+        exit(1);
+    }
+}
+
 int main(int argc, char *argv[], char *env[])
 {
     std::string file_conf;
@@ -17,6 +26,7 @@ int main(int argc, char *argv[], char *env[])
         std::cerr << "Usage: ./webserv <path_file_conf>" << std::endl;
         return (0);
     }
+    signal(SIGINT, handle_signal);
     try
     {
         http::Conf                      config(file_conf);

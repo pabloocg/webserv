@@ -68,6 +68,12 @@ private:
 
     std::string     _cgi_exec;
 
+    bool            _is_redirect;
+
+    int             _code_redirect;
+
+    std::string     _path_to_redirect;
+
     // Make the route able to accept uploaded files. Default false
     bool            _uploads;
 
@@ -89,6 +95,9 @@ private:
 public:
     Routes()
     {
+        this->_is_redirect = false;
+        this->_code_redirect = 0;
+        this->_path_to_redirect = std::string("");
         this->_support_languages = false;
         this->_is_prefix = false;
         this->_is_cgi = false;
@@ -118,6 +127,9 @@ public:
 
     Routes(const http::Routes &other)
     {
+        this->_is_redirect = other._is_redirect;
+        this->_code_redirect = other._code_redirect;
+        this->_path_to_redirect = other._path_to_redirect;
         this->_support_languages = other._support_languages;
         this->_is_prefix = other._is_prefix;
         this->_is_cgi = other._is_cgi;
@@ -149,6 +161,9 @@ public:
 
     Routes      &operator=(const http::Routes &other)
     {
+        this->_is_redirect = other._is_redirect;
+        this->_code_redirect = other._code_redirect;
+        this->_path_to_redirect = other._path_to_redirect;
         this->_support_languages = other._support_languages;
         this->_is_prefix = other._is_prefix;
         this->_is_cgi = other._is_cgi;
@@ -282,6 +297,36 @@ public:
     bool        isPrefix()
     {
         return (this->_is_prefix);
+    };
+
+    void        setRedirect()
+    {
+        this->_is_redirect = true;
+    };
+
+    bool        isRedirect()
+    {
+        return (this->_is_redirect);
+    };
+
+    void        setCodeRedirect(int code)
+    {
+        this->_code_redirect = code;
+    };
+
+    int        getCodeRedirect()
+    {
+        return (this->_code_redirect);
+    };
+
+    void        setPathRedirect(std::string path)
+    {
+        this->_path_to_redirect = path;
+    };
+
+    std::string getPathRedirect()
+    {
+        return (this->_path_to_redirect);
     };
 
     void        setCgi()
@@ -547,6 +592,9 @@ inline std::ostream &operator<<(std::ostream &out, http::Routes &route)
     out << "Location isCGI: " << ((route.isCgi()) ? "on": "off") << std::endl;
     out << "Location CGI EXEC: " << route.getCgiExec() << std::endl;
     out << "Location Extension: " << route.getExtension() << std::endl;
+    out << "Location isRedirect: " << ((route.isRedirect()) ? "on": "off") << std::endl;
+    out << "Location Redirect Code: " << route.getCodeRedirect() << std::endl;
+    out << "Location Redirect Path: " << route.getPathRedirect() << std::endl;
     out << "Location OptionalModifier: " << route.getOptModifier() << std::endl;
     out << "Location RootPath: " << route.getDirPath() << std::endl;
     out << "Location indexFile: ";

@@ -8,6 +8,7 @@
 # include <dirent.h>
 # include <sys/stat.h>
 # include <time.h>
+# include <signal.h>
 # include <errno.h>
 # include <iostream>
 # include <vector>
@@ -98,6 +99,8 @@ private:
 		m[201] = "Created";
 		m[202] = "Accepted";
 		m[204] = "No Content";
+		m[301] = "Moved Permanently";
+		m[302] = "Moved Temporarily";
 		m[400] = "Bad Request";
 		m[401] = "Unauthorized";
 		m[403] = "Forbidden";
