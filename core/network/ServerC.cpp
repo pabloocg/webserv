@@ -7,6 +7,7 @@ http::ServerC::ServerC(std::vector<http::ServerConf> servers, std::map<std::stri
 	this->_max_client = 30;
 	this->_server_socket.resize(this->_servers.size());
 	this->_env = http::charptrptrToVector(env);
+	/*
 	for (struct {std::vector<http::ServerConf>::iterator it; int i; } v = {this->_servers.begin(), 0}; v.it != this->_servers.end(); v.it++, v.i++)
 	{
 		std::cout << "SERVER " << v.i << std::endl;
@@ -18,6 +19,7 @@ http::ServerC::ServerC(std::vector<http::ServerConf> servers, std::map<std::stri
 			std::cout << *it << std::endl;
 		}
 	}
+	*/
 }
 
 void http::ServerC::start()

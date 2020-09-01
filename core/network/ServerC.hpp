@@ -65,6 +65,7 @@ public:
 	class		ServerError: public std::exception
 	{
 		private:
+			std::string		_function;
 			std::string		_error;
 			const Logger	_log;
 

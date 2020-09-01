@@ -40,9 +40,6 @@ Hay tres casos principales en que se utiliza este encabezado:
     -Cuando se envía con una respuesta de redireccionamiento, como 301 (Moved Permanently),
         esto indica el tiempo mínimo que se le pide al agente de usuario que espere antes de emitir la solicitud redirigida.
 
-No me quedan claros
-- Location (Lo manda el servidor?). Indica la URL a la que redirigir una página.
-Solo proporciona un significado cuando se sirve con una respuesta de estado 3xx (redirección) o 201 (creado).
 
 - Content-Location (Lo manda el servidor?). Indica una ubicación alternativa para los datos devueltos.
 El uso principal es indicar la URL de un recurso transmitido como resultado de la negociación de contenido.
