@@ -7,11 +7,8 @@ Cosas por hacer:
     - 429 Too Many Requests. Indica que el usuario ha enviado demasiadas solicitudes en un período de tiempo determinado.
 -Implementar codigos de error de servidor (50X)
     - 500 Internal Server Error. Error genérico, cuando se ha dado una condición no esperada y no se puede concretar el mensaje.
-    *- 502 Bad Gateway. El server actuaba como puerta de entrada o proxy y recibió una respuesta inválida del servidor upstream.
     - 503 Service Unavailable. El servidor está actualmente no disponible, ya sea por mantenimiento o por sobrecarga.
         (Por ejemplo cuando todos los fd de un server esten llenos)
-    *- 504 Gateway Timeout. El servidor estaba actuando como puerta de entrada o proxy y no recibió una respuesta oportuna por parte del servidor upstream.
-*No se si esos habrá que hacerlos ya que parece que es solo para proxys
 
 Metodos HTTP:
 -Implementar PATCH hay que hacerlo??
@@ -24,12 +21,9 @@ Implementar Headers:
     #Accept-Charset: utf-8, iso-8859-1;q=0.5, *;q=0.1
     (la q es la preferencia que tiene el cliente por el metodo usado
     en el ultimo caso utf-8 tiene prioridad 1, iso-8859-1 tiene prioridad 0.5 y * que es cualquier otro 0.1)
+
 - Content-Type (Lo manda el servidor).
-**El servidor responde con el header Content-Type poniendo el metodo usado**
-    Formato:
-    Content-Type: <mime_type>; <charset(codificacion)>; <boundary(NPI)>
-    #Content-Type: text/html; charset=utf-8
-    #Content-Type: multipart/form-data; boundary=something                                                                       
+	Solo añadir el charset del tipo que pasamos.
 
 - Retry-After (Lo manda el servidor). Indica cuánto tiempo debe esperar el cliente antes de realizar otra request 
 Hay tres casos principales en que se utiliza este encabezado:
@@ -37,17 +31,7 @@ Hay tres casos principales en que se utiliza este encabezado:
         indica cuánto tiempo se espera que el servicio no esté disponible.
     - Cuando se envía con una respuesta 429 (Too Many Requests),
         indica cuánto tiempo se debe esperar antes de realizar una nueva solicitud.
-    -Cuando se envía con una respuesta de redireccionamiento, como 301 (Moved Permanently),
-        esto indica el tiempo mínimo que se le pide al agente de usuario que espere antes de emitir la solicitud redirigida.
-
-No me quedan claros
-- Location (Lo manda el servidor?). Indica la URL a la que redirigir una página.
-Solo proporciona un significado cuando se sirve con una respuesta de estado 3xx (redirección) o 201 (creado).
 
 - Content-Location (Lo manda el servidor?). Indica una ubicación alternativa para los datos devueltos.
 El uso principal es indicar la URL de un recurso transmitido como resultado de la negociación de contenido.
 
-Location y Content-Location son diferentes.
-Location indica la URL de un redireccionamiento, mientras que Content-Location indica la URL directa
-que se utilizará para acceder al recurso, sin más negociaciones de contenido en el futuro.
-Location es un encabezado asociado con la respuesta, mientras que Content-Location está asociado con los datos devueltos.

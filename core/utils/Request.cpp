@@ -119,12 +119,6 @@ void http::Request::save_header(std::string header)
 	}
 	else if (words[0] == "Transfer-Encoding:")
 		this->_transf_encoding = words[1];
-	/*
-	Creo que este header solo lo puede mandar el servidor
-	else if (words[0] == "Retry-After:")
-	{
-	}
-	*/
 }
 
 void http::Request::save_request_body(void)
@@ -325,9 +319,9 @@ char *http::Request::getResponse(int *size, std::map<std::string, std::string> m
 			stream << "\n" << this->_CGI_headers[i];
 	stream << "\nDate: " << http::get_actual_date();
 	//stream << "\nContent-Location: " << this->_file_bef_req;
-	if (this->_status != 204 && this->_type != PUT)
+	if (this->_status != 204 && this->_type != PUT && this->_resp_body.length() > 0)
 		stream << "\nContent-Length: " << this->_resp_body.length();
-	else
+	else if (!this->_isCGI && this->_type != POST)
 		stream << "\nContent-Length: 0";
 	if (this->_language_setted.length() > 0)
 		stream << "\nContent-Language: " << this->_language_setted;
@@ -505,14 +499,17 @@ void http::Request::startCGI(void)
 	char **args;
 	char buffer[30000] = {0};
 
+	if (this->_request_body.size() > 64000000){
+		this->_CGI_response = "";
+		this->_resp_body = "";
+		return;
+	}
 	if (pipe(pipes))
 		perror("pipe");
 	if (this->_req_content_length.size() > 0)
 	{
 		if (pipe(pipes_in))
 			perror("pipe");
-		fcntl(pipes_in[SIDE_OUT], F_SETFL, O_NONBLOCK);
-		fcntl(pipes_in[SIDE_IN], F_SETFL, O_NONBLOCK);
 	}
 	if (!(args = (char **)malloc(sizeof(char *) * 2)))
 		perror("malloc");
@@ -538,7 +535,7 @@ void http::Request::startCGI(void)
 	}
 	else
 	{
-		signal(SIGCHLD, handle_child);
+		//signal(SIGCHLD, handle_child);
 		//signal(SIGCHLD, SIG_IGN);
 		waitpid(pid, &status, 0);
 		close(pipes[SIDE_IN]);
