@@ -1,0 +1,11 @@
+wsv_stat(): No such file or directory
+SIGPIPE signal received: No such file or directory
+wsv_send(): Broken pipe
+wsv_stat(): No such file or directory
+wsv_stat(): No such file or directory
+wsv_stat(): No such file or directory
+wsv_bind(): Address already in use
+wsv_stat(): No such file or directory
+wsv_stat(): No such file or directory
+wsv_stat(): No such file or directory
+wsv_bind(): Address already in use

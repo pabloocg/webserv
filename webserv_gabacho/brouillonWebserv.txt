@@ -1,0 +1,20 @@
+
+
+w3m
+elinks
+ls -l
+ps aux | grep webserv
+	kill -s SIGINT ...
+telnet
+	open localhost 8080
+GET /index.html HTTP/1.1
+	Host: localhost
+https://tmate.io/
+make log
+fg (?)
+htop
+siege
+sudo systemctl start nginx
+valgrind --log-file=log ./webserv
+
+

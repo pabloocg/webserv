@@ -324,9 +324,9 @@ char *http::Request::getResponse(int *size, std::map<std::string, std::string> m
 			stream << "\n" << this->_CGI_headers[i];
 	stream << "\nDate: " << http::get_actual_date();
 	//stream << "\nContent-Location: " << this->_file_bef_req;
-	if (this->_status != 204 && this->_type != PUT && this->_resp_body.length() > 0)
+	if (this->_status != 204 && this->_type != PUT)
 		stream << "\nContent-Length: " << this->_resp_body.length();
-	else if (!this->_isCGI && this->_type != POST)
+	else
 		stream << "\nContent-Length: 0";
 	if (this->_language_setted.length() > 0)
 		stream << "\nContent-Language: " << this->_language_setted;
@@ -482,33 +482,23 @@ void http::Request::startCGI(void)
 	char	**env = http::vecToCharptrptr(this->_env);
 	char	**args;
 	char	buffer[30000] = {0};
-
-	if (this->_request_body.size() > 64000000){
-		this->_CGI_response = "";
-		this->_resp_body = "";
-		return;
-	}
 	if (pipe(pipes))
 		perror("pipe");
 	if (this->_req_content_length.size() > 0 && pipe(pipes_in))
 		perror("pipe");
-	if (!(args = (char **)malloc(sizeof(char *) * 2)))
+	if (!(args = (char **)malloc(sizeof(char *) * 3)))
 		perror("malloc");
 	args[0] = strdup(this->_location.getCgiExec().c_str());
-	args[1] = NULL;
+	args[1] = strdup(this->_script_name.c_str());
+	args[2] = NULL;
 	if ((pid = fork()) < 0)
 		perror("fork");
 	else if (pid == 0)
 	{
 		if (dup2(pipes[SIDE_IN], STDOUT) < 0)
 			perror("dup2");
-		if (this->_req_content_length.size() > 0)
-		{
-			if (dup2(pipes_in[SIDE_OUT], STDIN) < 0)
-				perror("dup2");
-			write(pipes_in[SIDE_IN], this->_request_body.c_str(), this->_request_body.size());
-			close(pipes_in[SIDE_IN]);
-		}
+		if (this->_req_content_length.size() > 0 && dup2(pipes_in[SIDE_OUT], STDIN) < 0)
+			perror("dup2");
 		if ((ret = execve(args[0], args, env)) < 0)
 			perror("execve");
 		free(args);
@@ -516,6 +506,29 @@ void http::Request::startCGI(void)
 	}
 	else
 	{
+		fcntl(pipes_in[SIDE_IN], F_SETFL, O_NONBLOCK);
+		int bytes_left = this->_request_body.size();
+		int bytes_written = 0;
+		int total_bytes_written = 0;
+		int activity;
+		struct timeval timeout;
+		while (bytes_left > 0){
+			timeout.tv_sec = 1;
+			timeout.tv_usec = 0;
+			fd_set	writefd;
+			FD_ZERO(&writefd);
+			FD_SET(pipes_in[SIDE_IN], &writefd);
+			std::cout << "waiting for select in cgi" << std::endl;
+			activity = select(pipes_in[SIDE_IN] + 1, NULL, &writefd, NULL, &timeout);
+			if (activity == 0){
+				break;
+			}
+			bytes_written = write(pipes_in[SIDE_IN], this->_request_body.c_str() + total_bytes_written, bytes_left);
+			total_bytes_written += bytes_written;
+			bytes_left -= bytes_written;
+			std::cout << "bytes written: " << total_bytes_written << ", bytes left: " << bytes_left << std::endl;
+		}
+		close(pipes_in[SIDE_IN]);
 		waitpid(pid, &status, 0);
 		close(pipes[SIDE_IN]);
 		if (this->_req_content_length.size() > 0)
