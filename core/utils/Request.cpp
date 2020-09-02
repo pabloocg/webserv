@@ -39,6 +39,7 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 			this->_is_autoindex = true;
 	}
 	set_status();
+	prepare_status();
 }
 
 void	http::Request::save_request()
@@ -177,6 +178,10 @@ void http::Request::set_status(void)
 	}
 	if (!this->_status)
 		this->_status = code;
+}
+
+void		http::Request::prepare_status()
+{
 	this->_message_status = this->_error_mgs[this->_status];
 	if (this->_status >= 400)
 	{
@@ -462,42 +467,21 @@ char *http::Request::build_response(int *size, std::map<std::string, std::string
 		this->build_delete();
 	else if (this->_type == OPTIONS)
 		this->build_options();
+	if (this->_status >= 500)
+		prepare_status();
 	return (getResponse(size, mime_types));
-}
-int		g_child_fail = 0;
-
-void	handle_child(int signal)
-{
-	if (signal == SIGCHLD)
-	{
-		pid_t	pid;
-		int		wstat;
-
-		std::cout << "Catch sigchld" << std::endl;
-		g_child_fail = 1;
-		while (1)
-		{
-			pid = wait3(&wstat, WNOHANG, (struct rusage *)NULL );
-			if (pid == 0)
-				return;
-			else if (pid == -1)
-				return;
-			else
-				std::cout << "Return code: " << wstat << std::endl;
-		}
-	}
 }
 
 void http::Request::startCGI(void)
 {
-	int ret = EXIT_SUCCESS;
-	int status;
-	int pipes[2];
-	int pipes_in[2];
-	pid_t pid;
-	char **env = http::vecToCharptrptr(this->_env);
-	char **args;
-	char buffer[30000] = {0};
+	int		ret = EXIT_SUCCESS;
+	int		status;
+	int		pipes[2];
+	int		pipes_in[2];
+	pid_t	pid;
+	char	**env = http::vecToCharptrptr(this->_env);
+	char	**args;
+	char	buffer[30000] = {0};
 
 	if (this->_request_body.size() > 64000000){
 		this->_CGI_response = "";
@@ -506,11 +490,8 @@ void http::Request::startCGI(void)
 	}
 	if (pipe(pipes))
 		perror("pipe");
-	if (this->_req_content_length.size() > 0)
-	{
-		if (pipe(pipes_in))
-			perror("pipe");
-	}
+	if (this->_req_content_length.size() > 0 && pipe(pipes_in))
+		perror("pipe");
 	if (!(args = (char **)malloc(sizeof(char *) * 2)))
 		perror("malloc");
 	args[0] = strdup(this->_location.getCgiExec().c_str());
@@ -535,15 +516,13 @@ void http::Request::startCGI(void)
 	}
 	else
 	{
-		//signal(SIGCHLD, handle_child);
-		//signal(SIGCHLD, SIG_IGN);
 		waitpid(pid, &status, 0);
 		close(pipes[SIDE_IN]);
 		if (this->_req_content_length.size() > 0)
 			close(pipes_in[SIDE_OUT]);
 		read(pipes[SIDE_OUT], buffer, 30000);
 		this->_CGI_response = buffer;
-		decode_CGI_response();
+		this->_status = decode_CGI_response();
 		close(pipes[SIDE_OUT]);
 		if (WIFEXITED(status))
 			ret = WEXITSTATUS(status);
@@ -610,19 +589,22 @@ void http::Request::decode_chunked(void)
 	this->_req_content_length = std::to_string(body_length);
 }
 
-void http::Request::decode_CGI_response(void)
+int http::Request::decode_CGI_response(void)
 {
-	std::string tmp;
+	std::string			tmp;
+	size_t				pos;
+	std::stringstream	buf;
+	int					tmp_code;
 
-	if (g_child_fail)
-	{
-		this->_resp_body = "";
-		g_child_fail = 0;
-		return ;
-	}
 	while (this->_CGI_response.find('\n') != std::string::npos)
 	{
 		tmp = this->_CGI_response.substr(0, this->_CGI_response.find('\n'));
+		pos = tmp.find("Status: ");
+		if (pos != std::string::npos)
+		{
+			while (std::isdigit(tmp[pos]))
+				buf << tmp[pos++];
+		}
 		this->_CGI_response = this->_CGI_response.substr(this->_CGI_response.find('\n') + 1);
 		if (tmp.length() == 1 && tmp[0] == '\r')
 		{
@@ -631,6 +613,10 @@ void http::Request::decode_CGI_response(void)
 		}
 		this->_CGI_headers.push_back(tmp);
 	}
+	tmp_code = atoi(buf.str().c_str());
+	if (!tmp_code)
+		tmp_code = this->_status;
+	return (tmp_code);
 }
 
 void http::Request::get_languages_vector(void)

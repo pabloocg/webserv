@@ -31,7 +31,6 @@ Hay tres casos principales en que se utiliza este encabezado:
         indica cuánto tiempo se espera que el servicio no esté disponible.
     - Cuando se envía con una respuesta 429 (Too Many Requests),
         indica cuánto tiempo se debe esperar antes de realizar una nueva solicitud.
-
 - Content-Location (Lo manda el servidor?). Indica una ubicación alternativa para los datos devueltos.
 El uso principal es indicar la URL de un recurso transmitido como resultado de la negociación de contenido.
 

@@ -84,8 +84,9 @@ private:
 	void		save_request_body(void);
 	void		add_basic_env_vars(void);
 	void		get_allowed_methods(void);
-	void		decode_CGI_response(void);
+	int			decode_CGI_response(void);
 	void		get_languages_vector(void);
+	void		prepare_status(void);
 	bool		needs_auth(http::Routes routes);
 	bool		validate_password(std::string auth);
 	char		*getResponse(int *size, std::map<std::string, std::string> mime_types);
@@ -107,6 +108,7 @@ private:
 		m[404] = "Not Found";
 		m[405] = "Not Allowed";
 		m[413] = "Payload Too Large";
+		m[500] = "Internal Server Error";
 		m[505] = "HTTP Version Not Supported";
 		return (m);
 	};
