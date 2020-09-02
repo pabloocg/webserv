@@ -108,7 +108,7 @@ void http::Request::save_header(std::string header)
 	else if (words[0] == "Content-Type:")
 		this->_req_content_type = words[1];
 	else if (words[0] == "Content-Length:")
-		this->_req_content_length = words[1];
+		this->_req_content_length = header.substr(16, header.length() - 17);
 	else if (words[0] == "Location:")
 	{
 	}
@@ -207,7 +207,7 @@ void http::Request::add_basic_env_vars(void)
 	if (this->_req_content_length.size() > 0)
 		this->_env.push_back("CONTENT_LENGTH=" + this->_req_content_length);
 	else
-		this->_env.push_back("CONTENT_TYPE=NULL");
+		this->_env.push_back("CONTENT_LENGTH=0");
 	if (this->_auth != "NULL")
 	{
 		this->_env.push_back("AUTH_TYPE=BASIC");
@@ -229,16 +229,9 @@ void http::Request::add_basic_env_vars(void)
 		this->_env.push_back("REQUEST_METHOD=DELETE");
 	else if (this->_type == OPTIONS)
 		this->_env.push_back("REQUEST_METHOD=OPTIONS");
-	if (this->_path_info.size() > 0)
-	{
-		this->_env.push_back("PATH_INFO=" + this->_path_info);
-		this->_env.push_back("PATH_TRANSLATED=http://" + this->_server.getServerName() + ":" + std::to_string(this->_server.getPort()) + this->_path_info);
-	}
-	else
-	{
-		this->_env.push_back("PATH_INFO=");
-		this->_env.push_back("PATH_TRANSLATED=");
-	}
+
+	this->_env.push_back("PATH_INFO=" + this->_req_URI);
+	this->_env.push_back("PATH_TRANSLATED=" + this->_script_name);
 	this->_env.push_back("SCRIPT_NAME=" + this->_script_name);
 	this->_env.push_back("SCRIPT_FILENAME=" + this->_script_name);
 	this->_env.push_back("REMOTE_ADDR=127.0.0.1");
@@ -323,7 +316,6 @@ char *http::Request::getResponse(int *size, std::map<std::string, std::string> m
 		for (int i = 0; i < (int)this->_CGI_headers.size(); i++)
 			stream << "\n" << this->_CGI_headers[i];
 	stream << "\nDate: " << http::get_actual_date();
-	//stream << "\nContent-Location: " << this->_file_bef_req;
 	if (this->_status != 204 && this->_type != PUT)
 		stream << "\nContent-Length: " << this->_resp_body.length();
 	else
@@ -474,18 +466,22 @@ char *http::Request::build_response(int *size, std::map<std::string, std::string
 
 void http::Request::startCGI(void)
 {
+	std::cout << "llega a startCGI" << std::endl;
 	int		ret = EXIT_SUCCESS;
 	int		status;
 	int		pipes[2];
-	int		pipes_in[2];
+	//int		pipes_in[2];
 	pid_t	pid;
 	char	**env = http::vecToCharptrptr(this->_env);
 	char	**args;
 	char	buffer[30000] = {0};
+	int		fd;
+	fd = open("tmp/cgi_input.tmp", O_TRUNC | O_RDWR | O_APPEND | O_CREAT, 0666);
+	write(fd, this->_request_body.c_str(), this->_request_body.length());
 	if (pipe(pipes))
 		perror("pipe");
-	if (this->_req_content_length.size() > 0 && pipe(pipes_in))
-		perror("pipe");
+	//if (pipe(pipes_in))
+	//	perror("pipe");
 	if (!(args = (char **)malloc(sizeof(char *) * 3)))
 		perror("malloc");
 	args[0] = strdup(this->_location.getCgiExec().c_str());
@@ -497,7 +493,7 @@ void http::Request::startCGI(void)
 	{
 		if (dup2(pipes[SIDE_IN], STDOUT) < 0)
 			perror("dup2");
-		if (this->_req_content_length.size() > 0 && dup2(pipes_in[SIDE_OUT], STDIN) < 0)
+		if (dup2(fd, STDIN) < 0)
 			perror("dup2");
 		if ((ret = execve(args[0], args, env)) < 0)
 			perror("execve");
@@ -506,33 +502,8 @@ void http::Request::startCGI(void)
 	}
 	else
 	{
-		fcntl(pipes_in[SIDE_IN], F_SETFL, O_NONBLOCK);
-		int bytes_left = this->_request_body.size();
-		int bytes_written = 0;
-		int total_bytes_written = 0;
-		int activity;
-		struct timeval timeout;
-		while (bytes_left > 0){
-			timeout.tv_sec = 1;
-			timeout.tv_usec = 0;
-			fd_set	writefd;
-			FD_ZERO(&writefd);
-			FD_SET(pipes_in[SIDE_IN], &writefd);
-			std::cout << "waiting for select in cgi" << std::endl;
-			activity = select(pipes_in[SIDE_IN] + 1, NULL, &writefd, NULL, &timeout);
-			if (activity == 0){
-				break;
-			}
-			bytes_written = write(pipes_in[SIDE_IN], this->_request_body.c_str() + total_bytes_written, bytes_left);
-			total_bytes_written += bytes_written;
-			bytes_left -= bytes_written;
-			std::cout << "bytes written: " << total_bytes_written << ", bytes left: " << bytes_left << std::endl;
-		}
-		close(pipes_in[SIDE_IN]);
 		waitpid(pid, &status, 0);
 		close(pipes[SIDE_IN]);
-		if (this->_req_content_length.size() > 0)
-			close(pipes_in[SIDE_OUT]);
 		read(pipes[SIDE_OUT], buffer, 30000);
 		this->_CGI_response = buffer;
 		this->_status = decode_CGI_response();
