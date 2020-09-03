@@ -42,7 +42,6 @@ private:
 	std::vector<http::ServerConf>		_servers;
 	std::map<int, http::Pending_send>	_pending_messages;
 	std::map<std::string, std::string>	_mime_types;
-	std::map<int, int>					_client_server_map;
 	std::map<int, std::string>			_pending_reads;
 	std::string							_host_header;
 	std::vector<std::string> 			_env;

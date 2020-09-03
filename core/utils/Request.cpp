@@ -161,8 +161,12 @@ void http::Request::set_status(void)
 					code = 200;
 			}
 		}
-		else if (http::file_exists(this->_file_req) && (this->_type == PUT or (this->_type == POST && !this->_isCGI)) && !code)
+		else if (http::file_exists(this->_file_req) && (this->_type == PUT or (this->_type == POST && !this->_isCGI)) && !code){
 			code = 201;
+		}
+		else if (http::file_exists(this->_file_req) && this->_type == POST && this->_isCGI && !code){
+			code = 200;
+		}
 		//else if (http::is_dir(this->_file_req))
 		//	code = 403;
 		else
@@ -466,52 +470,103 @@ char *http::Request::build_response(int *size, std::map<std::string, std::string
 
 void http::Request::startCGI(void)
 {
-	std::cout << "llega a startCGI" << std::endl;
-	int		ret = EXIT_SUCCESS;
-	int		status;
-	int		pipes[2];
-	//int		pipes_in[2];
-	pid_t	pid;
-	char	**env = http::vecToCharptrptr(this->_env);
-	char	**args;
-	char	buffer[30000] = {0};
-	int		fd;
-	fd = open("tmp/cgi_input.tmp", O_TRUNC | O_RDWR | O_APPEND | O_CREAT, 0666);
-	write(fd, this->_request_body.c_str(), this->_request_body.length());
-	if (pipe(pipes))
-		perror("pipe");
-	//if (pipe(pipes_in))
-	//	perror("pipe");
-	if (!(args = (char **)malloc(sizeof(char *) * 3)))
-		perror("malloc");
-	args[0] = strdup(this->_location.getCgiExec().c_str());
-	args[1] = strdup(this->_script_name.c_str());
-	args[2] = NULL;
-	if ((pid = fork()) < 0)
-		perror("fork");
-	else if (pid == 0)
-	{
-		if (dup2(pipes[SIDE_IN], STDOUT) < 0)
-			perror("dup2");
-		if (dup2(fd, STDIN) < 0)
-			perror("dup2");
-		if ((ret = execve(args[0], args, env)) < 0)
-			perror("execve");
-		free(args);
-		exit(ret);
-	}
-	else
-	{
-		waitpid(pid, &status, 0);
-		close(pipes[SIDE_IN]);
-		read(pipes[SIDE_OUT], buffer, 30000);
-		this->_CGI_response = buffer;
+    std::cout << "llega a startCGI" << std::endl;
+    int     ret = EXIT_SUCCESS;
+    int     status;
+    int     pipes[2];
+    int     pipes_in[2];
+    pid_t   pid;
+    char    **env = http::vecToCharptrptr(this->_env);
+    char    **args;
+    char    buffer[65537] = {0};
+    if (pipe(pipes))
+        perror("pipe");
+    if (this->_request_body.length() > 0 && pipe(pipes_in))
+        perror("pipe");
+    if (!(args = (char **)malloc(sizeof(char *) * 3)))
+        perror("malloc");
+    args[0] = strdup(this->_location.getCgiExec().c_str());
+    args[1] = strdup(this->_script_name.c_str());
+    args[2] = NULL;
+    if ((pid = fork()) < 0)
+        perror("fork");
+    else if (pid == 0)
+    {
+        if (dup2(pipes[SIDE_IN], STDOUT) < 0)
+            perror("dup2");
+        if (this->_request_body.length() > 0 && dup2(pipes_in[SIDE_OUT], STDIN) < 0)
+            perror("dup2");
+        if ((ret = execve(args[0], args, env)) < 0)
+            perror("execve");
+        free(args);
+		free(env);
+        exit(ret);
+    }
+    else
+    {
+        int valread;
+		int valwrite;
+        //int activity;
+		int max_sd;
+        struct timeval timeout;
+		fd_set readfd;
+		fd_set writefd;
+		timeout.tv_sec = 1;
+		timeout.tv_usec = 0;
+		max_sd = pipes[SIDE_OUT];
+		if (pipes_in[SIDE_IN] > max_sd)
+			max_sd = pipes_in[SIDE_IN];
+		fcntl(pipes_in[SIDE_IN], F_SETFL, O_NONBLOCK);
+		FD_ZERO(&readfd);
+		FD_ZERO(&writefd);
+		FD_SET(pipes[SIDE_OUT], &readfd);
+		if (this->_request_body.length() > 0)
+			FD_SET(pipes_in[SIDE_IN], &writefd);
+		else{
+			close(pipes_in[SIDE_IN]);
+		}
+		this->_CGI_response = "";
+        while (select(max_sd + 1, &readfd, &writefd, NULL, &timeout) > 0)
+		{
+			std::cout << "PASSSS SELECT..." << std::endl;
+			if (FD_ISSET(pipes[SIDE_OUT], &readfd))
+			{
+				valread = read(pipes[SIDE_OUT], buffer, 65536);
+				this->_CGI_response += std::string(buffer, valread);
+				std::cerr << "pasa por select despues de leer " << valread << std::endl;
+				std::cerr << "CGI_RESPONSE ->  " << this->_CGI_response.length() << std::endl;
+			}
+			else if (FD_ISSET(pipes_in[SIDE_IN], &writefd))
+            {
+				std::cout << "va a escribir " << this->_request_body.length() << std::endl;
+				valwrite = write(pipes_in[SIDE_IN], this->_request_body.c_str(), this->_request_body.length());
+				std::cout << "valwrite-> "<< valwrite << std::endl;
+				if (valwrite == (int)this->_request_body.length())
+				{
+					close(pipes_in[SIDE_IN]);
+					this->_request_body.clear();
+				}
+				if (valwrite < (int)this->_request_body.length())
+					this->_request_body = this->_request_body.substr(valwrite);
+			}
+			FD_ZERO(&readfd);
+			FD_ZERO(&writefd);
+			FD_SET(pipes[SIDE_OUT], &readfd);
+			if (this->_request_body.length() > 0)
+				FD_SET(pipes_in[SIDE_IN], &writefd);
+			std::cout << "WAITING FOR SELECT..." << std::endl;
+        }
+		std::cout << "cierra el pipe de escritura" << std::endl;
+        waitpid(pid, &status, 0);
+		close(pipes_in[SIDE_OUT]);
+        close(pipes[SIDE_IN]);
+        close(pipes[SIDE_OUT]);
 		this->_status = decode_CGI_response();
-		close(pipes[SIDE_OUT]);
-		if (WIFEXITED(status))
-			ret = WEXITSTATUS(status);
-	}
+        if (WIFEXITED(status))
+            ret = WEXITSTATUS(status);
+    }
 }
+
 
 bool http::Request::validate_password(std::string auth)
 {
