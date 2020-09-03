@@ -7,7 +7,7 @@
 #define DEFAULT_FILE_INDEX "index.html"
 #define DEFAULT_SERVER_NAME "localhost"
 #define DEFAULT_BODY_SIZE_MEGABYTES 100
-#define DEFAULT_BODY_SIZE_BYTES 1000000
+#define DEFAULT_BODY_SIZE_BYTES 100000000
 #define DEFAULT_ERROR_PAGE_400 "error_pages/400.html"
 #define DEFAULT_ERROR_PAGE_401 "error_pages/401.html"
 #define DEFAULT_ERROR_PAGE_403 "error_pages/403.html"

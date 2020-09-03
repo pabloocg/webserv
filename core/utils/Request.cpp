@@ -12,11 +12,9 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 						_env(env),
 						_status(0)
 {
-	if (req.length() < 1000){
 	std::cout << "************ REQUEST ************" << std::endl;
-	std::cout << req << std::endl;
+	std::cout << req.substr(0, req.find("\r\n\r\n")) << std::endl;
 	std::cout << "*********************************" << std::endl;
-	}
 	this->_allow.clear();
 	if (bad_request == true)
 		this->_status = 400;
@@ -47,7 +45,7 @@ void	http::Request::save_request()
 	std::vector<std::string> sheader;
 	std::vector<std::string> srequest;
 
-	sheader = http::split(this->_request, '\n');
+	sheader = http::split(this->_request.substr(0, this->_request.find("\r\n\r\n")), '\n');
 	srequest = http::split(sheader[0], ' ');
 	if (srequest[0] == "GET")
 		this->_type = GET;
@@ -98,6 +96,9 @@ void http::Request::save_header(std::string header)
 	if (words[0] == "Accept-Charsets:")
 	{
 	}
+	if (words[0] == "Accept-Encoding:")
+	{
+	}
 	else if (words[0] == "Accept-Language:")
 		this->_language_header = header.substr(16, header.length() - 17);
 	else if (words[0] == "Authorization:")
@@ -120,6 +121,13 @@ void http::Request::save_header(std::string header)
 	}
 	else if (words[0] == "Transfer-Encoding:")
 		this->_transf_encoding = words[1];
+	else if (words[0] == "Host:")
+	{
+	}
+	else if (words[0][0] == 'X' && words[0][1] == '-'){
+		std::cout << "adds custom header: " << header << std::endl;
+		this->_custom_headers.push_back(header);
+	}
 }
 
 void http::Request::save_request_body(void)
@@ -127,6 +135,7 @@ void http::Request::save_request_body(void)
 	for (int i = 0; i < (int)this->_request.length(); i++)
 		if (this->_request[i] == '\n' && this->_request[i + 2] == '\n')
 			this->_request_body = this->_request.substr(i + 3, atoi(this->_req_content_length.c_str()));
+	
 }
 
 void http::Request::set_status(void)
@@ -147,9 +156,10 @@ void http::Request::set_status(void)
 			else if (!validate_password(this->_auth))
 				code = 403;
 		}
-		if (this->_location.isRedirect())
+		if (this->_location.isRedirect()){
 			code = this->_location.getCodeRedirect();
-		else if (this->_request_body.size() > this->_location.getBodySizeinBytes() && !code)
+		}
+		else if (this->_request_body.length() > this->_location.getBodySize() && !code)
 			code = 413;
 		else if (!http::file_exists(this->_file_req) && !http::is_dir(this->_file_req))
 		{
@@ -240,6 +250,10 @@ void http::Request::add_basic_env_vars(void)
 	this->_env.push_back("SCRIPT_FILENAME=" + this->_script_name);
 	this->_env.push_back("REMOTE_ADDR=127.0.0.1");
 	this->_env.push_back("REMOTE_IDENT=local");
+
+	for(int i = 0; i < (int)_custom_headers.size(); i++){
+		this->_env.push_back(custom_header_to_env(this->_custom_headers[i]));
+	}
 
 	std::cout << "Added this env vars:" << std::endl;
 	for (int i = start; i < (int)this->_env.size(); i++)
@@ -470,7 +484,6 @@ char *http::Request::build_response(int *size, std::map<std::string, std::string
 
 void http::Request::startCGI(void)
 {
-    std::cout << "llega a startCGI" << std::endl;
     int     ret = EXIT_SUCCESS;
     int     status;
     int     pipes[2];
@@ -528,19 +541,16 @@ void http::Request::startCGI(void)
 		this->_CGI_response = "";
         while (select(max_sd + 1, &readfd, &writefd, NULL, &timeout) > 0)
 		{
-			std::cout << "PASSSS SELECT..." << std::endl;
 			if (FD_ISSET(pipes[SIDE_OUT], &readfd))
 			{
 				valread = read(pipes[SIDE_OUT], buffer, 65536);
 				this->_CGI_response += std::string(buffer, valread);
-				std::cerr << "pasa por select despues de leer " << valread << std::endl;
-				std::cerr << "CGI_RESPONSE ->  " << this->_CGI_response.length() << std::endl;
+				std::cerr << "CGI_RESPONSE SIZE->  " << this->_CGI_response.length() << std::endl;
 			}
 			else if (FD_ISSET(pipes_in[SIDE_IN], &writefd))
             {
-				std::cout << "va a escribir " << this->_request_body.length() << std::endl;
 				valwrite = write(pipes_in[SIDE_IN], this->_request_body.c_str(), this->_request_body.length());
-				std::cout << "valwrite-> "<< valwrite << std::endl;
+				std::cout << "VALWRITE-> "<< valwrite << std::endl;
 				if (valwrite == (int)this->_request_body.length())
 				{
 					close(pipes_in[SIDE_IN]);
@@ -554,9 +564,8 @@ void http::Request::startCGI(void)
 			FD_SET(pipes[SIDE_OUT], &readfd);
 			if (this->_request_body.length() > 0)
 				FD_SET(pipes_in[SIDE_IN], &writefd);
-			std::cout << "WAITING FOR SELECT..." << std::endl;
         }
-		std::cout << "cierra el pipe de escritura" << std::endl;
+		std::cout << "waitpid" << std::endl;
         waitpid(pid, &status, 0);
 		close(pipes_in[SIDE_OUT]);
         close(pipes[SIDE_IN]);
@@ -635,6 +644,13 @@ int http::Request::decode_CGI_response(void)
 	std::stringstream	buf;
 	int					tmp_code;
 
+	if (this->_custom_headers.size() > 0){
+		size_t pos = this->_CGI_response.find("\r\n\r\n") + 4;
+		this->_CGI_response.replace(pos,
+							this->_CGI_response.size() - pos,
+						   	this->_CGI_response.size() - pos, '1');
+	}
+
 	while (this->_CGI_response.find('\n') != std::string::npos)
 	{
 		tmp = this->_CGI_response.substr(0, this->_CGI_response.find('\n'));
@@ -675,4 +691,25 @@ void http::Request::get_languages_vector(void)
 			this->_languages_accepted[i] = this->_languages_accepted[i].substr(min);
 		std::cout << "language: " << this->_languages_accepted[i] << std::endl;
 	}
+}
+
+std::string http::Request::custom_header_to_env(std::string custom_header){
+	std::string key = custom_header.substr(0, custom_header.find(':'));
+	std::string value = custom_header.substr(custom_header.find(':') + 1);
+
+	for(int i = 0; i < (int)key.length(); i++){
+		if (key[i] >= 'a' && key[i] <= 'z'){
+			key[i] = std::toupper(key[i]);
+		}
+		if(key[i] == '-')
+			key[i] = '_';
+	}
+	key += "=";
+	for(int i = 0; i < (int)value.length(); i++){
+		if (value[i] != ' ' && value[i] != '\r'){
+			key += value[i];
+		}
+	}
+	std::cout << "adding env var: " << key << std::endl;
+	return (key);
 }

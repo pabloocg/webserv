@@ -106,7 +106,7 @@ public:
         this->_optional_modifier = std::string("");
         this->_location = std::string("");
         this->_directory_path = std::string("");
-        this->_body_size = DEFAULT_BODY_SIZE_MEGABYTES;
+        this->_body_size = DEFAULT_BODY_SIZE_BYTES;
         this->_httpMethods._CONNECT = false;
         this->_httpMethods._DELETE = false;
         this->_httpMethods._GET = false;

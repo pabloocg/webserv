@@ -62,6 +62,7 @@ private:
 	std::vector<std::string>	_allow;
 	std::vector<std::string>	_env;
 	std::vector<std::string>	_CGI_headers;
+	std::vector<std::string>	_custom_headers;
 	std::vector<std::string>	_languages_accepted;
 
 	//Response variables
@@ -90,6 +91,8 @@ private:
 	bool		needs_auth(http::Routes routes);
 	bool		validate_password(std::string auth);
 	char		*getResponse(int *size, std::map<std::string, std::string> mime_types);
+
+	std::string custom_header_to_env(std::string custom_header);
 	std::string	build_autoindex(void);
 	std::string	get_content_type(std::string file_type, std::map<std::string, std::string> mime_types);
 	std::map<int, std::string> create_map()
