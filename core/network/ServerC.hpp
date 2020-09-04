@@ -16,7 +16,7 @@
 # include <fcntl.h>
 #include "Pending_read.hpp"
 # include "../config/Logger.hpp"
-# include "../request/Request.hpp"
+# include "../utils/Request.hpp"
 # include "../utils/utils.hpp"
 # include "../config/ServerConf.hpp"
 # include "../utils/Pending_send.hpp"
@@ -25,6 +25,7 @@
 #define FALSE 0
 #define MAX_CLIENTS 200
 
+#define DEBUG_MODE
 
 namespace http
 {

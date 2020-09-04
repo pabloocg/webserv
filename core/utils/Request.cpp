@@ -126,16 +126,18 @@ void http::Request::save_header(std::string header)
 	{
 	}
 	else if (words[0][0] == 'X' && words[0][1] == '-'){
-		std::cout << "adds custom header: " << header << std::endl;
 		this->_custom_headers.push_back(header);
 	}
 }
 
 void http::Request::save_request_body(void)
 {
-	for (int i = 0; i < (int)this->_request.length(); i++)
-		if (this->_request[i] == '\n' && this->_request[i + 2] == '\n')
+	for (int i = 0; i < (int)this->_request.length(); i++){
+		if (this->_request[i] == '\n' && this->_request[i + 2] == '\n'){
 			this->_request_body = this->_request.substr(i + 3, atoi(this->_req_content_length.c_str()));
+			break;
+		}
+	}
 	
 }
 
@@ -603,27 +605,27 @@ bool http::Request::validate_password(std::string auth)
 
 void http::Request::decode_chunked(void)
 {
-	int i = 0;
+	std::cout << "se mete en decode chunked" << std::endl;
 	int ret = 0;
-	int body_length = 0;
 	std::string tmp;
-	std::vector<std::string> chunked_vec;
 
-	for (int i = 0; i < (int)this->_request.length(); i++)
+	std::cout << "hace substr" << std::endl;
+	tmp = this->_request.substr(this->_request.find("\r\n\r\n") + 4);
+
+	std::stringstream ss(tmp);
+	std::string tok;
+	std::cout << "bucle" << std::endl;
+	while (std::getline(ss, tok, '\n'))
 	{
-		if (this->_request[i] == '\n' && this->_request[i + 2] == '\n')
-		{
-			chunked_vec = http::split(this->_request.substr(i + 3), '\n');
+		if ((ret = std::stoi(tok, 0, 16)) == 0){
 			break;
 		}
+		std::getline(ss, tok, '\n');
+		tok.erase(tok.end() - 1);
+		this->_request_body.append(tok);
 	}
-	while ((ret = stoi(chunked_vec[i], 0, 16)) > 0)
-	{
-		body_length += ret;
-		this->_request_body += chunked_vec[++i].substr(0, ret);
-		i++;
-	}
-	this->_req_content_length = std::to_string(body_length);
+	this->_req_content_length = std::to_string(this->_request_body.length());
+	std::cout << "sale de decode chunked" << std::endl;
 }
 
 int http::Request::decode_CGI_response(void)
