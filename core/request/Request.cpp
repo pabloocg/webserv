@@ -1,19 +1,17 @@
 #include "Request.hpp"
-#include "../utils/base64.hpp"
 
-http::Request::Request(std::string req, http::ServerConf server, bool bad_request, std::vector<std::string> env):
-						_is_autoindex(false),
-						_www_auth_required(false),
-						_isCGI(false),
-						_request(req),
-						_auth("NULL"),
-						_server(server),
-						_error_mgs(create_map()),
-						_env(env),
-						_status(0)
+http::Request::Request(std::string req, http::ServerConf server, bool bad_request, std::vector<std::string> env) : _is_autoindex(false),
+																												   _www_auth_required(false),
+																												   _isCGI(false),
+																												   _request(req),
+																												   _auth("NULL"),
+																												   _server(server),
+																												   _error_mgs(create_map()),
+																												   _env(env),
+																												   _status(0)
 {
 
-#ifdef 		DEBUG_MODE
+#ifdef DEBUG_MODE
 
 	std::cout << "************ REQUEST HEADERS ************" << std::endl;
 	std::cout << req.substr(0, req.find("\r\n\r\n")) << std::endl;
@@ -29,22 +27,22 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	{
 		this->_isCGI = true;
 
-		#ifdef 		DEBUG_MODE
+#ifdef DEBUG_MODE
 
 		std::cout << "extension =" << this->_location.getExtension() << std::endl;
 
-		#endif
+#endif
 
 		this->_path_info = this->_file_req.substr(this->_file_req.find(this->_location.getExtension()) + 3);
 		this->_script_name = this->_file_req.substr(0, this->_file_req.find(this->_location.getExtension()) + 3);
 		this->_file_req = this->_script_name;
 		add_basic_env_vars();
 
-		#ifdef 		DEBUG_MODE
+#ifdef DEBUG_MODE
 
 		std::cout << "File after CGI Transformation: " << this->_file_req << std::endl;
 
-		#endif
+#endif
 	}
 	if (!this->_location.isRedirect())
 	{
@@ -57,7 +55,7 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	prepare_status();
 }
 
-void	http::Request::save_request()
+void http::Request::save_request()
 {
 	std::vector<std::string> sheader;
 	std::vector<std::string> srequest;
@@ -96,29 +94,29 @@ void	http::Request::save_request()
 		this->_file_bef_req += '/';
 	this->_location = this->_server.getRoutebyPath(this->_file_bef_req);
 
-	#ifdef 		DEBUG_MODE
+#ifdef DEBUG_MODE
 
 	std::cout << "Location: " << this->_location.getVirtualLocation() << std::endl;
 
-	#endif
+#endif
 
 	if (this->_location.isRedirect())
 		this->_file_bef_req = this->_location.getPathRedirect();
 	else
 	{
-		#ifdef 		DEBUG_MODE
+#ifdef DEBUG_MODE
 
 		std::cout << "File before getFileTransformed: " << this->_file_bef_req << std::endl;
 
-		#endif
+#endif
 
 		this->_file_req = this->_location.getFileTransformed(this->_file_bef_req, this->_languages_accepted, this->_type, this->_language_setted);
-		
-		#ifdef 		DEBUG_MODE
-		
+
+#ifdef DEBUG_MODE
+
 		std::cout << "File after getFileTransformed: " << this->_file_req << std::endl;
-		
-		#endif
+
+#endif
 	}
 }
 
@@ -159,7 +157,9 @@ void http::Request::save_header(std::string header)
 	}
 	else if (words[0][0] == 'X' && words[0][1] == '-')
 	{
+#ifdef DEBUG_MODE
 		std::cout << "adds custom header: " << header << std::endl;
+#endif
 		this->_custom_headers.push_back(header);
 	}
 }
@@ -168,8 +168,10 @@ void http::Request::save_request_body(void)
 {
 	for (int i = 0; i < (int)this->_request.length(); i++)
 		if (this->_request[i] == '\n' && this->_request[i + 2] == '\n')
+		{
 			this->_request_body = this->_request.substr(i + 3, atoi(this->_req_content_length.c_str()));
-	
+			break;
+		}
 }
 
 void http::Request::set_status(void)
@@ -190,7 +192,8 @@ void http::Request::set_status(void)
 			else if (!validate_password(this->_auth))
 				code = 403;
 		}
-		if (this->_location.isRedirect()){
+		if (this->_location.isRedirect())
+		{
 			code = this->_location.getCodeRedirect();
 		}
 		else if (this->_request_body.length() > this->_location.getBodySize() && !code)
@@ -205,10 +208,12 @@ void http::Request::set_status(void)
 					code = 200;
 			}
 		}
-		else if (http::file_exists(this->_file_req) && (this->_type == PUT or (this->_type == POST && !this->_isCGI)) && !code){
+		else if (http::file_exists(this->_file_req) && (this->_type == PUT or (this->_type == POST && !this->_isCGI)) && !code)
+		{
 			code = 201;
 		}
-		else if (http::file_exists(this->_file_req) && this->_type == POST && this->_isCGI && !code){
+		else if (http::file_exists(this->_file_req) && this->_type == POST && this->_isCGI && !code)
+		{
 			code = 200;
 		}
 		//else if (http::is_dir(this->_file_req))
@@ -226,44 +231,6 @@ void http::Request::set_status(void)
 	}
 	if (!this->_status)
 		this->_status = code;
-}
-
-void		http::Request::prepare_status()
-{
-	this->_message_status = this->_error_mgs[this->_status];
-	if (this->_status >= 400)
-	{
-		this->_isCGI = false;
-		this->_file_req = this->_server.getErrorPage(this->_status);
-		this->_file_type = this->_file_req.substr(_file_req.find(".") + 1);
-	}
-}
-
-std::string http::Request::get_content_type(std::string type, std::map<std::string, std::string> mime_types)
-{
-	std::map<std::string, std::string>::iterator iter = mime_types.find(type);
-
-	if (iter == mime_types.end())
-		return ("application/octet-stream");
-	else
-		return (iter->second);
-}
-
-bool http::Request::needs_auth(http::Routes route)
-{
-	if (route.needAuth())
-	{
-		this->_realm = route.getAuthMessage();
-		this->_auth_file_path = route.getPassAuthFile();
-		return (true);
-	}
-	else if (!route.needExplicitAuth() && this->_server.needAuth())
-	{
-		this->_realm = this->_server.getAuthMessage();
-		this->_auth_file_path = this->_server.getPassAuthFile();
-		return (true);
-	}
-	return (false);
 }
 
 char *http::Request::getResponse(int *size, std::map<std::string, std::string> mime_types)
@@ -291,7 +258,8 @@ char *http::Request::getResponse(int *size, std::map<std::string, std::string> m
 		stream << "\nWWW-Authenticate: Basic realm=\"" << this->_realm << "\"";
 	if (this->_isCGI)
 		for (int i = 0; i < (int)this->_CGI_headers.size(); i++)
-			stream << "\n" << this->_CGI_headers[i];
+			stream << "\n"
+				   << this->_CGI_headers[i];
 	stream << "\nDate: " << http::get_actual_date();
 	if (this->_status != 204 && this->_type != PUT)
 		stream << "\nContent-Length: " << this->_resp_body.length();
@@ -305,52 +273,27 @@ char *http::Request::getResponse(int *size, std::map<std::string, std::string> m
 	if (this->_type != HEAD && this->_status != 204 && this->_type != PUT)
 		stream << this->_resp_body;
 	this->_resp_body = stream.str();
+
+#ifdef DEBUG_MODE
+
 	if (this->_resp_body.length() < 1000)
 	{
 		std::cout << "************ RESPONSE ***********" << std::endl;
 		std::cout << this->_resp_body;
 		std::cout << "*********************************" << std::endl;
 	}
+
+#endif
 	if (!(res = (char *)malloc(sizeof(char) * (this->_resp_body.size() + 1))))
 		return (NULL);
 	std::copy(this->_resp_body.begin(), this->_resp_body.end(), res);
 	res[this->_resp_body.size()] = '\0';
 	*size = this->_resp_body.size();
+
+#ifdef DEBUG_MODE
+
 	std::cout << "Sending " << this->_file_req << std::endl;
+
+#endif
 	return (res);
-}
-
-bool http::Request::validate_password(std::string auth)
-{
-	std::ifstream htpasswd;
-	std::string buf;
-	std::string decoded_str;
-	std::string user;
-	std::string password;
-
-	auth = auth.substr(0, auth.size() - 1);
-	std::vector<std::uint8_t> decoded = base64::decode(auth);
-	for (int i = 0; i < (int)decoded.size(); i++)
-		decoded_str += (char)decoded[i];
-	int pos = decoded_str.find(':');
-	user = decoded_str.substr(0, pos);
-	password = decoded_str.substr(pos + 1, (decoded_str.size() - pos + 1));
-	htpasswd.open(this->_auth_file_path);
-	if (htpasswd.is_open())
-	{
-		while (std::getline(htpasswd, buf))
-		{
-			if (user == buf.substr(0, buf.find(':')))
-			{
-				std::string encrypted_passwd = buf.substr(buf.find(':') + 1, buf.size() - buf.find(':') + 1);
-				decoded.clear();
-				for (int i = 0; i < (int)password.size(); i++)
-					decoded.push_back((unsigned char)password[i]);
-				std::string encoded = base64::encode(decoded);
-				if (encoded == encrypted_passwd)
-					return (true);
-			}
-		}
-	}
-	return (false);
 }

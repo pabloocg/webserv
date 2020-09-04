@@ -19,7 +19,9 @@ void http::Request::parent_process(int &pipes_out, int &pipesin_in)
 		if ((valread = read(pipes_out, buffer, BUFFER_SIZE)) < 0)
 			continue;
 		this->_CGI_response += std::string(buffer, valread);
+#ifdef DEBUG_MODE
 		std::cout << "CGI_LENGTH->" << this->_CGI_response.length() << std::endl;
+#endif
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 500000;
 		FD_ZERO(&readfd);
@@ -27,18 +29,36 @@ void http::Request::parent_process(int &pipes_out, int &pipesin_in)
 	}
 }
 
+void http::Request::child_process(char **args, int &pipes_in)
+{
+	char **env = http::vecToCharptrptr(this->_env);
+	int ret = EXIT_SUCCESS;
+
+	if (dup2(pipes_in, STDOUT) < 0)
+		perror("dup2");
+	if (this->_request_body.length() > 0)
+	{
+		this->_CGI_fd = open(FILE_CGI, O_RDONLY, 0);
+		if (dup2(this->_CGI_fd, STDIN))
+			perror("dup2");
+	}
+	else
+		close(STDIN);
+	if ((ret = execve(args[0], args, env)) < 0)
+		perror("execve");
+	free(args);
+	free(env);
+	exit(ret);
+}
+
 void http::Request::startCGI(void)
 {
-	int ret = EXIT_SUCCESS;
-	int status;
-	int pipes[2];
-	//int     pipes_in[2];
-	pid_t pid;
-	char **env = http::vecToCharptrptr(this->_env);
-	char **args;
-	int valwrite;
+	int 	ret, status, valwrite;
+	int		pipes[2];
+	pid_t	pid;
+	char	**args;
 
-	this->_CGI_fd = open("tmp/CGI.tmp", O_RDWR | O_CREAT | O_TRUNC | O_NOFOLLOW | O_NONBLOCK, 0666);
+	this->_CGI_fd = open(FILE_CGI, O_RDWR | O_CREAT | O_TRUNC | O_NOFOLLOW | O_NONBLOCK, 0666);
 	valwrite = write(this->_CGI_fd, this->_request_body.c_str(), this->_request_body.length());
 	close(this->_CGI_fd);
 	if (pipe(pipes))
@@ -51,27 +71,7 @@ void http::Request::startCGI(void)
 	if ((pid = fork()) < 0)
 		perror("fork");
 	else if (pid == 0)
-	{
-		if (dup2(pipes[SIDE_IN], STDOUT) < 0)
-			perror("dup2");
-		if (this->_request_body.length() > 0)
-		{
-			this->_CGI_fd = open("tmp/CGI.tmp", O_RDONLY, 0);
-			if (dup2(this->_CGI_fd, STDIN))
-			{
-				perror("dup2");
-			}
-		}
-		else
-		{
-			close(STDIN);
-		}
-		if ((ret = execve(args[0], args, env)) < 0)
-			perror("execve");
-		free(args);
-		free(env);
-		exit(ret);
-	}
+		this->child_process(args, pipes[SIDE_IN]);
 	else
 	{
 		this->parent_process(pipes[SIDE_OUT], this->_CGI_fd);
@@ -79,7 +79,7 @@ void http::Request::startCGI(void)
 		waitpid(pid, &status, 0);
 	}
 	close(this->_CGI_fd);
-	unlink("tmp/CGI.tmp");
+	unlink(FILE_CGI);
 	close(pipes[SIDE_IN]);
 	close(pipes[SIDE_OUT]);
 	this->_status = decode_CGI_response();
@@ -127,7 +127,9 @@ int http::Request::decode_CGI_response(void)
 
 void http::Request::add_basic_env_vars(void)
 {
+#ifdef DEBUG_MODE
 	int start = (int)this->_env.size();
+#endif
 
 	this->_env.push_back("SERVER_NAME=" + this->_server.getServerName());
 	this->_env.push_back("SERVER_PORT=" + std::to_string(this->_server.getPort()));

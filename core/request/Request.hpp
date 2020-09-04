@@ -23,6 +23,8 @@
 # define STDOUT 1
 # define STDERR 2
 
+# define FILE_CGI "tmp/CGI.tmp"
+
 # define SIDE_OUT 0
 # define SIDE_IN 1
 
@@ -81,6 +83,7 @@ private:
 	void		build_options(void);
 
 	void		startCGI(void);
+	void		child_process(char **args, int &pipes_in);
 	void		parent_process(int &pipes_out, int &pipesin_in);
 	void		set_status(void);
 	void		decode_chunked(void);

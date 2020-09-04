@@ -1,26 +1,40 @@
 #include "Request.hpp"
-#include "../utils/base64.hpp"
+
+void		http::Request::prepare_status()
+{
+	this->_message_status = this->_error_mgs[this->_status];
+	if (this->_status >= 400)
+	{
+		this->_isCGI = false;
+		this->_file_req = this->_server.getErrorPage(this->_status);
+		this->_file_type = this->_file_req.substr(_file_req.find(".") + 1);
+	}
+}
+
+std::string http::Request::get_content_type(std::string type, std::map<std::string, std::string> mime_types)
+{
+	std::map<std::string, std::string>::iterator iter = mime_types.find(type);
+
+	if (iter == mime_types.end())
+		return ("application/octet-stream");
+	else
+		return (iter->second);
+}
 
 void http::Request::decode_chunked(void)
 {
-	int i = 0;
 	int ret = 0;
-    int end_headers;
-	int body_length = 0;
-	std::string tmp;
-	std::vector<std::string> chunked_vec;
+	std::string tok;
 
-    if ((end_headers = this->_request.find("\r\n\r\n")) != std::string::npos)
-		chunked_vec = http::split(this->_request.substr(end_headers + 4), '\n');
-    else
-        return ;
-	while ((ret = stoi(chunked_vec[i], 0, 16)) > 0)
+	std::stringstream ss(this->_request.substr(this->_request.find("\r\n\r\n") + 4));
+	while (std::getline(ss, tok, '\n'))
 	{
-		body_length += ret;
-		this->_request_body += chunked_vec[++i].substr(0, ret);
-		i++;
+		if ((ret = std::stoi(tok, 0, 16)) == 0)
+			break;
+		std::getline(ss, tok, '\n');
+		this->_request_body.append(tok.substr(0, ret));
 	}
-	this->_req_content_length = std::to_string(body_length);
+	this->_req_content_length = std::to_string(this->_request_body.length());
 }
 
 void http::Request::get_languages_vector(void)

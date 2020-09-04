@@ -19,7 +19,7 @@ void http::ServerC::wait_for_connection()
 		if (_client_socket[i] > max_sd)
 			max_sd = _client_socket[i];
 
-#ifdef 		DEBUG_MODE
+#ifdef DEBUG_MODE
 
 	std::cout << "Waiting for select" << std::endl;
 
@@ -28,7 +28,7 @@ void http::ServerC::wait_for_connection()
 	if (((activity = select(max_sd + 1, &readfds, &writefds, NULL, NULL)) < 0) && (errno != EINTR))
 		throw ServerError("select", "failed for some reason");
 
-#ifdef 		DEBUG_MODE
+#ifdef DEBUG_MODE
 
 	if (activity > 0)
 		std::cout << "Number of reads/writes possible " << activity << std::endl;
@@ -61,13 +61,13 @@ void http::ServerC::wait_for_connection()
 		}
 		if (FD_ISSET(sd, &writefds))
 		{
-			int n = 0;
-			http::Pending_send pending = _pending_messages.find(sd)->second;
-			n = send(sd, pending.get_message() + pending.get_sended(), pending.get_left(), 0);
-			std::cout << "Sended " << n + pending.get_sended() << " bytes to " << sd << ", " << pending.get_left() - n << " left" << std::endl;
-			if (n == -1)
+			int n;
+			http::Pending_send pending;
+
+			pending = _pending_messages.find(sd)->second;
+			if ((n = send(sd, pending.get_message() + pending.get_sended(), pending.get_left(), 0)) < 0)
 				throw ServerError("send", "failed for some reason");
-			else if (n < pending.get_left())
+			if (n < pending.get_left())
 			{
 				_pending_messages.find(sd)->second.set_sended(pending.get_sended() + n);
 				_pending_messages.find(sd)->second.set_left(pending.get_left() - n);
@@ -78,6 +78,12 @@ void http::ServerC::wait_for_connection()
 				FD_CLR(sd, &_master_write);
 				_pending_messages.erase(_pending_messages.find(sd));
 			}
+
+#ifdef DEBUG_MODE
+
+			std::cout << "Sended " << n + pending.get_sended() << " bytes to " << sd << ", " << pending.get_left() - n << " left" << std::endl;
+
+#endif
 		}
 	}
 }
