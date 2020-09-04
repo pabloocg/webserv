@@ -6,6 +6,8 @@ CONFIG_PATH = config/
 
 NETWORK_PATH = network/
 
+REQUEST_PATH = request/
+
 UTILS_PATH = utils/
 
 TMP_PATH = tmp/
@@ -23,7 +25,7 @@ SRCS =	main.cpp\
 		${addprefix ${NETWORK_PATH}, ServerC.cpp}\
 		${addprefix ${NETWORK_PATH}, Pending_read.cpp}\
 		${addprefix ${CONFIG_PATH}, Logger.cpp}\
-		${addprefix ${UTILS_PATH}, Request.cpp}\
+		${addprefix ${REQUEST_PATH}, Request.cpp}\
 		${addprefix ${UTILS_PATH}, Pending_send.cpp}\
 		${addprefix ${CONFIG_PATH}, Conf.cpp}
 
