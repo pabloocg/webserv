@@ -484,53 +484,29 @@ char *http::Request::build_response(int *size, std::map<std::string, std::string
 
 void	http::Request::parent_process(int &pipes_out, int &pipesin_in)
 {
-	int		valread, valwrite, max_sd;
-	fd_set	readfd, writefd;
+	(void)pipesin_in;
+	int		valread, max_sd;
+	fd_set	readfd;
 	char    buffer[BUFFER_SIZE + 1] = {0};
 	struct timeval timeout;
 
-	timeout.tv_sec = 1;
-	timeout.tv_usec = 0;
+	
 	max_sd = pipes_out;
-	if (this->_req_content_length.size() > 0 && pipesin_in > max_sd)
-		max_sd = pipesin_in;
-	if (this->_req_content_length.size() > 0 && fcntl(pipesin_in, F_SETFL, O_NONBLOCK) < 0)
-		perror("fcntl");
 	FD_ZERO(&readfd);
-	FD_ZERO(&writefd);
 	FD_SET(pipes_out, &readfd);
-	if (this->_req_content_length.size() > 0)
-		FD_SET(pipesin_in, &writefd);
-	//else
-	//	close(pipesin_in);
 	this->_CGI_response = "";
-	while (select(max_sd + 1, &readfd, &writefd, NULL, &timeout) > 0)
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 500000;
+	while (select(max_sd + 1, &readfd, NULL, NULL, &timeout) > 0)
 	{
-		if (FD_ISSET(pipes_out, &readfd))
-		{
-			if ((valread = read(pipes_out, buffer, BUFFER_SIZE)) < 0)
-				continue ;
-			this->_CGI_response += std::string(buffer, valread);
-			std::cerr << "CGI_RESPONSE SIZE->  " << this->_CGI_response.length() << std::endl;
-		}
-		else if (FD_ISSET(pipesin_in, &writefd))
-		{
-			if ((valwrite = write(pipesin_in, this->_request_body.c_str(), this->_request_body.length())) < 0)
-				continue ;
-			std::cerr << "VALWRITE-> "<< valwrite << std::endl;
-			if (valwrite == (int)this->_request_body.length())
-			{
-				close(pipesin_in);
-				this->_request_body.clear();
-			}
-			if (valwrite < (int)this->_request_body.length())
-				this->_request_body = this->_request_body.substr(valwrite);
-		}
+		if ((valread = read(pipes_out, buffer, BUFFER_SIZE)) < 0)
+			continue ;
+		this->_CGI_response += std::string(buffer, valread);
+		std::cout << "CGI_LENGTH->" << this->_CGI_response.length() << std::endl;
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 500000;
 		FD_ZERO(&readfd);
-		FD_ZERO(&writefd);
 		FD_SET(pipes_out, &readfd);
-		if (this->_request_body.length() > 0)
-			FD_SET(pipesin_in, &writefd);
 	}
 }
 
@@ -539,15 +515,17 @@ void http::Request::startCGI(void)
     int     ret = EXIT_SUCCESS;
     int		status;
     int     pipes[2];
-    int     pipes_in[2];
+    //int     pipes_in[2];
     pid_t   pid;
     char    **env = http::vecToCharptrptr(this->_env);
     char    **args;
+	int		valwrite;
 
+	this->_CGI_fd = open("tmp/CGI.tmp", O_RDWR | O_CREAT | O_TRUNC | O_NOFOLLOW | O_NONBLOCK, 0666);
+	valwrite = write(this->_CGI_fd, this->_request_body.c_str(), this->_request_body.length());
+	close(this->_CGI_fd);
     if (pipe(pipes))
         perror("pipe");
-	if (this->_req_content_length.size() > 0 && pipe(pipes_in))
-		perror("pipe");
     if (!(args = (char **)malloc(sizeof(char *) * 3)))
         perror("malloc");
     args[0] = strdup(this->_location.getCgiExec().c_str());
@@ -559,26 +537,27 @@ void http::Request::startCGI(void)
     {
         if (dup2(pipes[SIDE_IN], STDOUT) < 0)
             perror("dup2");
-        if (this->_req_content_length.size() > 0 && dup2(pipes_in[SIDE_OUT], STDIN) < 0)
-            perror("dup2");
-		else
-			close(pipes_in[SIDE_OUT]);
-		std::cerr << "Before execve" << std::endl;
+        if (this->_request_body.length() > 0){
+            this->_CGI_fd = open("tmp/CGI.tmp", O_RDONLY, 0);
+			if (dup2(this->_CGI_fd, STDIN)){
+				perror("dup2");
+			}
+		}
+		else{
+			close(STDIN);
+		}
         if ((ret = execve(args[0], args, env)) < 0)
             perror("execve");
-		std::cerr << "After execve" << std::endl;
         free(args);
 		free(env);
         exit(ret);
     }
     else
     {
-		this->parent_process(pipes[SIDE_OUT], pipes_in[SIDE_IN]);
+		this->parent_process(pipes[SIDE_OUT], this->_CGI_fd);
 		std::cerr << "waitpid" << std::endl;
 		waitpid(pid, &status, 0);
     }
-	if (this->_req_content_length.size() > 0)
-		close(pipes_in[SIDE_OUT]);
 	close(pipes[SIDE_IN]);
 	close(pipes[SIDE_OUT]);
 	this->_status = decode_CGI_response();
