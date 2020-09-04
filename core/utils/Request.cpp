@@ -15,6 +15,7 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	std::cout << "************ REQUEST HEADERS ************" << std::endl;
 	std::cout << req.substr(0, req.find("\r\n\r\n")) << std::endl;
 	std::cout << "*********************************" << std::endl;
+	std::cout << "REQUEST LENGTH: " << req.length() << std::endl;
 	this->_allow.clear();
 	if (bad_request == true)
 		this->_status = 400;
@@ -502,7 +503,6 @@ void	http::Request::parent_process(int &pipes_out, int &pipesin_in)
 		if ((valread = read(pipes_out, buffer, BUFFER_SIZE)) < 0)
 			continue ;
 		this->_CGI_response += std::string(buffer, valread);
-		std::cout << "CGI_LENGTH->" << this->_CGI_response.length() << std::endl;
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 500000;
 		FD_ZERO(&readfd);

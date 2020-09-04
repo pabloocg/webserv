@@ -14,8 +14,9 @@
 # include <iostream>
 # include <string>
 # include <fcntl.h>
+#include "Pending_read.hpp"
 # include "../config/Logger.hpp"
-# include "../utils/Request.hpp"
+# include "../request/Request.hpp"
 # include "../utils/utils.hpp"
 # include "../config/ServerConf.hpp"
 # include "../utils/Pending_send.hpp"
@@ -24,7 +25,6 @@
 #define FALSE 0
 #define MAX_CLIENTS 200
 
-#define DEBUG_MODE
 
 namespace http
 {
@@ -45,7 +45,7 @@ private:
 	std::vector<http::ServerConf>		_servers;
 	std::map<int, http::Pending_send>	_pending_messages;
 	std::map<std::string, std::string>	_mime_types;
-	std::map<int, std::string>			_pending_reads;
+	std::map<int, http::Pending_read>	_pending_reads;
 	std::string							_host_header;
 	std::vector<std::string> 			_env;
 	bool								_bad_request;

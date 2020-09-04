@@ -8,12 +8,17 @@ void	http::ServerC::read_request(char *buf, int &sd)
     std::string s_buffer;
 
     if (this->_pending_reads.find(sd) != this->_pending_reads.end())
-        this->_pending_reads[sd].append(std::string(buf));
-    else
-        this->_pending_reads[sd] = std::string(buf);
-    if (valid_req_format(this->_pending_reads[sd]))
+        this->_pending_reads[sd].message.append(std::string(buf));
+    else{
+		//this->_pending_reads[sd] = *(new Pending_read());
+        this->_pending_reads[sd].message = std::string(buf);
+	}
+    if (this->_pending_reads[sd].is_valid_format())
     {
-        s_buffer = this->_pending_reads[sd];
+        s_buffer = this->_pending_reads[sd].headers + this->_pending_reads[sd].message;
+		this->_bad_request = this->_pending_reads[sd].badRequest;
+		this->_host_header = this->_pending_reads[sd].host_header;
+		//delete(&(this->_pending_reads[sd]));
         this->_pending_reads.erase(sd);
         http::Request req(s_buffer, get_server(), this->_bad_request, this->_env);
         if (!(message = req.build_response(&size, _mime_types)))
