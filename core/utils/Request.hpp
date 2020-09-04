@@ -26,6 +26,8 @@
 # define SIDE_OUT 0
 # define SIDE_IN 1
 
+# define BUFFER_SIZE 65536
+
 namespace http
 {
 class Request
@@ -78,6 +80,7 @@ private:
 	void		build_options(void);
 
 	void		startCGI(void);
+	void		parent_process(int &pipes_out, int &pipesin_in);
 	void		set_status(void);
 	void		decode_chunked(void);
 	void		save_request(void);

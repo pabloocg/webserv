@@ -12,7 +12,7 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 						_env(env),
 						_status(0)
 {
-	std::cout << "************ REQUEST ************" << std::endl;
+	std::cout << "************ REQUEST HEADERS ************" << std::endl;
 	std::cout << req.substr(0, req.find("\r\n\r\n")) << std::endl;
 	std::cout << "*********************************" << std::endl;
 	this->_allow.clear();
@@ -482,20 +482,72 @@ char *http::Request::build_response(int *size, std::map<std::string, std::string
 	return (getResponse(size, mime_types));
 }
 
+void	http::Request::parent_process(int &pipes_out, int &pipesin_in)
+{
+	int		valread, valwrite, max_sd;
+	fd_set	readfd, writefd;
+	char    buffer[BUFFER_SIZE + 1] = {0};
+	struct timeval timeout;
+
+	timeout.tv_sec = 1;
+	timeout.tv_usec = 0;
+	max_sd = pipes_out;
+	if (this->_req_content_length.size() > 0 && pipesin_in > max_sd)
+		max_sd = pipesin_in;
+	if (this->_req_content_length.size() > 0 && fcntl(pipesin_in, F_SETFL, O_NONBLOCK) < 0)
+		perror("fcntl");
+	FD_ZERO(&readfd);
+	FD_ZERO(&writefd);
+	FD_SET(pipes_out, &readfd);
+	if (this->_req_content_length.size() > 0)
+		FD_SET(pipesin_in, &writefd);
+	//else
+	//	close(pipesin_in);
+	this->_CGI_response = "";
+	while (select(max_sd + 1, &readfd, &writefd, NULL, &timeout) > 0)
+	{
+		if (FD_ISSET(pipes_out, &readfd))
+		{
+			if ((valread = read(pipes_out, buffer, BUFFER_SIZE)) < 0)
+				continue ;
+			this->_CGI_response += std::string(buffer, valread);
+			std::cerr << "CGI_RESPONSE SIZE->  " << this->_CGI_response.length() << std::endl;
+		}
+		else if (FD_ISSET(pipesin_in, &writefd))
+		{
+			if ((valwrite = write(pipesin_in, this->_request_body.c_str(), this->_request_body.length())) < 0)
+				continue ;
+			std::cerr << "VALWRITE-> "<< valwrite << std::endl;
+			if (valwrite == (int)this->_request_body.length())
+			{
+				close(pipesin_in);
+				this->_request_body.clear();
+			}
+			if (valwrite < (int)this->_request_body.length())
+				this->_request_body = this->_request_body.substr(valwrite);
+		}
+		FD_ZERO(&readfd);
+		FD_ZERO(&writefd);
+		FD_SET(pipes_out, &readfd);
+		if (this->_request_body.length() > 0)
+			FD_SET(pipesin_in, &writefd);
+	}
+}
+
 void http::Request::startCGI(void)
 {
     int     ret = EXIT_SUCCESS;
-    int     status;
+    int		status;
     int     pipes[2];
     int     pipes_in[2];
     pid_t   pid;
     char    **env = http::vecToCharptrptr(this->_env);
     char    **args;
-    char    buffer[65537] = {0};
+
     if (pipe(pipes))
         perror("pipe");
-    if (this->_request_body.length() > 0 && pipe(pipes_in))
-        perror("pipe");
+	if (this->_req_content_length.size() > 0 && pipe(pipes_in))
+		perror("pipe");
     if (!(args = (char **)malloc(sizeof(char *) * 3)))
         perror("malloc");
     args[0] = strdup(this->_location.getCgiExec().c_str());
@@ -507,73 +559,31 @@ void http::Request::startCGI(void)
     {
         if (dup2(pipes[SIDE_IN], STDOUT) < 0)
             perror("dup2");
-        if (this->_request_body.length() > 0 && dup2(pipes_in[SIDE_OUT], STDIN) < 0)
+        if (this->_req_content_length.size() > 0 && dup2(pipes_in[SIDE_OUT], STDIN) < 0)
             perror("dup2");
+		else
+			close(pipes_in[SIDE_OUT]);
+		std::cerr << "Before execve" << std::endl;
         if ((ret = execve(args[0], args, env)) < 0)
             perror("execve");
+		std::cerr << "After execve" << std::endl;
         free(args);
 		free(env);
         exit(ret);
     }
     else
     {
-        int valread;
-		int valwrite;
-        //int activity;
-		int max_sd;
-        struct timeval timeout;
-		fd_set readfd;
-		fd_set writefd;
-		timeout.tv_sec = 1;
-		timeout.tv_usec = 0;
-		max_sd = pipes[SIDE_OUT];
-		if (pipes_in[SIDE_IN] > max_sd)
-			max_sd = pipes_in[SIDE_IN];
-		fcntl(pipes_in[SIDE_IN], F_SETFL, O_NONBLOCK);
-		FD_ZERO(&readfd);
-		FD_ZERO(&writefd);
-		FD_SET(pipes[SIDE_OUT], &readfd);
-		if (this->_request_body.length() > 0)
-			FD_SET(pipes_in[SIDE_IN], &writefd);
-		else{
-			close(pipes_in[SIDE_IN]);
-		}
-		this->_CGI_response = "";
-        while (select(max_sd + 1, &readfd, &writefd, NULL, &timeout) > 0)
-		{
-			if (FD_ISSET(pipes[SIDE_OUT], &readfd))
-			{
-				valread = read(pipes[SIDE_OUT], buffer, 65536);
-				this->_CGI_response += std::string(buffer, valread);
-				std::cerr << "CGI_RESPONSE SIZE->  " << this->_CGI_response.length() << std::endl;
-			}
-			else if (FD_ISSET(pipes_in[SIDE_IN], &writefd))
-            {
-				valwrite = write(pipes_in[SIDE_IN], this->_request_body.c_str(), this->_request_body.length());
-				std::cout << "VALWRITE-> "<< valwrite << std::endl;
-				if (valwrite == (int)this->_request_body.length())
-				{
-					close(pipes_in[SIDE_IN]);
-					this->_request_body.clear();
-				}
-				if (valwrite < (int)this->_request_body.length())
-					this->_request_body = this->_request_body.substr(valwrite);
-			}
-			FD_ZERO(&readfd);
-			FD_ZERO(&writefd);
-			FD_SET(pipes[SIDE_OUT], &readfd);
-			if (this->_request_body.length() > 0)
-				FD_SET(pipes_in[SIDE_IN], &writefd);
-        }
-		std::cout << "waitpid" << std::endl;
-        waitpid(pid, &status, 0);
-		close(pipes_in[SIDE_OUT]);
-        close(pipes[SIDE_IN]);
-        close(pipes[SIDE_OUT]);
-		this->_status = decode_CGI_response();
-        if (WIFEXITED(status))
-            ret = WEXITSTATUS(status);
+		this->parent_process(pipes[SIDE_OUT], pipes_in[SIDE_IN]);
+		std::cerr << "waitpid" << std::endl;
+		waitpid(pid, &status, 0);
     }
+	if (this->_req_content_length.size() > 0)
+		close(pipes_in[SIDE_OUT]);
+	close(pipes[SIDE_IN]);
+	close(pipes[SIDE_OUT]);
+	this->_status = decode_CGI_response();
+	if (WIFEXITED(status))
+		ret = WEXITSTATUS(status);
 }
 
 

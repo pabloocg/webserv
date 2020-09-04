@@ -1,10 +1,10 @@
 #include "ServerC.hpp"
 
-http::ServerC::ServerC(std::vector<http::ServerConf> servers, std::map<std::string, std::string> mime_types, char **env) : _client_socket(30, 0),
+http::ServerC::ServerC(std::vector<http::ServerConf> servers, std::map<std::string, std::string> mime_types, char **env) : _client_socket(MAX_CLIENTS, 0),
 																														   _servers(servers),
 																														   _mime_types(mime_types)
 {
-	this->_max_client = 30;
+	this->_max_client = MAX_CLIENTS;
 	this->_server_socket.resize(this->_servers.size());
 	this->_env = http::charptrptrToVector(env);
 	/*
@@ -91,10 +91,10 @@ void http::ServerC::wait_for_connection()
 	for (int i = 0; i < _max_client; i++)
 		if (_client_socket[i] > max_sd)
 			max_sd = _client_socket[i];
-	std::cout << "Waiting for select" << std::endl;
+	//std::cout << "Waiting for select" << std::endl;
 	activity = select(max_sd + 1, &readfds, &writefds, NULL, NULL);
-	if (activity > 0)
-		std::cout << "Number of reads/writes possible " << activity << std::endl;
+	//if (activity > 0)
+	//	std::cout << "Number of reads/writes possible " << activity << std::endl;
 	if ((activity < 0) && (errno != EINTR))
 		throw(ServerError("select", "failed for some reason"));
 	for (size_t i = 0; i < _servers.size(); i++)
@@ -111,11 +111,11 @@ void http::ServerC::wait_for_connection()
 			int valread;
 			int size;
 			int n = 0;
-			char buffer[100000] = {0};
+			char buffer[BUFFER_SIZE + 1] = {0};
 			char *message;
 			std::string s_buffer = "";
 
-			if ((valread = read(sd, buffer, 100000)) == 0)
+			if ((valread = read(sd, buffer, BUFFER_SIZE)) == 0)
 			{
 				std::cout << "Host number " << sd << " disconnected" << std::endl;
 				close(sd);
@@ -131,13 +131,11 @@ void http::ServerC::wait_for_connection()
 			else
 			{
 				buffer[valread] = '\0';
-				s_buffer = std::string(buffer);
+				s_buffer = std::string(buffer, valread);
 				if (_pending_reads.find(sd) != _pending_reads.end())
 					_pending_reads[sd] += s_buffer;
 				else
-				{
 					_pending_reads[sd] = s_buffer;
-				}
 				if (valid_req_format(_pending_reads[sd]))
 				{
 					http::Request req(_pending_reads[sd], get_server(), this->_bad_request, this->_env);
@@ -186,16 +184,23 @@ void http::ServerC::wait_for_connection()
 }
 bool http::ServerC::valid_req_format(std::string buffer)
 {
-	std::vector<std::string> splitted_req;
-	long long buf_len = buffer.length();
-	std::string headers;
-	std::string chunked_str;
-	int body_size = 0;
-	int end_headers;
-	bool chunked = false;
+	std::vector<std::string>	splitted_req;
+	long long					buf_len = buffer.length();
+	std::string 	headers;
+	std::string 	chunked_str;
+	int				body_size = 0;
+	int				end_headers;
+	bool			chunked = false;
+	size_t			i;
 
 	std::cout << "lleva leido " << buf_len << std::endl;
 
+	if ((i = buffer.find("\r\n\r\n")) != std::string::npos)
+	{
+		splitted_req = http::split(buffer.substr(0, i), '\n');
+		end_headers = i + 4;
+	}
+	/*
 	for (int i = 0; i < buf_len; i++)
 	{
 		if (i == buf_len - 1)
@@ -207,13 +212,11 @@ bool http::ServerC::valid_req_format(std::string buffer)
 			break;
 		}
 	}
+	*/
 	this->_host_header = "NULL";
 	this->_bad_request = false;
 	if (splitted_req.size() < 2)
-	{
-		//std::cout << "devuelve false" << std::endl;
 		return (false);
-	}
 	for (int i = 0; i < (int)splitted_req.size(); i++)
 	{
 		if (splitted_req[i].find("Content-Length:") != std::string::npos)
@@ -230,13 +233,13 @@ bool http::ServerC::valid_req_format(std::string buffer)
 	}
 	if (chunked == true && buffer[buf_len - 5] == '0' && buffer[buf_len - 2] == '\r')
 		return (true);
-	if (chunked == false && (end_headers + 3 + body_size == (int)buffer.length() || end_headers + 3 + body_size == (int)buffer.length() - 2))
+	if (chunked == false && (end_headers + body_size == (int)buffer.length() ||
+							end_headers + body_size == (int)buffer.length() - 2))
 	{
 		if (this->_host_header == "NULL")
 			this->_bad_request = true;
 		return (true);
 	}
-	//std::cout << "devuelve false" << std::endl;
 	return (false);
 }
 
