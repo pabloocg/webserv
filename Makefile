@@ -17,6 +17,9 @@ LOGS_PATH = tmp/logs/
 #--------------------Files-----------------------------#
 
 SRCS =	main.cpp\
+		${addprefix ${NETWORK_PATH}, ServerInit.cpp}\
+		${addprefix ${NETWORK_PATH}, ServerManageClients.cpp}\
+		${addprefix ${NETWORK_PATH}, ServerRequest.cpp}\
 		${addprefix ${NETWORK_PATH}, ServerC.cpp}\
 		${addprefix ${CONFIG_PATH}, Logger.cpp}\
 		${addprefix ${UTILS_PATH}, Request.cpp}\

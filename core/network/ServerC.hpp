@@ -22,7 +22,9 @@
 
 #define TRUE 1
 #define FALSE 0
-# define MAX_CLIENTS 200
+#define MAX_CLIENTS 200
+
+#define DEBUG_MODE
 
 namespace http
 {
@@ -54,6 +56,9 @@ public:
 	virtual ~ServerC() {};
 
 	void	start();
+	void	read_request(char *buf, int &sd);
+	void	add_client(int &new_socket);
+	void	remove_client(int &sd, int j);
 	void	wait_for_connection();
 	void	accept_connection(SA_IN & address, int i);
 	void	manage_new_connection(int *server_sckt, SA_IN address, int serv_num);
