@@ -2,40 +2,41 @@
 
 void	http::ServerC::add_client(int &new_socket)
 {
-	for (int j = 0; j < _max_client; j++)
-	{
-		if (this->_client_socket[j] == 0)
-		{
-			this->_client_socket[j] = new_socket;
-			FD_SET(new_socket, &this->_master_read);
+	http::Client	new_client(new_socket);
+
+	this->_clients.push_back(new_client);
+	FD_SET(new_socket, &this->_master_read);
 
 #ifdef 		DEBUG_MODE
 
-			std::cout << "Host number " << j << " connected" << std::endl;
-			std::cout << "FD list:" << std::endl;
-			for (int k = 0; k < this->_max_client; k++)
-				if (this->_client_socket[k])
-					std::cout << k << " : " << this->_client_socket[k] << std::endl;
+	std::cout << "New Client " << new_socket << " connected" << std::endl;
+	std::cout << "FD list:" << std::endl;
+	for (size_t j = 0; j < this->_clients.size(); j++)
+	{
+		std::cout << j << " : " << this->_clients[j].getFd() << std::endl;
+	}
 
 #endif
-			break;
-		}
-	}
+
 }
 
-void	http::ServerC::remove_client(int &sd, int j)
+void	http::ServerC::remove_client(std::vector<http::Client>::iterator &client)
 {
-	close(sd);
-	FD_CLR(sd, &_master_read);
-	_client_socket[j] = 0;
+	int		sd;
+
+	sd = client->getFd();
+	close(client->getFd());
+	FD_CLR(client->getFd(), &_master_read);
+	this->_clients.erase(client);
 
 #ifdef 		DEBUG_MODE
 
 	std::cout << "Host number " << sd << " disconnected" << std::endl;
 	std::cout << "FD list:" << std::endl;
-	for (int k = 0; k < this->_max_client; k++)
-		if (this->_client_socket[k])
-			std::cout << k << " : " << this->_client_socket[k] << std::endl;
+	for (size_t j = 0; j < this->_clients.size(); j++)
+	{
+		std::cout << j << " : " << this->_clients[j].getFd() << std::endl;
+	}
 
 #endif
 }

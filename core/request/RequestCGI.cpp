@@ -53,10 +53,10 @@ void http::Request::child_process(char **args, int &pipes_in)
 
 void http::Request::startCGI(void)
 {
-	int 	ret, status, valwrite;
-	int		pipes[2];
-	pid_t	pid;
-	char	**args;
+	int ret, status, valwrite;
+	int pipes[2];
+	pid_t pid;
+	char **args;
 
 	this->_CGI_fd = open(FILE_CGI, O_RDWR | O_CREAT | O_TRUNC | O_NOFOLLOW | O_NONBLOCK, 0666);
 	valwrite = write(this->_CGI_fd, this->_request_body.c_str(), this->_request_body.length());
@@ -75,7 +75,13 @@ void http::Request::startCGI(void)
 	else
 	{
 		this->parent_process(pipes[SIDE_OUT], this->_CGI_fd);
+
+#ifdef DEBUG_MODE
+
 		std::cerr << "waitpid" << std::endl;
+
+#endif
+
 		waitpid(pid, &status, 0);
 	}
 	close(this->_CGI_fd);

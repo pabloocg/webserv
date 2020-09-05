@@ -15,9 +15,9 @@ void http::ServerC::wait_for_connection()
 	for (int i = 0; i < (int)_server_socket.size(); i++)
 		if (_server_socket[i] > max_sd)
 			max_sd = _server_socket[i];
-	for (int i = 0; i < _max_client; i++)
-		if (_client_socket[i] > max_sd)
-			max_sd = _client_socket[i];
+	for (size_t i = 0; i < this->_clients.size(); i++)
+		if (this->_clients[i].getFd() > max_sd)
+			max_sd = this->_clients[i].getFd();
 
 #ifdef DEBUG_MODE
 
@@ -41,9 +41,11 @@ void http::ServerC::wait_for_connection()
 		if (FD_ISSET(_server_socket[i], &readfds))
 			this->accept_connection(address, i);
 	}
-	for (int j = 0; j < _max_client; j++)
+	std::vector<http::Client>::iterator client = this->_clients.begin();
+	std::vector<http::Client>::iterator client_end = this->_clients.end();
+	for (; client != client_end; client++)
 	{
-		sd = _client_socket[j];
+		sd = client->getFd();
 		if (FD_ISSET(sd, &readfds))
 		{
 			int valread;
@@ -52,11 +54,11 @@ void http::ServerC::wait_for_connection()
 			if ((valread = read(sd, buffer, BUFFER_SIZE)) < 0)
 				throw ServerError("read", "failed for some reason");
 			else if (!valread)
-				this->remove_client(sd, j);
+				this->remove_client(client);
 			else
 			{
 				buffer[valread] = '\0';
-				read_request(buffer, sd);
+				read_request(buffer, client);
 			}
 		}
 		if (FD_ISSET(sd, &writefds))

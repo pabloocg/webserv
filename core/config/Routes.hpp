@@ -561,16 +561,16 @@ public:
             {
                 for (std::vector<std::string>::iterator it = this->_index_file.begin(); it != this->_index_file.end(); it++)
                 {
-                    std::cout << path_requested << ", IT: "<< *it << std::endl;
+                    //std::cout << path_requested << ", IT: "<< *it << std::endl;
                     if (it->front() == '/' && path_requested.back() == '/')
                         path_requested.erase(path_requested.begin());
                     else if (path_requested.back() != '/' && it->front() != '/')
                         path_requested += '/';
                     path_requested += *it;
-                    std::cout << path_requested << std::endl;
+                    //std::cout << path_requested << std::endl;
                     if (!http::file_exists(path_requested))
                     {
-						std::cout << "exists " << path_requested << std::endl;
+						//std::cout << "exists " << path_requested << std::endl;
                         break ;
                     }
 					path_requested = path_requested.substr(0, path_requested.length() - (*it).length());

@@ -14,12 +14,12 @@
 # include <iostream>
 # include <string>
 # include <fcntl.h>
-# include "Pending_read.hpp"
 # include "../config/Logger.hpp"
 # include "../request/Request.hpp"
 # include "../utils/utils.hpp"
 # include "../config/ServerConf.hpp"
 # include "../utils/Pending_send.hpp"
+# include "../client/Client.hpp"
 
 #define TRUE 1
 #define FALSE 0
@@ -37,14 +37,14 @@ private:
 	typedef struct sockaddr_in SA_IN;
 
 	std::vector<int>					_server_socket;
-	std::vector<int>					_client_socket;
+	//std::vector<int>					_client_socket;
+	std::vector<http::Client>			_clients;
 	int									_max_client;
 	fd_set								_master_read;
 	fd_set								_master_write;
 	std::vector<http::ServerConf>		_servers;
 	std::map<int, http::Pending_send>	_pending_messages;
 	std::map<std::string, std::string>	_mime_types;
-	std::map<int, http::Pending_read>	_pending_reads;
 	std::string							_host_header;
 	std::vector<std::string> 			_env;
 	bool								_bad_request;
@@ -55,9 +55,9 @@ public:
 	virtual ~ServerC() {};
 
 	void	start();
-	void	read_request(char *buf, int &sd);
+	void	read_request(char *buf, std::vector<http::Client>::iterator &client);
 	void	add_client(int &new_socket);
-	void	remove_client(int &sd, int j);
+	void	remove_client(std::vector<http::Client>::iterator &client);
 	void	wait_for_connection();
 	void	accept_connection(SA_IN & address, int i);
 	void	manage_new_connection(int *server_sckt, SA_IN address, int serv_num);

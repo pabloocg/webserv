@@ -11,7 +11,7 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 																												   _status(0)
 {
 
-#ifdef DEBUG_MODE
+#ifdef	DEBUG_MODE
 
 	std::cout << "************ REQUEST HEADERS ************" << std::endl;
 	std::cout << req.substr(0, req.find("\r\n\r\n")) << std::endl;
