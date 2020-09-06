@@ -51,10 +51,14 @@ void http::ServerC::wait_for_connection()
 			int valread;
 			char buffer[BUFFER_SIZE + 1] = {0};
 
-			if ((valread = read(sd, buffer, BUFFER_SIZE)) < 0)
-				throw ServerError("read", "failed for some reason");
-			else if (!valread)
+			if ((valread = read(sd, buffer, BUFFER_SIZE)) <= 0)
+			{
+				//throw ServerError("read", "failed for some reason");
 				this->remove_client(client);
+				continue;
+			}
+			//else if (!valread)
+				//this->remove_client(client);
 			else
 			{
 				buffer[valread] = '\0';
@@ -63,27 +67,30 @@ void http::ServerC::wait_for_connection()
 		}
 		if (FD_ISSET(sd, &writefds))
 		{
-			int n;
-			http::Pending_send pending;
+			int valwrite;
 
-			pending = _pending_messages.find(sd)->second;
-			if ((n = send(sd, pending.get_message() + pending.get_sended(), pending.get_left(), 0)) < 0)
-				throw ServerError("send", "failed for some reason");
-			if (n < pending.get_left())
+			if ((valwrite = send(sd, client->getSendMessage() + client->getSended(), client->getSendLeft(), 0)) < 0)
 			{
-				_pending_messages.find(sd)->second.set_sended(pending.get_sended() + n);
-				_pending_messages.find(sd)->second.set_left(pending.get_left() - n);
+				//throw ServerError("send", "failed for some reason");
+				this->remove_client(client);
+				continue;
+			}
+			if (valwrite < client->getSendLeft())
+			{
+				client->setSended(client->getSended() + valwrite);
+				client->setSendLeft(client->getSendLeft() - valwrite);
 			}
 			else
 			{
-				free(pending.get_message());
+				client->setSending(false);
+				free(client->getSendMessage());
+				client->reset_send();
 				FD_CLR(sd, &_master_write);
-				_pending_messages.erase(_pending_messages.find(sd));
 			}
 
 #ifdef DEBUG_MODE
 
-			std::cout << "Sended " << n + pending.get_sended() << " bytes to " << sd << ", " << pending.get_left() - n << " left" << std::endl;
+		std::cout << "Sended " << valwrite + client->getSended() << " bytes to " << sd << ", " << client->getSendLeft() - valwrite << " left" << std::endl;
 
 #endif
 		}

@@ -18,7 +18,6 @@
 # include "../request/Request.hpp"
 # include "../utils/utils.hpp"
 # include "../config/ServerConf.hpp"
-# include "../utils/Pending_send.hpp"
 # include "../client/Client.hpp"
 
 #define TRUE 1
@@ -36,18 +35,16 @@ private:
 
 	typedef struct sockaddr_in SA_IN;
 
-	std::vector<int>					_server_socket;
-	//std::vector<int>					_client_socket;
-	std::vector<http::Client>			_clients;
 	int									_max_client;
+	bool								_bad_request;
 	fd_set								_master_read;
 	fd_set								_master_write;
-	std::vector<http::ServerConf>		_servers;
-	std::map<int, http::Pending_send>	_pending_messages;
-	std::map<std::string, std::string>	_mime_types;
 	std::string							_host_header;
+	std::vector<int>					_server_socket;
+	std::vector<http::Client>			_clients;
+	std::vector<http::ServerConf>		_servers;
 	std::vector<std::string> 			_env;
-	bool								_bad_request;
+	std::map<std::string, std::string>	_mime_types;
 
 public:
 
@@ -56,6 +53,7 @@ public:
 
 	void	start();
 	void	read_request(char *buf, std::vector<http::Client>::iterator &client);
+	void	send_response(std::string &request, std::vector<http::Client>::iterator &client);
 	void	add_client(int &new_socket);
 	void	remove_client(std::vector<http::Client>::iterator &client);
 	void	wait_for_connection();
@@ -69,7 +67,6 @@ public:
 	class		ServerError: public std::exception
 	{
 		private:
-			std::string		_function;
 			std::string		_error;
 			const Logger	_log;
 

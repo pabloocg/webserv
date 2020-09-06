@@ -27,6 +27,7 @@ void	http::ServerC::remove_client(std::vector<http::Client>::iterator &client)
 	sd = client->getFd();
 	close(client->getFd());
 	FD_CLR(client->getFd(), &_master_read);
+	FD_CLR(client->getFd(), &_master_write);
 	this->_clients.erase(client);
 
 #ifdef 		DEBUG_MODE

@@ -3,21 +3,33 @@
 http::Client::Client(): _fd(0)
 {
     this->reset_read();
+	this->reset_send();
 }
 
 http::Client::Client(int &fd): _fd(fd)
 {
     this->reset_read();
+	this->reset_send();
 }
 
 http::Client::~Client()
 {
     this->_fd = 0;
+	this->reset_read();
+	this->reset_send();
+}
+
+void    http::Client::reset_send(void)
+{
+    this->_is_sending = false;
+	this->_message_send = NULL;
+	this->_size_send = 0;
+	this->_sended = 0;
+	this->_left = 0;
 }
 
 void    http::Client::reset_read(void)
 {
-    this->_is_sending = false;
     this->_is_reading = false;
     this->_message = "";
 	this->_host_header = "NULL";
@@ -38,6 +50,14 @@ void    http::Client::setFd(int &new_socket)
     this->_fd = new_socket;
 }
 
+void    http::Client::setupSend(char *message, int size, int sended, int left)
+{
+	this->_message_send = message;
+	this->_size_send = size;
+	this->_sended = sended;
+	this->_left = left;
+}
+
 bool    http::Client::isSending(void)
 {
     return (this->_is_sending);
@@ -46,6 +66,36 @@ bool    http::Client::isSending(void)
 void    http::Client::setSending(bool t)
 {
     this->_is_sending = t;
+}
+
+char	*http::Client::getSendMessage(void)
+{
+	return (this->_message_send);
+}
+
+int 	http::Client::getSendSize(void)
+{
+	return (this->_size_send);
+}
+
+int 	http::Client::getSended(void)
+{
+	return (this->_sended);
+}
+
+int 	http::Client::getSendLeft(void)
+{
+	return (this->_left);
+}
+
+void 	http::Client::setSended(int sended)
+{
+	this->_sended = sended;
+}
+
+void 	http::Client::setSendLeft(int left)
+{
+	this->_left = left;
 }
 
 bool    http::Client::isReading(void)

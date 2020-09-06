@@ -18,6 +18,8 @@ private:
     /*  For Pending Send Response*/
     char    *_message_send;
     int     _size_send;
+    int     _sended;
+    int     _left;
     bool    _is_sending;
 
     /*  For Pending Read Request*/
@@ -41,22 +43,27 @@ public:
 
     /*  For Pending Send Response*/
     bool    isSending(void);
+    void    setupSend(char *message, int size, int sended, int left);
     void    setSending(bool t);
-    char    *get_message(void);
-    int     get_size(void);
+    char    *getSendMessage(void);
+    int     getSendSize(void);
+    int     getSendLeft(void);
+    int     getSended(void);
+    void    setSended(int sended);
+    void    setSendLeft(int sended);
     void    reset_send(void);
 
     /*  For Pending Read Request*/
-    bool    isReading(void);
-    void    setReading(bool t);
-    void    appendReadMessage(std::string message);
-    void    setReadMessage(std::string message);
-    bool    read_valid_format(void);
+    bool        isReading(void);
+    void        setReading(bool t);
+    void        appendReadMessage(std::string message);
+    void        setReadMessage(std::string message);
+    bool        read_valid_format(void);
     std::string getHeaders();
     std::string getMessage();
     bool        getBadRequest();
     std::string getHostHeader();
-    void    reset_read(void);
+    void        reset_read(void);
 };
 } // namespace http
 

@@ -13,7 +13,7 @@ void http::Request::parent_process(int &pipes_out, int &pipesin_in)
 	FD_SET(pipes_out, &readfd);
 	this->_CGI_response = "";
 	timeout.tv_sec = 0;
-	timeout.tv_usec = 500000;
+	timeout.tv_usec = 300000;
 	while (select(max_sd + 1, &readfd, NULL, NULL, &timeout) > 0)
 	{
 		if ((valread = read(pipes_out, buffer, BUFFER_SIZE)) < 0)
@@ -23,7 +23,7 @@ void http::Request::parent_process(int &pipes_out, int &pipesin_in)
 		std::cout << "CGI_LENGTH->" << this->_CGI_response.length() << std::endl;
 #endif
 		timeout.tv_sec = 0;
-		timeout.tv_usec = 500000;
+		timeout.tv_usec = 300000;
 		FD_ZERO(&readfd);
 		FD_SET(pipes_out, &readfd);
 	}

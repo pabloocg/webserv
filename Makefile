@@ -32,7 +32,6 @@ SRCS =	main.cpp\
 		${addprefix ${REQUEST_PATH}, RequestCGI.cpp}\
 		${addprefix ${REQUEST_PATH}, RequestMethods.cpp}\
 		${addprefix ${REQUEST_PATH}, RequestUtils.cpp}\
-		${addprefix ${UTILS_PATH}, Pending_send.cpp}\
 		${addprefix ${CONFIG_PATH}, Conf.cpp}
 
 NAME = webserv

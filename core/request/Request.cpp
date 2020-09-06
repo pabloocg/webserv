@@ -233,7 +233,7 @@ void http::Request::set_status(void)
 		this->_status = code;
 }
 
-char *http::Request::getResponse(int *size, std::map<std::string, std::string> mime_types)
+char *http::Request::getResponse(ssize_t *size, std::map<std::string, std::string> mime_types)
 {
 	char *res;
 	std::stringstream stream;

@@ -1,9 +1,0 @@
-{
-	"files.associations": {
-		"*.h": "c",
-		"*.conf": "plaintext",
-		"array": "c",
-		"*.tcc": "c",
-		"tuple": "c"
-	}
-}

@@ -1,6 +1,6 @@
 #include "Request.hpp"
 
-char *http::Request::build_response(int *size, std::map<std::string, std::string> mime_types)
+char *http::Request::build_response(ssize_t *size, std::map<std::string, std::string> mime_types)
 {
 	if (this->_type == GET || this->_status >= 400)
 		this->build_get();

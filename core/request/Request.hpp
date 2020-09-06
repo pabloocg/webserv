@@ -97,7 +97,7 @@ private:
 	void		prepare_status(void);
 	bool		needs_auth(http::Routes routes);
 	bool		validate_password(std::string auth);
-	char		*getResponse(int *size, std::map<std::string, std::string> mime_types);
+	char		*getResponse(ssize_t *size, std::map<std::string, std::string> mime_types);
 
 	std::string custom_header_to_env(std::string custom_header);
 	std::string	build_autoindex(void);
@@ -127,7 +127,7 @@ public:
 
 	Request(std::string req, http::ServerConf server, bool bad_request, std::vector<std::string> env);
 
-	char		*build_response(int *size, std::map<std::string, std::string> mime_types);
+	char		*build_response(ssize_t *size, std::map<std::string, std::string> mime_types);
 };
 } // namespace http
 
