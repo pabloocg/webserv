@@ -26,7 +26,8 @@ bool http::Request::validate_password(std::string auth)
 	std::string user;
 	std::string password;
 
-	auth = auth.substr(0, auth.size() - 1);
+	if (auth.back() == '\r')
+		auth = auth.substr(0, auth.size() - 1);
 	std::vector<std::uint8_t> decoded = base64::decode(auth);
 	for (int i = 0; i < (int)decoded.size(); i++)
 		decoded_str += (char)decoded[i];
