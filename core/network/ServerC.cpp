@@ -53,12 +53,9 @@ void http::ServerC::wait_for_connection()
 
 			if ((valread = read(sd, buffer, BUFFER_SIZE)) <= 0)
 			{
-				//throw ServerError("read", "failed for some reason");
 				this->remove_client(client);
 				continue;
 			}
-			//else if (!valread)
-				//this->remove_client(client);
 			else
 			{
 				buffer[valread] = '\0';
@@ -71,7 +68,6 @@ void http::ServerC::wait_for_connection()
 
 			if ((valwrite = send(sd, client->getSendMessage() + client->getSended(), client->getSendLeft(), 0)) < 0)
 			{
-				//throw ServerError("send", "failed for some reason");
 				this->remove_client(client);
 				continue;
 			}
