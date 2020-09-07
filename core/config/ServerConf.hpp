@@ -69,6 +69,7 @@ public:
         this->_err_pages[405] = DEFAULT_ERROR_PAGE_405;
         this->_err_pages[413] = DEFAULT_ERROR_PAGE_413;
         this->_err_pages[500] = DEFAULT_ERROR_PAGE_500;
+        this->_err_pages[503] = DEFAULT_ERROR_PAGE_503;
         this->_err_pages[505] = DEFAULT_ERROR_PAGE_505;
         this->_is_auth = false;
         this->_default_server = false;
@@ -88,7 +89,6 @@ public:
 
     void        setPort(in_port_t newport)
     {
-        //std::cout << "New server port -> " << newport << std::endl;
         this->_port = newport;
         this->_address.sin_port = htons(this->_port);
     };
@@ -100,7 +100,6 @@ public:
 
     void        setServerAddr(std::string new_serveraddr)
     {
-        //std::cout << "New server addr -> " << new_serveraddr << std::endl;
         this->_server_addr = new_serveraddr;
         this->_address.sin_addr.s_addr = inet_addr(this->_server_addr.c_str());
     };
@@ -283,17 +282,15 @@ public:
                 http::Routes                        father_location2;
                 size_t                              len2 = 0;
                 size_t                              max_len2 = 0;
-                //std::cout << "sufix in" << std::endl;
+
                 father_location = *it;
                 max_len = len;
                 for (; itl != itlend; itl++)
                 {
                     path = itl->getVirtualLocation();
                     len2 = path.length();
-                    //std::cout << "search path: " << search_path << " route path: " << path << std::endl;
                     if (search_path.compare(0, len2, path) == 0)
                     {
-                        //std::cout << "IN" << std::endl;
                         if (!max_len2)
                         {
                             max_len2 = len2;
@@ -306,7 +303,6 @@ public:
                         }
                     }
                 }
-                //std::cout << "sufix out" << std::endl;
                 if (max_len2)
                 {
                     father_location2.setCgiExec(father_location.getCgiExec());

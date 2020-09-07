@@ -4,7 +4,6 @@ http::ServerC::ServerC(std::vector<http::ServerConf> servers,
                         std::map<std::string, std::string> mime_types, char **env): _servers(servers),
                                                                                     _mime_types(mime_types)
 {
-	this->_max_client = MAX_CLIENTS;
 	this->_server_socket.resize(this->_servers.size());
 	this->_env = http::charptrptrToVector(env);
 

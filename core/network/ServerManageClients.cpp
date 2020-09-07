@@ -25,14 +25,16 @@ void	http::ServerC::remove_client(std::vector<http::Client>::iterator &client)
 	int		sd;
 
 	sd = client->getFd();
-	close(client->getFd());
-	FD_CLR(client->getFd(), &_master_read);
-	FD_CLR(client->getFd(), &_master_write);
+	close(sd);
+	if (FD_ISSET(sd, &_master_read))
+		FD_CLR(sd, &_master_read);
+	if (FD_ISSET(sd, &_master_write))
+		FD_CLR(sd, &_master_write);
 	this->_clients.erase(client);
 
 #ifdef 		DEBUG_MODE
 
-	std::cout << "Host number " << sd << " disconnected" << std::endl;
+	std::cout << "Client number " << sd << " disconnected" << std::endl;
 	std::cout << "FD list:" << std::endl;
 	for (size_t j = 0; j < this->_clients.size(); j++)
 	{
@@ -42,22 +44,49 @@ void	http::ServerC::remove_client(std::vector<http::Client>::iterator &client)
 #endif
 }
 
-void http::ServerC::accept_connection(SA_IN &address, int i)
+void	http::ServerC::remove_tmp_client(http::Client &client)
 {
+	int		sd;
 
-#ifdef 		DEBUG_MODE
+	sd = client.getFd();
+	close(sd);
+	if (FD_ISSET(sd, &_master_write))
+		FD_CLR(sd, &_master_write);
+}
 
-	std::cout << "New connection at server " << i << "!" << std::endl;
+void http::ServerC::accept_connection(http::ServerConf &server, int &server_socket)
+{
+	int			new_socket = -1;
+	SA_IN		address;
+	socklen_t	addrlen;
 
-#endif
-
-	int new_socket;
-	int addrlen;
-
-	addrlen = sizeof(address);
-	if ((new_socket = accept(this->_server_socket[i], (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
+	address = server.getInfoAddress();
+	addrlen = sizeof(struct sockaddr);
+	if ((new_socket = accept(server_socket, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
 		throw ServerError("accept", "failed for some reason");
 	if (fcntl(new_socket, F_SETFL, O_NONBLOCK) < 0)
 		throw ServerError("fcntl", "failed for some reason");
 	this->add_client(new_socket);
+}
+
+void	http::ServerC::reject_connection(http::ServerConf &server, int &server_socket)
+{
+	int 		new_socket = -1;
+	SA_IN		address;
+	socklen_t	addrlen;
+
+	address = server.getInfoAddress();
+	addrlen = sizeof(struct sockaddr);
+	if ((new_socket = accept(server_socket, (struct sockaddr *)&address, &addrlen)) == -1)
+		throw ServerError("accept", "failed for some reason");
+	if (fcntl(new_socket, F_SETFL, O_NONBLOCK) < 0)
+		throw ServerError("fcntl", "failed for some reason");
+	if ((int)this->_tmp_clients.size() > MAX_TMP_CLIENTS)
+		close(new_socket);
+	else
+	{
+		http::Client	new_client(new_socket);
+		this->_tmp_clients.push(new_client);
+		FD_SET(new_socket, &this->_master_write);
+	}
 }

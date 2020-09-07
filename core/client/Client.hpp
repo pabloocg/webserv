@@ -38,6 +38,8 @@ public:
     Client(int &fd);
     virtual ~Client();
 
+    http::Client    &operator=(const http::Client &other);
+
     int     &getFd();
     void    setFd(int &new_socket);
 

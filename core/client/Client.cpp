@@ -19,6 +19,26 @@ http::Client::~Client()
 	this->reset_send();
 }
 
+http::Client    &http::Client::operator=(const http::Client &other)
+{
+	this->_fd = other._fd;
+	this->_message_send = other._message_send;
+	this->_size_send = other._size_send;
+	this->_sended = other._sended;
+	this->_left = other._left;
+	this->_is_sending = other._is_sending;
+	this->_message = other._message;
+	this->_headers = other._headers;
+	this->_badRequest = other._badRequest;
+	this->_bodyLength = other._bodyLength;
+	this->_headers_read = other._headers_read;
+	this->_host_header = other._host_header;
+	this->_is_reading = other._is_reading;
+	this->_isChunked = other._isChunked;
+	this->_isLength = other._isLength;
+	return (*this);
+}
+
 void    http::Client::reset_send(void)
 {
     this->_is_sending = false;

@@ -119,6 +119,7 @@ private:
 		m[405] = "Not Allowed";
 		m[413] = "Payload Too Large";
 		m[500] = "Internal Server Error";
+		m[503] = "Service Unavailable";
 		m[505] = "HTTP Version Not Supported";
 		return (m);
 	};
@@ -126,6 +127,7 @@ private:
 public:
 
 	Request(std::string req, http::ServerConf server, bool bad_request, std::vector<std::string> env);
+	Request(int code_error);
 
 	char		*build_response(ssize_t *size, std::map<std::string, std::string> mime_types);
 };

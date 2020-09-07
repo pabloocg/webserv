@@ -55,6 +55,17 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	prepare_status();
 }
 
+http::Request::Request(int code) : _is_autoindex(false),
+								_www_auth_required(false),
+								_isCGI(false),
+								_request(""),
+								_auth("NULL"),
+								_error_mgs(create_map()),
+								_status(code)
+{
+	prepare_status();
+}
+
 void http::Request::save_request()
 {
 	std::vector<std::string> sheader;
