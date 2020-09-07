@@ -26,12 +26,23 @@ private:
     std::string _message;
     std::string _headers;
     std::string _host_header;
+	char		*_char_message;
+	char		*_dechunked_body;
+	char		*_last_read;
     int         _bodyLength;
+	int			_offset;
+	int			_size_char;
+	int			_size_nl;
+	int			_valread;
+	int			_state;
+	int			_dechunked_capacity;
+	int			_dechunked_size;
     bool        _isChunked;
     bool        _isLength;
     bool        _headers_read;
     bool        _badRequest;
     bool        _is_reading;
+	bool		_first_time;
 
 public:
     Client();
@@ -56,15 +67,17 @@ public:
     void    reset_send(void);
 
     /*  For Pending Read Request*/
+	void		handle_chunked(void);
     bool        isReading(void);
     void        setReading(bool t);
     void        appendReadMessage(std::string message);
     void        setReadMessage(std::string message);
-    bool        read_valid_format(void);
+    bool        read_valid_format(char *last_read, int valread);
     std::string getHeaders();
     std::string getMessage();
     bool        getBadRequest();
     std::string getHostHeader();
+	char		*get_dechunked_body();
     void        reset_read(void);
 };
 } // namespace http

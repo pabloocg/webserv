@@ -1,7 +1,6 @@
 #ifndef PARAMS_HPP
 # define PARAMS_HPP
 
-#define DEBUG_MODE
 #define DEFAULT_PORT 8080
 #define DEFAULT_SERVER_ADDR "127.0.0.1"
 #define DEFAULT_ROOT_DIR "www"

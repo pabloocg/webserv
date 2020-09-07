@@ -36,6 +36,7 @@ class Request
 {
 private:
 	//Request variables
+	char						*_dechunked_body;
 	bool						_is_autoindex;
 	bool						_www_auth_required;
 	bool						_isCGI;
@@ -126,7 +127,7 @@ private:
 
 public:
 
-	Request(std::string req, http::ServerConf server, bool bad_request, std::vector<std::string> env);
+	Request(std::string req, http::ServerConf server, bool bad_request, std::vector<std::string> env, char* dechunked_body);
 	Request(int code_error);
 
 	char		*build_response(ssize_t *size, std::map<std::string, std::string> mime_types);

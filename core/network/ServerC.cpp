@@ -48,7 +48,7 @@ void http::ServerC::wait_for_connection()
 	std::vector<http::Client>::iterator client = this->_clients.begin();
 	std::vector<http::Client>::iterator client_end = this->_clients.end();
 
-	std::cout << "Actual clients " << this->_clients.size() << std::endl;
+	//std::cout << "Actual clients " << this->_clients.size() << std::endl;
 
 	for (; client != client_end; client++)
 	{
@@ -66,7 +66,7 @@ void http::ServerC::wait_for_connection()
 			else
 			{
 				buffer[valread] = '\0';
-				read_request(buffer, client);
+				read_request(buffer, client, valread);
 			}
 		}
 		if (FD_ISSET(sd, &writefds))

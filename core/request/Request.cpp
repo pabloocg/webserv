@@ -1,6 +1,7 @@
 #include "Request.hpp"
 
-http::Request::Request(std::string req, http::ServerConf server, bool bad_request, std::vector<std::string> env) : _is_autoindex(false),
+http::Request::Request(std::string req, http::ServerConf server, bool bad_request, std::vector<std::string> env, char *dechunked_body) : _dechunked_body(dechunked_body),
+																													_is_autoindex(false),
 																												   _www_auth_required(false),
 																												   _isCGI(false),
 																												   _request(req),
@@ -91,8 +92,17 @@ void http::Request::save_request()
 		this->save_header(sheader[i]);
 	if (atoi(this->_req_content_length.c_str()) > 0)
 		save_request_body();
-	if (this->_transf_encoding.find("chunked") != std::string::npos)
-		decode_chunked();
+	if (this->_transf_encoding.find("chunked") != std::string::npos){
+		if (this->_dechunked_body != NULL){
+			this->_request_body = std::string(this->_dechunked_body);
+			this->_req_content_length = std::to_string(this->_request_body.length());
+		}
+		else{
+			this->_request_body = "";
+			this->_req_content_length = "0";
+		}
+	}
+		//decode_chunked();
 	get_languages_vector();
 	if (this->_req_URI.find('?') != std::string::npos)
 	{
@@ -207,8 +217,10 @@ void http::Request::set_status(void)
 		{
 			code = this->_location.getCodeRedirect();
 		}
-		else if (this->_request_body.length() > this->_location.getBodySize() && !code)
+		else if (this->_request_body.length() > this->_location.getBodySize() && !code){
+			std::cout << "body len:\n" << this->_request_body.length() << "\nlocation max size " << this->_location.getBodySize() << std::endl;
 			code = 413;
+		}
 		else if (!http::file_exists(this->_file_req) && !http::is_dir(this->_file_req))
 		{
 			if (!code)
@@ -300,6 +312,7 @@ char *http::Request::getResponse(ssize_t *size, std::map<std::string, std::strin
 	std::copy(this->_resp_body.begin(), this->_resp_body.end(), res);
 	res[this->_resp_body.size()] = '\0';
 	*size = this->_resp_body.size();
+	std::cout << "Sending " << this->_file_req << std::endl;
 
 #ifdef DEBUG_MODE
 
