@@ -17,9 +17,37 @@ std::string http::Request::get_content_type(std::string type, std::map<std::stri
 
 	if (iter == mime_types.end())
 		return ("application/octet-stream");
-	else{
-		if (iter->second.find("text") != std::string::npos){
+	else
+  {
+		if (iter->second.find("text") != std::string::npos)
+    {
 			return (iter->second + "; charset=" + this->_charset);
+    }
+    return (iter->second);
+  }
+
+void http::Request::decode_chunked(void)
+{
+	int ret = 0;
+	std::string tok;
+	char *dechunked;
+	dechunked = (char *)malloc(10000);
+    if (!dechunked)
+        throw 500;
+	int dechunked_capacity = 10000;
+	int dechunked_size = 0;
+	std::cout << "va a dar segfault" << std::endl;
+	std::stringstream ss(this->_request.substr(this->_request.find("\r\n\r\n") + 4));
+	while (std::getline(ss, tok, '\n'))
+	{
+		if ((ret = std::stoi(tok, 0, 16)) == 0)
+			break;
+		std::getline(ss, tok, '\n');
+		if (dechunked_capacity < dechunked_size + ret){
+			char * tmp = (char *)malloc(dechunked_size + ret + 10000000);
+			memcpy(tmp, dechunked, dechunked_size);
+			free(dechunked);
+			dechunked_capacity = dechunked_size + ret + 10000000;
 		}
 		return (iter->second);
 	}

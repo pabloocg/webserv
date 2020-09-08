@@ -47,9 +47,9 @@ void http::ServerC::wait_for_connection()
 	}
 	std::vector<http::Client>::iterator client = this->_clients.begin();
 	std::vector<http::Client>::iterator client_end = this->_clients.end();
-
-	//std::cout << "Actual clients " << this->_clients.size() << std::endl;
-
+#ifdef DEBUG_MODE
+	std::cout << "Actual clients " << this->_clients.size() << std::endl;
+#endif
 	for (; client != client_end; client++)
 	{
 		sd = client->getFd();
@@ -75,6 +75,7 @@ void http::ServerC::wait_for_connection()
 
 			if ((valwrite = send(sd, client->getSendMessage() + client->getSended(), client->getSendLeft(), 0)) < 0)
 			{
+				free(client->getSendMessage());
 				this->remove_client(client);
 				continue;
 			}
@@ -121,6 +122,7 @@ void http::ServerC::wait_for_connection()
 			}
 			if ((valwrite = send(sd, tmp_client.getSendMessage() + tmp_client.getSended(), tmp_client.getSendLeft(), 0)) < 0)
 			{
+				free(tmp_client.getSendMessage());
 				this->remove_tmp_client(tmp_client);
 				continue;
 			}

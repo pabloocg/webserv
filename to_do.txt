@@ -1,4 +1,4 @@
 Cosas por hacer:
 
 -Implementar timeout si una request se queda colgada (Creo que se hace en el select)
-
+- 411 Length Required. El request no especificó la longitud del contenido, la cual es requerida por el recurso solicitado.

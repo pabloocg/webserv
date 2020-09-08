@@ -67,7 +67,8 @@ public:
         this->_err_pages[403] = DEFAULT_ERROR_PAGE_403;
         this->_err_pages[404] = DEFAULT_ERROR_PAGE_404;
         this->_err_pages[405] = DEFAULT_ERROR_PAGE_405;
-		this->_err_pages[406] = DEFAULT_ERROR_PAGE_406;
+        this->_err_pages[406] = DEFAULT_ERROR_PAGE_406;
+        this->_err_pages[411] = DEFAULT_ERROR_PAGE_411;
         this->_err_pages[413] = DEFAULT_ERROR_PAGE_413;
         this->_err_pages[500] = DEFAULT_ERROR_PAGE_500;
         this->_err_pages[503] = DEFAULT_ERROR_PAGE_503;

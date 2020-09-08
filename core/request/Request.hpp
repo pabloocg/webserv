@@ -35,6 +35,7 @@ namespace http
 class Request
 {
 private:
+
 	//Request variables
 	char						*_dechunked_body;
 	bool						_is_autoindex;
@@ -88,7 +89,7 @@ private:
 
 	void		startCGI(void);
 	void		child_process(char **args, int &pipes_in);
-	void		parent_process(int &pipes_out, int &pipesin_in);
+	void		parent_process(int &pipes_out);
 	void		set_status(void);
 	void		save_request(void);
 	void		save_header(std::string header);
@@ -122,6 +123,7 @@ private:
 		m[404] = "Not Found";
 		m[405] = "Not Allowed";
 		m[406] = "Not Acceptable";
+		m[411] = "Length Required";
 		m[413] = "Payload Too Large";
 		m[500] = "Internal Server Error";
 		m[503] = "Service Unavailable";
@@ -135,6 +137,7 @@ public:
 	Request(int code_error);
 
 	char		*build_response(ssize_t *size, std::map<std::string, std::string> mime_types);
+
 };
 } // namespace http
 
