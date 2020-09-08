@@ -1,18 +1,19 @@
 #include "Request.hpp"
 
 http::Request::Request(std::string req, http::ServerConf server, bool bad_request, std::vector<std::string> env, char *dechunked_body) : _dechunked_body(dechunked_body),
-																													_is_autoindex(false),
-																												   _www_auth_required(false),
-																												   _isCGI(false),
-																												   _request(req),
-																												   _auth("NULL"),
-																												   _server(server),
-																												   _error_mgs(create_map()),
-																												   _env(env),
-																												   _status(0)
+																																		 _is_autoindex(false),
+																																		 _www_auth_required(false),
+																																		 _isCGI(false),
+																																		 _request(req),
+																																		 _auth("NULL"),
+																																		 _server(server),
+																																		 _error_mgs(create_map()),
+																																		 _env(env),
+																																		 _status(0)
 {
+	this->_set_content_location = false;
 
-#ifdef	DEBUG_MODE
+#ifdef DEBUG_MODE
 
 	std::cout << "************ REQUEST HEADERS ************" << std::endl;
 	std::cout << req.substr(0, req.find("\r\n\r\n")) << std::endl;
@@ -57,12 +58,12 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 }
 
 http::Request::Request(int code) : _is_autoindex(false),
-								_www_auth_required(false),
-								_isCGI(false),
-								_request(""),
-								_auth("NULL"),
-								_error_mgs(create_map()),
-								_status(code)
+								   _www_auth_required(false),
+								   _isCGI(false),
+								   _request(""),
+								   _auth("NULL"),
+								   _error_mgs(create_map()),
+								   _status(code)
 {
 	prepare_status();
 }
@@ -92,13 +93,16 @@ void http::Request::save_request()
 		this->save_header(sheader[i]);
 	if (atoi(this->_req_content_length.c_str()) > 0)
 		save_request_body();
-	if (this->_transf_encoding.find("chunked") != std::string::npos){
-		if (this->_dechunked_body != NULL){
+	if (this->_transf_encoding.find("chunked") != std::string::npos)
+	{
+		if (this->_dechunked_body != NULL)
+		{
 			this->_request_body = std::string(this->_dechunked_body);
 			this->_req_content_length = std::to_string(this->_request_body.length());
 			free(this->_dechunked_body);
 		}
-		else{
+		else
+		{
 			this->_request_body = "";
 			this->_req_content_length = "0";
 		}
@@ -145,26 +149,19 @@ void http::Request::save_header(std::string header)
 {
 	std::vector<std::string> words = http::split(header, ' ');
 
-	if (words[0] == "Accept-Charsets:")
-	{
-	}
-	if (words[0] == "Accept-Encoding:")
-	{
-	}
+	if (words[0] == "Accept-Charset:")
+		if(header.back() == '\r')
+			this->_charset_header = header.substr(16, header.length() - 17);
+		else
+			this->_charset_header = header.substr(16, header.length() - 16);
 	else if (words[0] == "Accept-Language:")
 		this->_language_header = header.substr(16, header.length() - 17);
 	else if (words[0] == "Authorization:")
 		this->_auth = words[2];
-	else if (words[0] == "Content-Location:")
-	{
-	}
 	else if (words[0] == "Content-Type:")
 		this->_req_content_type = words[1];
 	else if (words[0] == "Content-Length:")
 		this->_req_content_length = header.substr(16, header.length() - 17);
-	else if (words[0] == "Location:")
-	{
-	}
 	else if (words[0] == "Referer:" || words[0] == "User-Agent:")
 	{
 		for (int i = 0; i < (int)words.size(); i++)
@@ -217,8 +214,10 @@ void http::Request::set_status(void)
 		{
 			code = this->_location.getCodeRedirect();
 		}
-		else if (this->_request_body.length() > this->_location.getBodySize() && !code){
-			std::cout << "body len:\n" << this->_request_body.length() << "\nlocation max size " << this->_location.getBodySize() << std::endl;
+		else if (this->_request_body.length() > this->_location.getBodySize() && !code)
+		{
+			std::cout << "body len:\n"
+					  << this->_request_body.length() << "\nlocation max size " << this->_location.getBodySize() << std::endl;
 			code = 413;
 		}
 		else if (!http::file_exists(this->_file_req) && !http::is_dir(this->_file_req))
@@ -290,6 +289,8 @@ char *http::Request::getResponse(ssize_t *size, std::map<std::string, std::strin
 		stream << "\nContent-Length: 0";
 	if (this->_language_setted.length() > 0)
 		stream << "\nContent-Language: " << this->_language_setted;
+	if (this->_set_content_location == true)
+		stream << "\nContent-Location: " << this->_file_bef_req;
 	if (this->_status == 201 or this->_status == 301 or this->_status == 302)
 		stream << "\nLocation: " << this->_file_bef_req;
 	stream << "\nServer: Webserv/1.0\r\n\r\n";

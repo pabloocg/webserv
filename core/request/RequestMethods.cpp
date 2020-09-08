@@ -28,6 +28,7 @@ void http::Request::build_get(void)
 	}
 	if (!this->_is_autoindex && this->_isCGI)
 		startCGI();
+	get_charset();
 }
 
 void http::Request::build_post(void)

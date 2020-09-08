@@ -1,36 +1,4 @@
 Cosas por hacer:
 
 -Implementar timeout si una request se queda colgada (Creo que se hace en el select)
--Implementar codigos de error de cliente (4XX)
-    - 406 Not Acceptable. El recurso solicitado solo genera contenido no aceptado de acuerdo con los headers Accept enviados en el request.
-    - 411 Length Required. El request no especificó la longitud del contenido, la cual es requerida por el recurso solicitado.
-    - 429 Too Many Requests. Indica que el usuario ha enviado demasiadas solicitudes en un período de tiempo determinado.
--Implementar codigos de error de servidor (50X)
-    - 500 Internal Server Error. Error genérico, cuando se ha dado una condición no esperada y no se puede concretar el mensaje.
-    - 503 Service Unavailable. El servidor está actualmente no disponible, ya sea por mantenimiento o por sobrecarga.
-        (Por ejemplo cuando todos los fd de un server esten llenos)
-
-Metodos HTTP:
--Implementar PATCH hay que hacerlo??
-
-Implementar Headers:
-
-- Accept-Charset (Lo manda el cliente). Indica al servidor qué tipos de codificaciones de caracteres entiende el cliente 
-    #Accept-Charset: iso-8859-1
-    #Accept-Charset: utf-8, iso-8859-1;q=0.5
-    #Accept-Charset: utf-8, iso-8859-1;q=0.5, *;q=0.1
-    (la q es la preferencia que tiene el cliente por el metodo usado
-    en el ultimo caso utf-8 tiene prioridad 1, iso-8859-1 tiene prioridad 0.5 y * que es cualquier otro 0.1)
-
-- Content-Type (Lo manda el servidor).
-	Solo añadir el charset del tipo que pasamos.
-
-- Retry-After (Lo manda el servidor). Indica cuánto tiempo debe esperar el cliente antes de realizar otra request 
-Hay tres casos principales en que se utiliza este encabezado:
-    -Cuando se envía con una respuesta 503 (Service Unavailable),
-        indica cuánto tiempo se espera que el servicio no esté disponible.
-    - Cuando se envía con una respuesta 429 (Too Many Requests),
-        indica cuánto tiempo se debe esperar antes de realizar una nueva solicitud.
-- Content-Location (Lo manda el servidor?). Indica una ubicación alternativa para los datos devueltos.
-El uso principal es indicar la URL de un recurso transmitido como resultado de la negociación de contenido.
 

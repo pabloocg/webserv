@@ -17,38 +17,12 @@ std::string http::Request::get_content_type(std::string type, std::map<std::stri
 
 	if (iter == mime_types.end())
 		return ("application/octet-stream");
-	else
-		return (iter->second);
-}
-
-void http::Request::decode_chunked(void)
-{
-	int ret = 0;
-	std::string tok;
-	char *dechunked;
-	dechunked = (char *)malloc(10000);
-	int dechunked_capacity = 10000;
-	int dechunked_size = 0;
-	std::cout << "va a dar segfault" << std::endl;
-	std::stringstream ss(this->_request.substr(this->_request.find("\r\n\r\n") + 4));
-	while (std::getline(ss, tok, '\n'))
-	{
-		if ((ret = std::stoi(tok, 0, 16)) == 0)
-			break;
-		std::getline(ss, tok, '\n');
-		if (dechunked_capacity < dechunked_size + ret){
-			char * tmp = (char *)malloc(dechunked_size + ret + 10000000);
-			memcpy(tmp, dechunked, dechunked_size);
-			free(dechunked);
-			dechunked_capacity = dechunked_size + ret + 10000000;
+	else{
+		if (iter->second.find("text") != std::string::npos){
+			return (iter->second + "; charset=" + this->_charset);
 		}
-		memcpy(dechunked + dechunked_size, tok.c_str(), ret);
+		return (iter->second);
 	}
-	this->_request_body = std::string(dechunked);
-	this->_req_content_length = std::to_string(dechunked_size);
-	//free(dechunked);
-	std::cout << "nooo segfault" << std::endl;
-
 }
 
 void http::Request::get_languages_vector(void)
@@ -108,4 +82,68 @@ std::string http::Request::custom_header_to_env(std::string custom_header)
 
 #endif
     return (key);
+}
+
+void http::Request::get_charset(void){
+	this->_charset = "iso-8859-1";
+	if (this->_isCGI){
+		for (int i = 0; i < (int)this->_CGI_headers.size(); i++){
+			if (this->_CGI_headers[i].find("Charset=") != std::string::npos){
+				this->_charset = this->_CGI_headers[i].substr(this->_CGI_headers[i].find("Charset=") + 8);
+				if (this->_charset.back() == '\r'){
+					this->_charset.erase(this->_charset.back());
+				}
+			}
+		}
+	}
+	else{
+		if (this->_resp_body.find("charset=") != std::string::npos){
+			int pos = this->_resp_body.find("charset=") + 8;
+			if (this->_resp_body[pos] == '\"'){
+				int count = 0;
+				int i = pos;
+				while(this->_resp_body[++i] != '\"'){
+					count++;
+				}
+				this->_charset = this->_resp_body.substr(pos + 1, count);
+			}
+			else{
+				int i = pos;
+				int count = 0;
+				while(this->_resp_body[i] != '\r' && this->_resp_body[i] != ' ' && this->_resp_body[i] != '\n' && this->_resp_body[i] != ';' && this->_resp_body[i] != ',' && this->_resp_body[i] != '\"'){
+					count++;
+					i++;
+				}
+				this->_charset = this->_resp_body.substr(pos, count);
+			}
+		}
+	}
+	for(int i = 0; i < (int)this->_charset.length(); i++){
+		if (this->_charset[i] >= 'A' && this->_charset[i] <= 'Z'){
+			this->_charset[i] = std::tolower(this->_charset[i]);
+		}
+	}
+	if (this->_charset_header.size() > 0){
+
+		bool accepted = false;
+		std::cout << "header charset: " << this->_charset_header << std::endl;
+		std::vector<std::string> charsets_accepted = http::split(this->_charset_header, ',');
+		for (int i = 0; i < (int)charsets_accepted.size(); i++)
+		{
+			std::cout << "va a comparar " << this->_charset << " con " << charsets_accepted[i] << std::endl;
+			if (charsets_accepted[i].find(this->_charset) != std::string::npos){
+				accepted = true;
+				break;
+			}
+		}
+		if (!accepted){
+			this->_status = 406;
+			prepare_status();
+			this->_resp_body = http::file_content(this->_file_req);
+		}
+		else{
+			this->_set_content_location = true;
+		}
+	}
+	std::cout << "CHARSET: " << this->_charset << std::endl;
 }

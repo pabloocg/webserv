@@ -40,6 +40,7 @@ private:
 	bool						_is_autoindex;
 	bool						_www_auth_required;
 	bool						_isCGI;
+	bool						_set_content_location;
 	int							_type;
 	int							_CGI_fd;
 	std::string					_language_setted;
@@ -62,6 +63,8 @@ private:
 	std::string					_request_body;
 	std::string					_CGI_response;
 	std::string					_language_header;
+	std::string					_charset_header;
+	std::string					_charset;
 	http::Routes				_location;
 	http::ServerConf			_server;
 	std::map<int, std::string>	_error_mgs;
@@ -87,7 +90,6 @@ private:
 	void		child_process(char **args, int &pipes_in);
 	void		parent_process(int &pipes_out, int &pipesin_in);
 	void		set_status(void);
-	void		decode_chunked(void);
 	void		save_request(void);
 	void		save_header(std::string header);
 	void		save_request_body(void);
@@ -96,6 +98,7 @@ private:
 	int			decode_CGI_response(void);
 	void		get_languages_vector(void);
 	void		prepare_status(void);
+	void		get_charset(void);
 	bool		needs_auth(http::Routes routes);
 	bool		validate_password(std::string auth);
 	char		*getResponse(ssize_t *size, std::map<std::string, std::string> mime_types);
@@ -118,6 +121,7 @@ private:
 		m[403] = "Forbidden";
 		m[404] = "Not Found";
 		m[405] = "Not Allowed";
+		m[406] = "Not Acceptable";
 		m[413] = "Payload Too Large";
 		m[500] = "Internal Server Error";
 		m[503] = "Service Unavailable";
