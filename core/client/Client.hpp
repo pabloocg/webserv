@@ -14,6 +14,7 @@ class Client
 {
 private:
     int     _fd;
+	struct timeval	_time_last_activity;
 
     /*  For Pending Send Response*/
     char    *_message_send;
@@ -53,6 +54,8 @@ public:
 
     int     &getFd();
     void    setFd(int &new_socket);
+	void	set_last_activity(void);
+	struct timeval get_time_sleeping(struct timeval now);
 
     /*  For Pending Send Response*/
     bool    isSending(void);

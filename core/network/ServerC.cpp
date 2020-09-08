@@ -1,12 +1,19 @@
 #include "ServerC.hpp"
 
+#define TTL_SEC 5
+#define TTL_USEC 0
+
 void http::ServerC::wait_for_connection()
 {
 	int max_sd, sd, activity;
+	struct timeval now;
+	struct timeval timeout;
 	fd_set readfds;
 	fd_set writefds;
 
 	max_sd = 0;
+	timeout.tv_sec = 1;
+	timeout.tv_usec = 0;
 	FD_ZERO(&readfds);
 	FD_ZERO(&writefds);
 	readfds = _master_read;
@@ -22,13 +29,17 @@ void http::ServerC::wait_for_connection()
 	std::cout << "Waiting for select" << std::endl;
 #endif
 
-	if (((activity = select(max_sd + 1, &readfds, &writefds, NULL, NULL)) < 0) && (errno != EINTR))
+	if (((activity = select(max_sd + 1, &readfds, &writefds, NULL, &timeout)) < 0) && (errno != EINTR))
 		throw ServerError("select", "failed for some reason");
 
 #ifdef DEBUG_MODE
 	if (activity > 0)
 		std::cout << "Number of reads/writes possible " << activity << std::endl;
 #endif
+	if (gettimeofday(&now, NULL) != 0)
+	{
+		throw ServerError("gettimeofday", "failed for some reason");
+	}
 
 	for (size_t i = 0; i < _servers.size(); i++)
 	{
@@ -55,6 +66,7 @@ void http::ServerC::wait_for_connection()
 		sd = client->getFd();
 		if (FD_ISSET(sd, &readfds))
 		{
+			client->set_last_activity();
 			int valread;
 			char buffer[BUFFER_SIZE + 1] = {0};
 
@@ -69,8 +81,9 @@ void http::ServerC::wait_for_connection()
 				read_request(buffer, client, valread);
 			}
 		}
-		if (FD_ISSET(sd, &writefds))
+		else if (FD_ISSET(sd, &writefds))
 		{
+			client->set_last_activity();
 			int valwrite;
 
 			if ((valwrite = send(sd, client->getSendMessage() + client->getSended(), client->getSendLeft(), 0)) < 0)
@@ -95,6 +108,13 @@ void http::ServerC::wait_for_connection()
 #ifdef DEBUG_MODE
 			std::cout << "Sended " << valwrite + client->getSended() << " bytes to " << sd << ", " << client->getSendLeft() - valwrite << " left" << std::endl;
 #endif
+		}
+		else
+		{
+			struct timeval time_sleeping = client->get_time_sleeping(now);
+			if(time_sleeping.tv_sec > TTL_SEC || (time_sleeping.tv_sec == TTL_SEC && time_sleeping.tv_usec > TTL_USEC)){
+				this->remove_client(client);
+			}
 		}
 	}
 
