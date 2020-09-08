@@ -68,11 +68,13 @@ void http::Client::reset_read(void)
 	this->_bodyLength = 0;
 	this->_offset = 0;
 	this->_size_nl = 0;
-	this->_dechunked_capacity = 0;
 	this->_state = NEED_SIZE;
 	this->_dechunked_size = 0;
-	this->_first_time = true;
+	this->_dechunked_capacity = 0;
 	this->_dechunked_body = NULL;
+	this->_char_message = NULL;
+	this->_first_time = true;
+	
 }
 
 int &http::Client::getFd()
@@ -239,7 +241,7 @@ bool http::Client::read_valid_format(char *last_read, int valread)
 
 void http::Client::handle_chunked(void)
 {
-	if (_first_time == true)
+	/*if (_first_time == true)
 	{
 		this->_char_message = strdup(this->_message.c_str());
 		this->_size_char = this->_message.length();
@@ -249,11 +251,16 @@ void http::Client::handle_chunked(void)
 	{
 		this->_char_message = this->_last_read;
 		this->_size_char = this->_valread;
-	}
-	int i = 0;
-	char *ptr = this->_char_message;
-	i--;
-	//std::cout << "va a procesar:\n" << this->_char_message << "\ncon state" << this->_state << std::endl;
+	}*/
+
+	//this->_char_message[this->_size_char] = '\0';
+	int i = this->_offset - 1;
+	const char *ptr = this->_message.c_str();
+	this->_size_char = this->_message.length();
+	/*if (this->_dechunked_size > 100000000){
+		std::cout << "se va a pasar con " << this->_char_message << std::endl;
+	}*/
+	//std::cout << "va a procesar:\n" << ptr + i << "\ncon state" << this->_state << std::endl;
 	while (++i < this->_size_char)
 	{
 		if (this->_state == NEED_SIZE)
@@ -297,7 +304,6 @@ void http::Client::handle_chunked(void)
 			}
 			memcpy(this->_dechunked_body + this->_dechunked_size, ptr + i, to_read);
 			this->_dechunked_size += to_read;
-			i += to_read - 1;
 			this->_dechunked_body[this->_dechunked_size] = '\0';
 			if (this->_size_nl == 0)
 			{
@@ -312,6 +318,7 @@ void http::Client::handle_chunked(void)
 		{
 		}
 	}
+	this->_offset = i;
 	//std::cout << "final de un bloque: state=" << this->_state << ", dechunked_size=" << this->_dechunked_size << std::endl;
 	//std::cout << "dechunked body:" << this->_dechunked_body << std::endl;
 }

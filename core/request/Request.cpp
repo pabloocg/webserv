@@ -96,13 +96,13 @@ void http::Request::save_request()
 		if (this->_dechunked_body != NULL){
 			this->_request_body = std::string(this->_dechunked_body);
 			this->_req_content_length = std::to_string(this->_request_body.length());
+			free(this->_dechunked_body);
 		}
 		else{
 			this->_request_body = "";
 			this->_req_content_length = "0";
 		}
 	}
-		//decode_chunked();
 	get_languages_vector();
 	if (this->_req_URI.find('?') != std::string::npos)
 	{

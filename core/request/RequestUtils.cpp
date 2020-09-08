@@ -25,16 +25,30 @@ void http::Request::decode_chunked(void)
 {
 	int ret = 0;
 	std::string tok;
-
+	char *dechunked;
+	dechunked = (char *)malloc(10000);
+	int dechunked_capacity = 10000;
+	int dechunked_size = 0;
+	std::cout << "va a dar segfault" << std::endl;
 	std::stringstream ss(this->_request.substr(this->_request.find("\r\n\r\n") + 4));
 	while (std::getline(ss, tok, '\n'))
 	{
 		if ((ret = std::stoi(tok, 0, 16)) == 0)
 			break;
 		std::getline(ss, tok, '\n');
-		this->_request_body.append(tok.substr(0, ret));
+		if (dechunked_capacity < dechunked_size + ret){
+			char * tmp = (char *)malloc(dechunked_size + ret + 10000000);
+			memcpy(tmp, dechunked, dechunked_size);
+			free(dechunked);
+			dechunked_capacity = dechunked_size + ret + 10000000;
+		}
+		memcpy(dechunked + dechunked_size, tok.c_str(), ret);
 	}
-	this->_req_content_length = std::to_string(this->_request_body.length());
+	this->_request_body = std::string(dechunked);
+	this->_req_content_length = std::to_string(dechunked_size);
+	//free(dechunked);
+	std::cout << "nooo segfault" << std::endl;
+
 }
 
 void http::Request::get_languages_vector(void)
