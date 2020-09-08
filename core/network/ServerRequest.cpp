@@ -19,11 +19,11 @@ void http::ServerC::read_request(char *buf, std::vector<http::Client>::iterator 
     {
         client->setReading(false);
         s_buffer = client->getHeaders() + client->getMessage();
-        this->_bad_request = client->getBadRequest();
+        this->_status_code = client->getCodeStatus();
         this->_host_header = client->getHostHeader();
         try
         {
-            http::Request req(s_buffer, get_server(), this->_bad_request, this->_env, client->get_dechunked_body());
+            http::Request req(s_buffer, get_server(), this->_status_code, this->_env, client->get_dechunked_body());
 
             if (!(message = req.build_response(&size, _mime_types)))
                 throw 500;

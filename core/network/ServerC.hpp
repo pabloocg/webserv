@@ -37,7 +37,7 @@ private:
 
 	typedef struct sockaddr_in SA_IN;
 
-	bool								_bad_request;
+	int									_status_code;
 	fd_set								_master_read;
 	fd_set								_master_write;
 	std::string							_host_header;

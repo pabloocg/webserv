@@ -37,7 +37,7 @@ http::Client &http::Client::operator=(const http::Client &other)
 	this->_is_sending = other._is_sending;
 	this->_message = other._message;
 	this->_headers = other._headers;
-	this->_badRequest = other._badRequest;
+	this->_code = other._code;
 	this->_bodyLength = other._bodyLength;
 	this->_headers_read = other._headers_read;
 	this->_host_header = other._host_header;
@@ -64,7 +64,7 @@ void http::Client::reset_read(void)
 	this->_headers_read = false;
 	this->_isChunked = false;
 	this->_isLength = false;
-	this->_badRequest = false;
+	this->_code = 0;
 	this->_bodyLength = 0;
 	this->_offset = 0;
 	this->_size_nl = 0;
@@ -165,9 +165,9 @@ std::string http::Client::getMessage()
 	return (this->_message);
 }
 
-bool http::Client::getBadRequest()
+int http::Client::getCodeStatus()
 {
-	return (this->_badRequest);
+	return (this->_code);
 }
 
 std::string http::Client::getHostHeader()
@@ -178,6 +178,7 @@ std::string http::Client::getHostHeader()
 bool http::Client::read_valid_format(char *last_read, int valread)
 {
 	size_t end_headers = 0;
+	this->_bodyLength = 0;
 	size_t message_len;
 	std::vector<std::string> splitted_headers;
 	this->_last_read = last_read;
@@ -210,16 +211,19 @@ bool http::Client::read_valid_format(char *last_read, int valread)
 					if (this->_host_header == "NULL")
 						this->_host_header = splitted_headers[i].substr(6, splitted_headers[i].length() - 7);
 					else
-						this->_badRequest = true;
+						this->_code = 400;
 				}
 			}
-			if (this->_badRequest || this->_host_header == "NULL")
+			if (this->_host_header == "NULL")
+				this->_code = 400;
+			if (!this->_bodyLength && !this->_isChunked)
 			{
-				this->_badRequest = true;
+				this->_code = 411;
 				return (true);
 			}
 		}
 	}
+	std::cout << "HEADERS FOUND bodyL -> " << this->_bodyLength<< "\nMessageL-> "<< this->_message.length()  << std::endl;
 	if (this->_headers_read)
 	{
 		if (this->_isChunked)

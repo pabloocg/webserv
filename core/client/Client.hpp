@@ -40,7 +40,7 @@ private:
     bool        _isChunked;
     bool        _isLength;
     bool        _headers_read;
-    bool        _badRequest;
+    int         _code;
     bool        _is_reading;
 	bool		_first_time;
 
@@ -75,7 +75,7 @@ public:
     bool        read_valid_format(char *last_read, int valread);
     std::string getHeaders();
     std::string getMessage();
-    bool        getBadRequest();
+    int         getCodeStatus();
     std::string getHostHeader();
 	char		*get_dechunked_body();
     void        reset_read(void);

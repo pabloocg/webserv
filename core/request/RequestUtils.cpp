@@ -1,6 +1,6 @@
 #include "Request.hpp"
 
-void		http::Request::prepare_status()
+void http::Request::prepare_status()
 {
 	this->_message_status = this->_error_mgs[this->_status];
 	if (this->_status >= 400)
@@ -18,36 +18,10 @@ std::string http::Request::get_content_type(std::string type, std::map<std::stri
 	if (iter == mime_types.end())
 		return ("application/octet-stream");
 	else
-  {
-		if (iter->second.find("text") != std::string::npos)
-    {
-			return (iter->second + "; charset=" + this->_charset);
-    }
-    return (iter->second);
-  }
-
-void http::Request::decode_chunked(void)
-{
-	int ret = 0;
-	std::string tok;
-	char *dechunked;
-	dechunked = (char *)malloc(10000);
-    if (!dechunked)
-        throw 500;
-	int dechunked_capacity = 10000;
-	int dechunked_size = 0;
-	std::cout << "va a dar segfault" << std::endl;
-	std::stringstream ss(this->_request.substr(this->_request.find("\r\n\r\n") + 4));
-	while (std::getline(ss, tok, '\n'))
 	{
-		if ((ret = std::stoi(tok, 0, 16)) == 0)
-			break;
-		std::getline(ss, tok, '\n');
-		if (dechunked_capacity < dechunked_size + ret){
-			char * tmp = (char *)malloc(dechunked_size + ret + 10000000);
-			memcpy(tmp, dechunked, dechunked_size);
-			free(dechunked);
-			dechunked_capacity = dechunked_size + ret + 10000000;
+		if (iter->second.find("text") != std::string::npos)
+		{
+			return (iter->second + "; charset=" + this->_charset);
 		}
 		return (iter->second);
 	}
@@ -55,90 +29,101 @@ void http::Request::decode_chunked(void)
 
 void http::Request::get_languages_vector(void)
 {
-    int min;
+	int min;
 
-    this->_languages_accepted = http::split(this->_language_header, ',');
-    for (int i = 0; i < (int)this->_languages_accepted.size(); i++)
-    {
-        min = 0;
+	this->_languages_accepted = http::split(this->_language_header, ',');
+	for (int i = 0; i < (int)this->_languages_accepted.size(); i++)
+	{
+		min = 0;
 
-        #ifdef DEBUG_MODE
+#ifdef DEBUG_MODE
 
-        std::cout << "language antes de tratarlo: " << this->_languages_accepted[i] << std::endl;
+		std::cout << "language antes de tratarlo: " << this->_languages_accepted[i] << std::endl;
 
-        #endif
+#endif
 
-        if (this->_languages_accepted[i][0] == ' ')
-            min = 1;
-        if (this->_languages_accepted[i].find(';') != std::string::npos)
-            this->_languages_accepted[i] = this->_languages_accepted[i].substr(min, this->_languages_accepted[i].find(';'));
-        else
-            this->_languages_accepted[i] = this->_languages_accepted[i].substr(min);
+		if (this->_languages_accepted[i][0] == ' ')
+			min = 1;
+		if (this->_languages_accepted[i].find(';') != std::string::npos)
+			this->_languages_accepted[i] = this->_languages_accepted[i].substr(min, this->_languages_accepted[i].find(';'));
+		else
+			this->_languages_accepted[i] = this->_languages_accepted[i].substr(min);
 
-        #ifdef DEBUG_MODE
+#ifdef DEBUG_MODE
 
-        std::cout << "language: " << this->_languages_accepted[i] << std::endl;
+		std::cout << "language: " << this->_languages_accepted[i] << std::endl;
 
-        #endif
-    }
+#endif
+	}
 }
 
 std::string http::Request::custom_header_to_env(std::string custom_header)
 {
-    size_t i;
-    std::string key;
-    std::string value;
+	size_t i;
+	std::string key;
+	std::string value;
 
-    i = custom_header.find(':');
-    key = custom_header.substr(0, i);
-    value = custom_header.substr(i + 1);
-    for (int i = 0; i < (int)key.length(); i++)
-    {
-        if (key[i] >= 'a' && key[i] <= 'z')
-            key[i] = std::toupper(key[i]);
-        if (key[i] == '-')
-            key[i] = '_';
-    }
-    key += "=";
-    for (int i = 0; i < (int)value.length(); i++)
-        if (value[i] != ' ' && value[i] != '\r')
-            key += value[i];
+	i = custom_header.find(':');
+	key = custom_header.substr(0, i);
+	value = custom_header.substr(i + 1);
+	for (int i = 0; i < (int)key.length(); i++)
+	{
+		if (key[i] >= 'a' && key[i] <= 'z')
+			key[i] = std::toupper(key[i]);
+		if (key[i] == '-')
+			key[i] = '_';
+	}
+	key += "=";
+	for (int i = 0; i < (int)value.length(); i++)
+		if (value[i] != ' ' && value[i] != '\r')
+			key += value[i];
 
 #ifdef DEBUG_MODE
 
-    std::cout << "adding env var: " << key << std::endl;
+	std::cout << "adding env var: " << key << std::endl;
 
 #endif
-    return (key);
+	return (key);
 }
 
-void http::Request::get_charset(void){
+void http::Request::get_charset(void)
+{
 	this->_charset = "iso-8859-1";
-	if (this->_isCGI){
-		for (int i = 0; i < (int)this->_CGI_headers.size(); i++){
-			if (this->_CGI_headers[i].find("Charset=") != std::string::npos){
+	if (this->_isCGI)
+	{
+		for (int i = 0; i < (int)this->_CGI_headers.size(); i++)
+		{
+			if (this->_CGI_headers[i].find("Charset=") != std::string::npos)
+			{
 				this->_charset = this->_CGI_headers[i].substr(this->_CGI_headers[i].find("Charset=") + 8);
-				if (this->_charset.back() == '\r'){
+				if (this->_charset.back() == '\r')
+				{
 					this->_charset.erase(this->_charset.back());
 				}
 			}
 		}
 	}
-	else{
-		if (this->_resp_body.find("charset=") != std::string::npos){
+	else
+	{
+		if (this->_resp_body.find("charset=") != std::string::npos)
+		{
 			int pos = this->_resp_body.find("charset=") + 8;
-			if (this->_resp_body[pos] == '\"'){
+			if (this->_resp_body[pos] == '\"')
+			{
 				int count = 0;
 				int i = pos;
-				while(this->_resp_body[++i] != '\"'){
+				while (this->_resp_body[++i] != '\"')
+				{
 					count++;
 				}
 				this->_charset = this->_resp_body.substr(pos + 1, count);
 			}
-			else{
+			else
+			{
 				int i = pos;
 				int count = 0;
-				while(this->_resp_body[i] != '\r' && this->_resp_body[i] != ' ' && this->_resp_body[i] != '\n' && this->_resp_body[i] != ';' && this->_resp_body[i] != ',' && this->_resp_body[i] != '\"'){
+				while (this->_resp_body[i] != '\r' && this->_resp_body[i] != ' ' && this->_resp_body[i] != '\n' && this->_resp_body[i] != ';' && this->_resp_body[i] != ',' && this->_resp_body[i] != '\"')
+				{
 					count++;
 					i++;
 				}
@@ -146,12 +131,15 @@ void http::Request::get_charset(void){
 			}
 		}
 	}
-	for(int i = 0; i < (int)this->_charset.length(); i++){
-		if (this->_charset[i] >= 'A' && this->_charset[i] <= 'Z'){
+	for (int i = 0; i < (int)this->_charset.length(); i++)
+	{
+		if (this->_charset[i] >= 'A' && this->_charset[i] <= 'Z')
+		{
 			this->_charset[i] = std::tolower(this->_charset[i]);
 		}
 	}
-	if (this->_charset_header.size() > 0){
+	if (this->_charset_header.size() > 0)
+	{
 
 		bool accepted = false;
 		std::cout << "header charset: " << this->_charset_header << std::endl;
@@ -159,17 +147,20 @@ void http::Request::get_charset(void){
 		for (int i = 0; i < (int)charsets_accepted.size(); i++)
 		{
 			std::cout << "va a comparar " << this->_charset << " con " << charsets_accepted[i] << std::endl;
-			if (charsets_accepted[i].find(this->_charset) != std::string::npos){
+			if (charsets_accepted[i].find(this->_charset) != std::string::npos)
+			{
 				accepted = true;
 				break;
 			}
 		}
-		if (!accepted){
+		if (!accepted)
+		{
 			this->_status = 406;
 			prepare_status();
 			this->_resp_body = http::file_content(this->_file_req);
 		}
-		else{
+		else
+		{
 			this->_set_content_location = true;
 		}
 	}
