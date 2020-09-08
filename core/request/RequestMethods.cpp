@@ -13,7 +13,10 @@ char *http::Request::build_response(ssize_t *size, std::map<std::string, std::st
 	else if (this->_type == OPTIONS)
 		this->build_options();
 	if (this->_status >= 500)
+	{
 		prepare_status();
+		this->_resp_body = http::file_content(this->_file_req);
+	}
 	return (getResponse(size, mime_types));
 }
 
@@ -39,10 +42,10 @@ void http::Request::build_post(void)
 		std::ofstream f(this->_file_req, std::ios::app);
 
 		if (f.good())
+		{
 			f << this->_request_body << std::endl;
-		else
-			f << "error" << std::endl;
-		f.close();
+			f.close();
+		}
 	}
 }
 
@@ -51,10 +54,12 @@ void http::Request::build_put(void)
 	std::ofstream f(this->_file_req);
 
 	if (f.good())
+	{
 		f << this->_request_body << std::endl;
+		f.close();
+	}
 	else
-		f << "error" << std::endl;
-	f.close();
+		throw 500;
 }
 
 void http::Request::build_delete(void)
@@ -106,7 +111,7 @@ std::string	http::Request::build_autoindex(void)
 	stream << "<h1>Index of " << this->_file_bef_req << "</h1><hr><pre><br>" << std::endl;
 	dirp = opendir(this->_file_req.c_str());
 	if (dirp == NULL)
-		perror("opendir");
+		throw 500;
 	while ((direntp = readdir(dirp)) != NULL)
 	{
 		if (!strncmp(direntp->d_name, ".", strlen(direntp->d_name)))
@@ -123,7 +128,7 @@ std::string	http::Request::build_autoindex(void)
 			gm = gmtime(&buff.st_mtimespec.tv_sec);
 			if (gm)
 				if (!((written = (ssize_t)strftime(buftime, sizeof(buftime), "%d-%b-%Y %H:%M", gm)) > 0))
-					perror("strftime");
+					throw 500;
 			for (size_t i = 0; i < 20; i++)
 				stream << "&nbsp;";
 			stream << buftime;

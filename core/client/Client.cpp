@@ -226,10 +226,17 @@ bool http::Client::read_valid_format(char *last_read, int valread)
 		{
 			message_len = this->_message.length();
 			handle_chunked();
-			if (message_len > 4 && this->_message[message_len - 5] == '0' && this->_message[message_len - 4] == '\r' && this->_message[message_len - 3] == '\n' && this->_message[message_len - 2] == '\r' && this->_message[message_len - 1] == '\n'){
+			if (message_len > 4 && this->_message[message_len - 5] == '0'
+								&& this->_message[message_len - 4] == '\r'
+								&& this->_message[message_len - 3] == '\n'
+								&& this->_message[message_len - 2] == '\r'
+								&& this->_message[message_len - 1] == '\n')
+			{
 				if (this->_dechunked_size > 0)
 					this->_dechunked_body[this->_dechunked_size] = '\0';
+#ifdef DEBUG_MODE
 				std::cout << "dechunked size:" << this->_dechunked_size << std::endl;
+#endif
 				return (true);
 			}
 		}

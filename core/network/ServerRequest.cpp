@@ -21,9 +21,20 @@ void http::ServerC::read_request(char *buf, std::vector<http::Client>::iterator 
         s_buffer = client->getHeaders() + client->getMessage();
         this->_bad_request = client->getBadRequest();
         this->_host_header = client->getHostHeader();
-        http::Request req(s_buffer, get_server(), this->_bad_request, this->_env, client->get_dechunked_body());
-        if (!(message = req.build_response(&size, _mime_types)))
-            throw ServerError("request", "failed for some reason");
+        try
+        {
+            http::Request req(s_buffer, get_server(), this->_bad_request, this->_env, client->get_dechunked_body());
+
+            if (!(message = req.build_response(&size, _mime_types)))
+                throw 500;
+        }
+        catch (const int internal_error) //Cath error 503 Internal Server Error
+        {
+            http::Request	req(internal_error);
+
+            if (!(message = req.build_response(&size, _mime_types)))
+                throw ServerError("request", "failed for some reason");
+        }
 		client->reset_read();
         client->setSending(true);
         client->setupSend(message, size, 0, size);

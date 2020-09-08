@@ -1,12 +1,11 @@
 #include "Request.hpp"
 
-void http::Request::parent_process(int &pipes_out, int &pipesin_in)
+void http::Request::parent_process(int &pipes_out)
 {
-	(void)pipesin_in;
-	int valread, max_sd;
-	fd_set readfd;
-	char buffer[BUFFER_SIZE + 1] = {0};
-	struct timeval timeout;
+	int				valread, max_sd;
+	fd_set			readfd;
+	char			buffer[BUFFER_SIZE + 1] = {0};
+	struct timeval	timeout;
 
 	max_sd = pipes_out;
 	FD_ZERO(&readfd);
@@ -33,50 +32,53 @@ void http::Request::child_process(char **args, int &pipes_in)
 {
 	char **env = http::vecToCharptrptr(this->_env);
 	int ret = EXIT_SUCCESS;
+	int	i = 0;
 
 	if (dup2(pipes_in, STDOUT) < 0)
-		perror("dup2");
+		throw 500;
 	if (this->_request_body.length() > 0)
 	{
 		this->_CGI_fd = open(FILE_CGI, O_RDONLY, 0);
 		if (dup2(this->_CGI_fd, STDIN))
-			perror("dup2");
+			throw 500;
 	}
 	else
 		close(STDIN);
+	if (this->_request_body.length() > 0)
+		close(this->_CGI_fd);
 	if ((ret = execve(args[0], args, env)) < 0)
-		perror("execve");
-	free(args[0]);
-	free(args[1]);
-	free(args);
+		throw 500;
+	while (env[i])
+		free(env[i++]);
 	free(env);
 	exit(ret);
 }
 
 void http::Request::startCGI(void)
 {
-	int ret, status, valwrite;
-	int pipes[2];
-	pid_t pid;
-	char **args;
+	int		ret, status, valwrite;
+	int		pipes[2];
+	pid_t	pid;
+	char	**args;
 
-	this->_CGI_fd = open(FILE_CGI, O_RDWR | O_CREAT | O_TRUNC | O_NOFOLLOW | O_NONBLOCK, 0666);
+	if ((this->_CGI_fd = open(FILE_CGI, O_RDWR | O_CREAT | O_TRUNC | O_NOFOLLOW | O_NONBLOCK, 0666)) < 0)
+		throw 500;
 	valwrite = write(this->_CGI_fd, this->_request_body.c_str(), this->_request_body.length());
 	close(this->_CGI_fd);
 	if (pipe(pipes))
-		perror("pipe");
+		throw 500;
 	if (!(args = (char **)malloc(sizeof(char *) * 3)))
-		perror("malloc");
+		throw 500;
 	args[0] = strdup(this->_location.getCgiExec().c_str());
 	args[1] = strdup(this->_script_name.c_str());
 	args[2] = NULL;
 	if ((pid = fork()) < 0)
-		perror("fork");
+		throw 500;
 	else if (pid == 0)
 		this->child_process(args, pipes[SIDE_IN]);
 	else
 	{
-		this->parent_process(pipes[SIDE_OUT], this->_CGI_fd);
+		this->parent_process(pipes[SIDE_OUT]);
 
 #ifdef DEBUG_MODE
 
@@ -86,7 +88,9 @@ void http::Request::startCGI(void)
 
 		waitpid(pid, &status, 0);
 	}
-	close(this->_CGI_fd);
+	free(args[0]);
+	free(args[1]);
+	free(args);
 	unlink(FILE_CGI);
 	close(pipes[SIDE_IN]);
 	close(pipes[SIDE_OUT]);

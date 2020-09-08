@@ -1,15 +1,15 @@
 #include "Request.hpp"
 
-http::Request::Request(std::string req, http::ServerConf server, bool bad_request, std::vector<std::string> env, char *dechunked_body) : _dechunked_body(dechunked_body),
+http::Request::Request(std::string req, http::ServerConf server, bool bad_request, std::vector<std::string> env, char *dechunked_body): _dechunked_body(dechunked_body),
 																													_is_autoindex(false),
-																												   _www_auth_required(false),
-																												   _isCGI(false),
-																												   _request(req),
-																												   _auth("NULL"),
-																												   _server(server),
-																												   _error_mgs(create_map()),
-																												   _env(env),
-																												   _status(0)
+																												   	_www_auth_required(false),
+																												   	_isCGI(false),
+																												   	_request(req),
+																												   	_auth("NULL"),
+																												   	_server(server),
+																												   	_error_mgs(create_map()),
+																												   	_env(env),
+																												   	_status(0)
 {
 
 #ifdef	DEBUG_MODE
@@ -27,13 +27,9 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	if (!this->_is_autoindex && this->_location.isCgi() && this->_type != OPTIONS && !this->_location.isRedirect())
 	{
 		this->_isCGI = true;
-
 #ifdef DEBUG_MODE
-
 		std::cout << "extension =" << this->_location.getExtension() << std::endl;
-
 #endif
-
 		this->_path_info = this->_file_req.substr(this->_file_req.find(this->_location.getExtension()) + 3);
 		this->_script_name = this->_file_req.substr(0, this->_file_req.find(this->_location.getExtension()) + 3);
 		this->_file_req = this->_script_name;
@@ -56,7 +52,7 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 	prepare_status();
 }
 
-http::Request::Request(int code) : _is_autoindex(false),
+http::Request::Request(int code): _is_autoindex(false),
 								_www_auth_required(false),
 								_isCGI(false),
 								_request(""),
@@ -92,13 +88,16 @@ void http::Request::save_request()
 		this->save_header(sheader[i]);
 	if (atoi(this->_req_content_length.c_str()) > 0)
 		save_request_body();
-	if (this->_transf_encoding.find("chunked") != std::string::npos){
-		if (this->_dechunked_body != NULL){
+	if (this->_transf_encoding.find("chunked") != std::string::npos)
+	{
+		if (this->_dechunked_body != NULL)
+		{
 			this->_request_body = std::string(this->_dechunked_body);
 			this->_req_content_length = std::to_string(this->_request_body.length());
 			free(this->_dechunked_body);
 		}
-		else{
+		else
+		{
 			this->_request_body = "";
 			this->_req_content_length = "0";
 		}
@@ -188,11 +187,13 @@ void http::Request::save_header(std::string header)
 void http::Request::save_request_body(void)
 {
 	for (int i = 0; i < (int)this->_request.length(); i++)
+	{
 		if (this->_request[i] == '\n' && this->_request[i + 2] == '\n')
 		{
 			this->_request_body = this->_request.substr(i + 3, atoi(this->_req_content_length.c_str()));
 			break;
 		}
+	}
 }
 
 void http::Request::set_status(void)
@@ -217,8 +218,11 @@ void http::Request::set_status(void)
 		{
 			code = this->_location.getCodeRedirect();
 		}
-		else if (this->_request_body.length() > this->_location.getBodySize() && !code){
+		else if (this->_request_body.length() > this->_location.getBodySize() && !code)
+		{
+#ifdef	DEBUG_MODE
 			std::cout << "body len:\n" << this->_request_body.length() << "\nlocation max size " << this->_location.getBodySize() << std::endl;
+#endif
 			code = 413;
 		}
 		else if (!http::file_exists(this->_file_req) && !http::is_dir(this->_file_req))
@@ -232,15 +236,9 @@ void http::Request::set_status(void)
 			}
 		}
 		else if (http::file_exists(this->_file_req) && (this->_type == PUT or (this->_type == POST && !this->_isCGI)) && !code)
-		{
 			code = 201;
-		}
 		else if (http::file_exists(this->_file_req) && this->_type == POST && this->_isCGI && !code)
-		{
 			code = 200;
-		}
-		//else if (http::is_dir(this->_file_req))
-		//	code = 403;
 		else
 		{
 			code = 404;
@@ -277,6 +275,14 @@ char *http::Request::getResponse(ssize_t *size, std::map<std::string, std::strin
 				stream << " " << this->_allow[i];
 		}
 	}
+	if (this->_status == 301 || this->_status == 503)
+	{
+		stream << "\nRetry-After: ";
+		if (this->_status == 503)
+			stream << "120";
+		else
+			stream << "0";
+	}
 	if (this->_www_auth_required == true)
 		stream << "\nWWW-Authenticate: Basic realm=\"" << this->_realm << "\"";
 	if (this->_isCGI)
@@ -292,6 +298,23 @@ char *http::Request::getResponse(ssize_t *size, std::map<std::string, std::strin
 		stream << "\nContent-Language: " << this->_language_setted;
 	if (this->_status == 201 or this->_status == 301 or this->_status == 302)
 		stream << "\nLocation: " << this->_file_bef_req;
+	if (this->_type == GET || this->_type == HEAD)
+	{
+		char				buftime[30];
+		ssize_t				written = -1;
+		struct stat			buff;
+		struct tm			*gm;
+
+		stream << "\nLast-Modified: ";
+		stat(this->_file_req.c_str(), &buff);
+		gm = gmtime(&buff.st_mtimespec.tv_sec);
+		if (gm)
+		{
+			if (!((written = (ssize_t)strftime(buftime, sizeof(buftime), "%d-%b-%Y %H:%M", gm)) > 0))
+				throw 500;
+		}
+		stream << buftime;
+	}
 	stream << "\nServer: Webserv/1.0\r\n\r\n";
 	if (this->_type != HEAD && this->_status != 204 && this->_type != PUT)
 		stream << this->_resp_body;

@@ -27,6 +27,8 @@ void http::Request::decode_chunked(void)
 	std::string tok;
 	char *dechunked;
 	dechunked = (char *)malloc(10000);
+    if (!dechunked)
+        throw 500;
 	int dechunked_capacity = 10000;
 	int dechunked_size = 0;
 	std::cout << "va a dar segfault" << std::endl;
