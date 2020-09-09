@@ -15,7 +15,7 @@ void http::Request::parent_process(int &pipes_out)
 	timeout.tv_usec = 400000;
 	while (select(max_sd + 1, &readfd, NULL, NULL, &timeout) > 0)
 	{
-		if ((valread = read(pipes_out, buffer, BUFFER_SIZE)) < 0)
+		if ((valread = read(pipes_out, buffer, BUFFER_SIZE)) <= 0)
 			continue;
 		this->_CGI_response += std::string(buffer, valread);
 #ifdef DEBUG_MODE

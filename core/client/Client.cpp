@@ -12,12 +12,14 @@ http::Client::Client() : _fd(0)
 {
 	this->reset_read();
 	this->reset_send();
+	set_last_activity();
 }
 
 http::Client::Client(int &fd) : _fd(fd)
 {
 	this->reset_read();
 	this->reset_send();
+	set_last_activity();
 }
 
 http::Client::~Client()
@@ -115,6 +117,20 @@ int http::Client::getSendSize(void)
 	return (this->_size_send);
 }
 
+struct timeval http::Client::get_time_sleeping(struct timeval now){
+	struct timeval time_sleeping;
+
+	time_sleeping.tv_usec = now.tv_usec - this->_time_last_activity.tv_usec;
+	if (time_sleeping.tv_usec < 0){
+		time_sleeping.tv_usec += 1000000;
+		time_sleeping.tv_sec = now.tv_sec - this->_time_last_activity.tv_sec - 1;
+	}
+	else{
+		time_sleeping.tv_sec = now.tv_sec - this->_time_last_activity.tv_sec ;
+	}
+	return(time_sleeping);
+}
+
 int http::Client::getSended(void)
 {
 	return (this->_sended);
@@ -165,7 +181,16 @@ std::string http::Client::getMessage()
 	return (this->_message);
 }
 
+
+void	http::Client::set_last_activity(void){
+	if (gettimeofday(&this->_time_last_activity, NULL) != 0)
+	{
+		perror("gettimeofday");
+	}
+}
+
 int http::Client::getCodeStatus()
+
 {
 	return (this->_code);
 }

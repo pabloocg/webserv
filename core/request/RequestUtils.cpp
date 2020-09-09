@@ -140,9 +140,7 @@ void http::Request::get_charset(void)
 	}
 	if (this->_charset_header.size() > 0)
 	{
-
 		bool accepted = false;
-		std::cout << "header charset: " << this->_charset_header << std::endl;
 		std::vector<std::string> charsets_accepted = http::split(this->_charset_header, ',');
 		for (int i = 0; i < (int)charsets_accepted.size(); i++)
 		{
@@ -164,5 +162,4 @@ void http::Request::get_charset(void)
 			this->_set_content_location = true;
 		}
 	}
-	std::cout << "CHARSET: " << this->_charset << std::endl;
 }
