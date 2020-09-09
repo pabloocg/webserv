@@ -1,6 +1,17 @@
 #ifndef PARAMS_HPP
 # define PARAMS_HPP
 
+#define GET 0
+#define HEAD 1
+#define POST 2
+#define PUT 3
+#define DELETE 4
+#define CONNECT 5
+#define OPTIONS 6
+#define TRACE 7
+#define PATCH 8
+#define NOT_IMPLEMENTED 9
+
 //#define DEBUG_MODE
 #define DEFAULT_PORT 8080
 #define DEFAULT_SERVER_ADDR "127.0.0.1"
@@ -17,9 +28,10 @@
 #define DEFAULT_ERROR_PAGE_406 "error_pages/406.html"
 #define DEFAULT_ERROR_PAGE_411 "error_pages/411.html"
 #define DEFAULT_ERROR_PAGE_413 "error_pages/413.html"
-#define DEFAULT_ERROR_PAGE_505 "error_pages/505.html"
 #define DEFAULT_ERROR_PAGE_500 "error_pages/500.html"
+#define DEFAULT_ERROR_PAGE_501 "error_pages/501.html"
 #define DEFAULT_ERROR_PAGE_503 "error_pages/503.html"
+#define DEFAULT_ERROR_PAGE_505 "error_pages/505.html"
 #define DEFAULT_ERROR_PAGE_50X "error_pages/50x.html"
 #define DEFAULT_ERROR_LOG "tmp/logs/error.log"
 #define DEFAULT_ACCESS_LOG "tmp/logs/access.log"

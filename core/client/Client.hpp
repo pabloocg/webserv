@@ -27,7 +27,6 @@ private:
     std::string _message;
     std::string _headers;
     std::string _host_header;
-	char		*_char_message;
 	char		*_dechunked_body;
 	char		*_last_read;
     int         _bodyLength;
@@ -48,7 +47,7 @@ private:
 public:
     Client();
     Client(int &fd);
-    virtual ~Client();
+    ~Client();
 
     http::Client    &operator=(const http::Client &other);
 

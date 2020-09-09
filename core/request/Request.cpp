@@ -1,16 +1,17 @@
 #include "Request.hpp"
 
 
-http::Request::Request(std::string req, http::ServerConf server, int status_code, std::vector<std::string> env, char *dechunked_body) : _dechunked_body(dechunked_body),
-																																		 _is_autoindex(false),
-																																		 _www_auth_required(false),
-																																		 _isCGI(false),
-																																		 _request(req),
-																																		 _auth("NULL"),
-																																		 _server(server),
-																																		 _error_mgs(create_map()),
-																																		 _env(env),
-																																		 _status(0)
+http::Request::Request(std::string req, http::ServerConf server, int status_code,
+						std::vector<std::string> env, char *dechunked_body) : _dechunked_body(dechunked_body),
+																			_is_autoindex(false),
+																			_www_auth_required(false),
+																			_isCGI(false),
+																			_request(req),
+																			_auth("NULL"),
+																			_server(server),
+																			_error_mgs(create_map()),
+																			_env(env),
+																			_status(0)
 {
 	this->_set_content_location = false;
 
@@ -97,6 +98,7 @@ void http::Request::save_request()
 			this->_request_body = std::string(this->_dechunked_body);
 			this->_req_content_length = std::to_string(this->_request_body.length());
 			free(this->_dechunked_body);
+			this->_dechunked_body = NULL;
 		}
 		else
 		{

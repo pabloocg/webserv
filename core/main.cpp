@@ -5,7 +5,7 @@
 
 void			handle_signal(int signal)
 {
-	if (signal == SIGINT or signal == SIGQUIT)
+	if (signal == SIGINT)
     {
         std::cout << "\nStopping webserv..." << std::endl;
         exit(1);
@@ -26,6 +26,7 @@ int main(int argc, char *argv[], char *env[])
         return (0);
     }
     signal(SIGINT, handle_signal);
+    signal(SIGPIPE, SIG_IGN);
     try
     {
         http::Conf                      config(file_conf);

@@ -5,16 +5,6 @@
 # include <iostream>
 # include "../utils/params.hpp"
 
-#define GET 0
-#define HEAD 1
-#define POST 2
-#define PUT 3
-#define DELETE 4
-#define CONNECT 5
-#define OPTIONS 6
-#define TRACE 7
-#define PATCH 8
-
 namespace http
 {
 

@@ -60,7 +60,7 @@ public:
 	void	reject_connection(http::ServerConf &server, int &server_socket);
 	void	read_request(char *buf, std::vector<http::Client>::iterator &client, int valread);
 	void	add_client(int &new_socket);
-	void	remove_client(std::vector<http::Client>::iterator &client);
+	std::vector<http::Client>::iterator		remove_client(std::vector<http::Client>::iterator &client);
 	void	remove_tmp_client(http::Client  &client);
 
 	bool	valid_req_format(std::string buffer);

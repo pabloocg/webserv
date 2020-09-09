@@ -71,6 +71,7 @@ public:
         this->_err_pages[411] = DEFAULT_ERROR_PAGE_411;
         this->_err_pages[413] = DEFAULT_ERROR_PAGE_413;
         this->_err_pages[500] = DEFAULT_ERROR_PAGE_500;
+        this->_err_pages[501] = DEFAULT_ERROR_PAGE_501;
         this->_err_pages[503] = DEFAULT_ERROR_PAGE_503;
         this->_err_pages[505] = DEFAULT_ERROR_PAGE_505;
         this->_is_auth = false;

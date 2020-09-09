@@ -58,9 +58,9 @@ void http::ServerC::wait_for_connection()
 	}
 	std::vector<http::Client>::iterator client = this->_clients.begin();
 	std::vector<http::Client>::iterator client_end = this->_clients.end();
-#ifdef DEBUG_MODE
+
 	std::cout << "Actual clients " << this->_clients.size() << std::endl;
-#endif
+
 	for (; client != client_end; client++)
 	{
 		sd = client->getFd();
@@ -72,7 +72,7 @@ void http::ServerC::wait_for_connection()
 
 			if ((valread = read(sd, buffer, BUFFER_SIZE)) <= 0)
 			{
-				this->remove_client(client);
+				client = this->remove_client(client);
 				continue;
 			}
 			else
@@ -88,32 +88,39 @@ void http::ServerC::wait_for_connection()
 
 			if ((valwrite = send(sd, client->getSendMessage() + client->getSended(), client->getSendLeft(), 0)) < 0)
 			{
-				free(client->getSendMessage());
-				this->remove_client(client);
+				std::cout << "Libera por fallo del send" << std::endl;
+				client->setSending(false);
+				if (client->getSendMessage() != NULL)
+					free(client->getSendMessage());
+				client->reset_send();
+				client = this->remove_client(client);
 				continue;
 			}
-			if (valwrite < client->getSendLeft())
+			else if (valwrite < client->getSendLeft())
 			{
+				std::cout << "No Libera" << std::endl;
 				client->setSended(client->getSended() + valwrite);
 				client->setSendLeft(client->getSendLeft() - valwrite);
 			}
 			else
 			{
 				client->setSending(false);
-				free(client->getSendMessage());
+				std::cout << "Libera" << std::endl;
+				if (client->getSendMessage() != NULL)
+					free(client->getSendMessage());
 				client->reset_send();
 				FD_CLR(sd, &_master_write);
 			}
-
-#ifdef DEBUG_MODE
 			std::cout << "Sended " << valwrite + client->getSended() << " bytes to " << sd << ", " << client->getSendLeft() - valwrite << " left" << std::endl;
-#endif
 		}
 		else
 		{
+			std::cout << "Se mete al else" << std::endl;
 			struct timeval time_sleeping = client->get_time_sleeping(now);
-			if(time_sleeping.tv_sec > TTL_SEC || (time_sleeping.tv_sec == TTL_SEC && time_sleeping.tv_usec > TTL_USEC)){
-				this->remove_client(client);
+			if(time_sleeping.tv_sec > TTL_SEC || (time_sleeping.tv_sec == TTL_SEC && time_sleeping.tv_usec > TTL_USEC))
+			{
+				std::cout << "Hace TIMEOUT" << std::endl;
+				client = this->remove_client(client);
 			}
 		}
 	}

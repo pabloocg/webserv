@@ -36,6 +36,8 @@ void http::ServerC::read_request(char *buf, std::vector<http::Client>::iterator 
                 throw ServerError("request", "failed for some reason");
         }
 		client->reset_read();
+        if (client->isSending())
+            free(client->getSendMessage());
         client->setSending(true);
         client->setupSend(message, size, 0, size);
         FD_SET(client->getFd(), &_master_write);

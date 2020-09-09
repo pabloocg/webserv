@@ -10,6 +10,8 @@
 
 http::Client::Client() : _fd(0)
 {
+	this->_dechunked_body = NULL;
+	this->_message_send = NULL;
 	this->reset_read();
 	this->reset_send();
 	set_last_activity();
@@ -17,6 +19,8 @@ http::Client::Client() : _fd(0)
 
 http::Client::Client(int &fd) : _fd(fd)
 {
+	this->_dechunked_body = NULL;
+	this->_message_send = NULL;
 	this->reset_read();
 	this->reset_send();
 	set_last_activity();
@@ -25,8 +29,11 @@ http::Client::Client(int &fd) : _fd(fd)
 http::Client::~Client()
 {
 	this->_fd = 0;
-	this->reset_read();
-	this->reset_send();
+	if (this->_dechunked_body != NULL)
+	{
+		free(this->_dechunked_body);
+		this->_dechunked_body = NULL;
+	}
 }
 
 http::Client &http::Client::operator=(const http::Client &other)
@@ -74,7 +81,6 @@ void http::Client::reset_read(void)
 	this->_dechunked_size = 0;
 	this->_dechunked_capacity = 0;
 	this->_dechunked_body = NULL;
-	this->_char_message = NULL;
 	this->_first_time = true;
 	
 }
@@ -208,6 +214,7 @@ bool http::Client::read_valid_format(char *last_read, int valread)
 	std::vector<std::string> splitted_headers;
 	this->_last_read = last_read;
 	this->_valread = valread;
+	int		method = 0;
 
 #ifdef DEBUG_MODE
 
@@ -225,7 +232,21 @@ bool http::Client::read_valid_format(char *last_read, int valread)
 			splitted_headers = http::split(this->_message.substr(0, end_headers), '\n');
 			this->_headers = this->_message.substr(0, end_headers + 4);
 			this->_message = this->_message.substr(end_headers + 4);
-			for (size_t i = 0; i < splitted_headers.size(); i++)
+			if (!method && splitted_headers[0].find("GET ") != std::string::npos)
+				method = GET;
+			else if (!method && splitted_headers[0].find("HEAD ") != std::string::npos)
+				method = HEAD;
+			else if (!method && splitted_headers[0].find("OPTIONS ") != std::string::npos)
+				method = OPTIONS;
+			else if (!method && splitted_headers[0].find("POST ") != std::string::npos)
+				method = POST;
+			else if (!method && splitted_headers[0].find("PUT ") != std::string::npos)
+				method = PUT;
+			else if (!method && splitted_headers[0].find("DELETE ") != std::string::npos)
+				method = DELETE;
+			else
+				method = NOT_IMPLEMENTED;
+			for (size_t i = 1; i < splitted_headers.size(); i++)
 			{
 				if (splitted_headers[i].find("Content-Length:") != std::string::npos)
 					this->_bodyLength = std::atoi(splitted_headers[i].substr(16, splitted_headers[i].length() - 16).c_str());
@@ -241,14 +262,21 @@ bool http::Client::read_valid_format(char *last_read, int valread)
 			}
 			if (this->_host_header == "NULL")
 				this->_code = 400;
-			if (!this->_bodyLength && !this->_isChunked)
+			if (method == NOT_IMPLEMENTED)
+			{
+				this->_code = 501;
+				return (true);
+			}
+			if (method > 1 && method < 4 && !this->_bodyLength && !this->_isChunked)
 			{
 				this->_code = 411;
 				return (true);
 			}
 		}
 	}
+#ifdef DEBUG_MODE
 	std::cout << "HEADERS FOUND bodyL -> " << this->_bodyLength<< "\nMessageL-> "<< this->_message.length()  << std::endl;
+#endif
 	if (this->_headers_read)
 	{
 		if (this->_isChunked)
@@ -277,26 +305,9 @@ bool http::Client::read_valid_format(char *last_read, int valread)
 
 void http::Client::handle_chunked(void)
 {
-	/*if (_first_time == true)
-	{
-		this->_char_message = strdup(this->_message.c_str());
-		this->_size_char = this->_message.length();
-		_first_time = false;
-	}
-	else
-	{
-		this->_char_message = this->_last_read;
-		this->_size_char = this->_valread;
-	}*/
-
-	//this->_char_message[this->_size_char] = '\0';
 	int i = this->_offset - 1;
 	const char *ptr = this->_message.c_str();
 	this->_size_char = this->_message.length();
-	/*if (this->_dechunked_size > 100000000){
-		std::cout << "se va a pasar con " << this->_char_message << std::endl;
-	}*/
-	//std::cout << "va a procesar:\n" << ptr + i << "\ncon state" << this->_state << std::endl;
 	while (++i < this->_size_char)
 	{
 		if (this->_state == NEED_SIZE)
@@ -355,10 +366,9 @@ void http::Client::handle_chunked(void)
 		}
 	}
 	this->_offset = i;
-	//std::cout << "final de un bloque: state=" << this->_state << ", dechunked_size=" << this->_dechunked_size << std::endl;
-	//std::cout << "dechunked body:" << this->_dechunked_body << std::endl;
 }
 
-char *http::Client::get_dechunked_body(void){
+char *http::Client::get_dechunked_body(void)
+{
 	return (this->_dechunked_body);
 }

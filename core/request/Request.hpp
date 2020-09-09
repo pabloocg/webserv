@@ -126,6 +126,7 @@ private:
 		m[411] = "Length Required";
 		m[413] = "Payload Too Large";
 		m[500] = "Internal Server Error";
+		m[501] = "Not Implemented";
 		m[503] = "Service Unavailable";
 		m[505] = "HTTP Version Not Supported";
 		return (m);

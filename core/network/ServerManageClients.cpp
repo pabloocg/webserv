@@ -20,9 +20,10 @@ void	http::ServerC::add_client(int &new_socket)
 
 }
 
-void	http::ServerC::remove_client(std::vector<http::Client>::iterator &client)
+std::vector<http::Client>::iterator	http::ServerC::remove_client(std::vector<http::Client>::iterator &client)
 {
 	int		sd;
+	std::vector<http::Client>::iterator	tmp;
 
 	sd = client->getFd();
 	close(sd);
@@ -30,7 +31,7 @@ void	http::ServerC::remove_client(std::vector<http::Client>::iterator &client)
 		FD_CLR(sd, &_master_read);
 	if (FD_ISSET(sd, &_master_write))
 		FD_CLR(sd, &_master_write);
-	this->_clients.erase(client);
+	tmp = this->_clients.erase(client);
 
 #ifdef 		DEBUG_MODE
 
@@ -42,6 +43,7 @@ void	http::ServerC::remove_client(std::vector<http::Client>::iterator &client)
 	}
 
 #endif
+	return (--tmp);
 }
 
 void	http::ServerC::remove_tmp_client(http::Client &client)

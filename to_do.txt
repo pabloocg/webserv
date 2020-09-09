@@ -1,2 +1,2 @@
 Cosas por hacer:
--Implementar timeout si una request se queda colgada (Creo que se hace en el select)
+
