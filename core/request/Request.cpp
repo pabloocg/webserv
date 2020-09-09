@@ -1,7 +1,7 @@
 #include "Request.hpp"
 
 
-http::Request::Request(std::string req, http::ServerConf server, bool bad_request, std::vector<std::string> env, char *dechunked_body) : _dechunked_body(dechunked_body),
+http::Request::Request(std::string req, http::ServerConf server, int status_code, std::vector<std::string> env, char *dechunked_body) : _dechunked_body(dechunked_body),
 																																		 _is_autoindex(false),
 																																		 _www_auth_required(false),
 																																		 _isCGI(false),
@@ -23,8 +23,7 @@ http::Request::Request(std::string req, http::ServerConf server, bool bad_reques
 #endif
 
 	this->_allow.clear();
-	if (bad_request == true)
-		this->_status = 400;
+	this->_status = status_code;
 	this->save_request();
 	if (!this->_is_autoindex && this->_location.isCgi() && this->_type != OPTIONS && !this->_location.isRedirect())
 	{
@@ -334,11 +333,5 @@ char *http::Request::getResponse(ssize_t *size, std::map<std::string, std::strin
 	res[this->_resp_body.size()] = '\0';
 	*size = this->_resp_body.size();
 	std::cout << "Sending " << this->_file_req << std::endl;
-
-#ifdef DEBUG_MODE
-
-	std::cout << "Sending " << this->_file_req << std::endl;
-
-#endif
 	return (res);
 }

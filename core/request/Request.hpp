@@ -133,7 +133,7 @@ private:
 
 public:
 
-	Request(std::string req, http::ServerConf server, bool bad_request, std::vector<std::string> env, char* dechunked_body);
+	Request(std::string req, http::ServerConf server, int status_code, std::vector<std::string> env, char* dechunked_body);
 	Request(int code_error);
 
 	char		*build_response(ssize_t *size, std::map<std::string, std::string> mime_types);
