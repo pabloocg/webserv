@@ -7,7 +7,7 @@
   <p align="center">
     This is when you finally understand why a url starts with HTTP
     <br />
-    <a href="https://github.com/pabloocg/webserv/tree/master/srcs"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/pabloocg/webserv/tree/master/core"><strong>Explore the docs »</strong></a>
   </p>
 </p>
 
