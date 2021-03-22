@@ -11,7 +11,7 @@ http::Request::Request(std::string req, http::ServerConf server, int status_code
 																			_server(server),
 																			_error_mgs(create_map()),
 																			_env(env),
-																			_status(0)
+																			_status(status_code)
 {
 	this->_set_content_location = false;
 
@@ -24,7 +24,6 @@ http::Request::Request(std::string req, http::ServerConf server, int status_code
 #endif
 
 	this->_allow.clear();
-	this->_status = status_code;
 	this->save_request();
 	if (!this->_is_autoindex && this->_location.isCgi() && this->_type != OPTIONS && !this->_location.isRedirect())
 	{
@@ -218,7 +217,7 @@ void http::Request::set_status(void)
 		else if (this->_request_body.length() > this->_location.getBodySize() && !code)
 		{
 #ifdef	DEBUG_MODE
-			std::cout << "body len:\n" << this->_request_body.length() << "\nlocation max size " << this->_location.getBodySize() << std::endl;
+			std::cout << "body len: " << this->_request_body.length() << " location max size " << this->_location.getBodySizeinBytes() << std::endl;
 #endif
 			code = 413;
 		}

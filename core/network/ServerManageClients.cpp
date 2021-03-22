@@ -38,12 +38,10 @@ std::vector<http::Client>::iterator	http::ServerC::remove_client(std::vector<htt
 	std::cout << "Client number " << sd << " disconnected" << std::endl;
 	std::cout << "FD list:" << std::endl;
 	for (size_t j = 0; j < this->_clients.size(); j++)
-	{
 		std::cout << j << " : " << this->_clients[j].getFd() << std::endl;
-	}
 
 #endif
-	return (--tmp);
+	return (tmp);
 }
 
 void	http::ServerC::remove_tmp_client(http::Client &client)
@@ -73,9 +71,13 @@ void http::ServerC::accept_connection(http::ServerConf &server, int &server_sock
 
 void	http::ServerC::reject_connection(http::ServerConf &server, int &server_socket)
 {
-	int 		new_socket = -1;
-	SA_IN		address;
-	socklen_t	addrlen;
+	int 			new_socket = -1;
+	int 			valwrite;
+	SA_IN			address;
+	socklen_t		addrlen;
+	http::Request	req(503);
+	ssize_t			size;
+	char			*message;
 
 	address = server.getInfoAddress();
 	addrlen = sizeof(struct sockaddr);
@@ -83,6 +85,24 @@ void	http::ServerC::reject_connection(http::ServerConf &server, int &server_sock
 		throw ServerError("accept", "failed for some reason");
 	if (fcntl(new_socket, F_SETFL, O_NONBLOCK) < 0)
 		throw ServerError("fcntl", "failed for some reason");
+	
+	http::Client	tmp_client(new_socket);
+	if (!(message = req.build_response(&size, _mime_types)))
+		throw ServerError("request", "failed for some reason");
+	tmp_client.setSending(true);
+	tmp_client.setupSend(message, size, 0, size);
+	if ((valwrite = send(tmp_client.getFd(), tmp_client.getSendMessage() + tmp_client.getSended(), tmp_client.getSendLeft(), 0)) < 0)
+	{
+		free(tmp_client.getSendMessage());
+		this->remove_tmp_client(tmp_client);
+	}
+	else
+	{
+		tmp_client.setSending(false);
+		free(tmp_client.getSendMessage());
+		this->remove_tmp_client(tmp_client);
+	}
+	/*
 	if ((int)this->_tmp_clients.size() > MAX_TMP_CLIENTS)
 		close(new_socket);
 	else
@@ -91,4 +111,5 @@ void	http::ServerC::reject_connection(http::ServerConf &server, int &server_sock
 		this->_tmp_clients.push(new_client);
 		FD_SET(new_socket, &this->_master_write);
 	}
+	*/
 }

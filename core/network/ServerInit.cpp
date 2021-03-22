@@ -37,14 +37,18 @@ void http::ServerC::start()
 			throw ServerError("setsockopt", "failed for some reason");
 		if (bind(_server_socket[i], (struct sockaddr *)&_servers[i].getInfoAddress(), sizeof(_servers[i].getInfoAddress())) < 0)
 			throw ServerError("bind", "failed for some reason");
+#ifdef DEBUG_MODE
 		std::cout << "Listener on port " << _servers[i].getPort() << std::endl;
+#endif
 		if (listen(_server_socket[i], 256) < 0)
 			throw ServerError("listen", "failed for some reason");
 		if (fcntl(_server_socket[i], F_SETFL, O_NONBLOCK) < 0)
 			throw ServerError("fcntl", "failed for some reason");
 		FD_SET(_server_socket[i], &_master_read);
+#ifdef DEBUG_MODE
 		std::cout << "Server fd is " << _server_socket[i] << std::endl;
 		std::cout << "Waiting for connections..." << std::endl;
+#endif
 	}
 }
 
@@ -68,18 +72,17 @@ http::ServerConf http::ServerC::get_default_server(void)
 	return (this->_servers[0]);
 }
 
-http::ServerC::ServerError::ServerError(void) : _log(DEFAULT_ACCESS_LOG, DEFAULT_ERROR_LOG)
+http::ServerC::ServerError::ServerError(void)
 {
 	this->_error = "Undefined Server Exception";
 }
 
-http::ServerC::ServerError::ServerError(std::string function, std::string error) : _log(DEFAULT_ACCESS_LOG, DEFAULT_ERROR_LOG)
+http::ServerC::ServerError::ServerError(std::string function, std::string error)
 {
 	this->_error = function + ": " + error;
 }
 
 const char *http::ServerC::ServerError::what(void) const throw()
 {
-	this->_log.makeLog(ERROR_LOG, this->_error);
 	return (this->_error.c_str());
 }

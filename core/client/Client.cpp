@@ -12,6 +12,7 @@ http::Client::Client() : _fd(0)
 {
 	this->_dechunked_body = NULL;
 	this->_message_send = NULL;
+	this->_send_message_free = false;
 	this->reset_read();
 	this->reset_send();
 	set_last_activity();
@@ -59,6 +60,7 @@ http::Client &http::Client::operator=(const http::Client &other)
 void http::Client::reset_send(void)
 {
 	this->_is_sending = false;
+	this->_send_message_free = false;
 	this->_message_send = NULL;
 	this->_size_send = 0;
 	this->_sended = 0;
@@ -68,6 +70,7 @@ void http::Client::reset_send(void)
 void http::Client::reset_read(void)
 {
 	this->_is_reading = false;
+	this->_read_message_free = false;
 	this->_message = "";
 	this->_host_header = "NULL";
 	this->_headers_read = false;
@@ -95,9 +98,18 @@ void http::Client::setFd(int &new_socket)
 	this->_fd = new_socket;
 }
 
-void http::Client::setupSend(char *message, int size, int sended, int left)
+void http::Client::freeSendMessage()
+{
+	if (this->_send_message_free && this->_message_send != NULL)
+		free(this->_message_send);
+	this->_send_message_free = false;
+	this->_message_send = NULL;
+}
+
+void http::Client::setupSend(char *message, ssize_t size, ssize_t sended, ssize_t left)
 {
 	this->_message_send = message;
+	this->_send_message_free = true;
 	this->_size_send = size;
 	this->_sended = sended;
 	this->_left = left;
@@ -118,41 +130,44 @@ char *http::Client::getSendMessage(void)
 	return (this->_message_send);
 }
 
-int http::Client::getSendSize(void)
+ssize_t http::Client::getSendSize(void)
 {
 	return (this->_size_send);
 }
 
-struct timeval http::Client::get_time_sleeping(struct timeval now){
+struct timeval http::Client::get_time_sleeping(struct timeval now)
+{
 	struct timeval time_sleeping;
 
 	time_sleeping.tv_usec = now.tv_usec - this->_time_last_activity.tv_usec;
-	if (time_sleeping.tv_usec < 0){
+	if (time_sleeping.tv_usec < 0)
+	{
 		time_sleeping.tv_usec += 1000000;
 		time_sleeping.tv_sec = now.tv_sec - this->_time_last_activity.tv_sec - 1;
 	}
-	else{
+	else
+	{
 		time_sleeping.tv_sec = now.tv_sec - this->_time_last_activity.tv_sec ;
 	}
 	return(time_sleeping);
 }
 
-int http::Client::getSended(void)
+ssize_t http::Client::getSended(void)
 {
 	return (this->_sended);
 }
 
-int http::Client::getSendLeft(void)
+ssize_t http::Client::getSendLeft(void)
 {
 	return (this->_left);
 }
 
-void http::Client::setSended(int sended)
+void http::Client::setSended(ssize_t sended)
 {
 	this->_sended = sended;
 }
 
-void http::Client::setSendLeft(int left)
+void http::Client::setSendLeft(ssize_t left)
 {
 	this->_left = left;
 }
@@ -188,7 +203,8 @@ std::string http::Client::getMessage()
 }
 
 
-void	http::Client::set_last_activity(void){
+void	http::Client::set_last_activity(void)
+{
 	if (gettimeofday(&this->_time_last_activity, NULL) != 0)
 	{
 		perror("gettimeofday");
@@ -196,7 +212,6 @@ void	http::Client::set_last_activity(void){
 }
 
 int http::Client::getCodeStatus()
-
 {
 	return (this->_code);
 }
@@ -209,7 +224,7 @@ std::string http::Client::getHostHeader()
 bool http::Client::read_valid_format(char *last_read, int valread)
 {
 	size_t end_headers = 0;
-	this->_bodyLength = 0;
+	//this->_bodyLength = 0;
 	size_t message_len;
 	std::vector<std::string> splitted_headers;
 	this->_last_read = last_read;
@@ -275,7 +290,7 @@ bool http::Client::read_valid_format(char *last_read, int valread)
 		}
 	}
 #ifdef DEBUG_MODE
-	std::cout << "HEADERS FOUND bodyL -> " << this->_bodyLength<< "\nMessageL-> "<< this->_message.length()  << std::endl;
+	std::cout << "HEADERS FOUND bodyL -> " << this->_bodyLength<< "MessageL-> "<< this->_message.length()  << std::endl;
 #endif
 	if (this->_headers_read)
 	{
@@ -297,7 +312,7 @@ bool http::Client::read_valid_format(char *last_read, int valread)
 				return (true);
 			}
 		}
-		if (!this->_isChunked && (this->_bodyLength == (int)this->_message.length() || this->_bodyLength == (int)this->_message.length() - 2))
+		if (!this->_isChunked && (this->_bodyLength == this->_message.length() || this->_bodyLength == this->_message.length() - 2))
 			return (true);
 	}
 	return (false);
@@ -321,26 +336,21 @@ void http::Client::handle_chunked(void)
 			else if (this->_size_nl > 0)
 				this->_state = NEED_N_1;
 			else
-			{
 				this->_state = WAIT_END;
-			}
 		}
 		else if (this->_state == NEED_N_1 && ptr[i] == '\n')
-		{
 			this->_state = GO_READ;
-		}
 		else if (this->_state == GO_READ)
 		{
 			int to_read = this->_size_nl;
 			if (this->_size_char - i < to_read)
-			{
 				to_read = this->_size_char - i;
-			}
 			this->_size_nl -= to_read;
 			if (this->_dechunked_capacity < this->_dechunked_size + to_read + 1)
 			{
-				char *tmp = (char *)malloc(this->_dechunked_capacity + to_read + 10000000);
-
+				char *tmp;
+				if (!(tmp = (char *)malloc(this->_dechunked_capacity + to_read + 10000000)))
+					throw ServerError("malloc", "allocating memory");
 				if (this->_dechunked_size > 0)
 				{
 					memcpy(tmp, this->_dechunked_body, this->_dechunked_size);
@@ -353,17 +363,12 @@ void http::Client::handle_chunked(void)
 			this->_dechunked_size += to_read;
 			this->_dechunked_body[this->_dechunked_size] = '\0';
 			if (this->_size_nl == 0)
-			{
 				this->_state = NEED_N_2;
-			}
 		}
 		else if (this->_state == NEED_N_2 && ptr[i] == '\n')
-		{
 			this->_state = NEED_SIZE;
-		}
 		else if (this->_state == WAIT_END)
-		{
-		}
+			;
 	}
 	this->_offset = i;
 }
@@ -371,4 +376,19 @@ void http::Client::handle_chunked(void)
 char *http::Client::get_dechunked_body(void)
 {
 	return (this->_dechunked_body);
+}
+
+http::Client::ServerError::ServerError(void)
+{
+	this->_error = "Undefined Server Exception";
+}
+
+http::Client::ServerError::ServerError(std::string function, std::string error)
+{
+	this->_error = function + ": " + error;
+}
+
+const char *http::Client::ServerError::what(void) const throw()
+{
+	return (this->_error.c_str());
 }

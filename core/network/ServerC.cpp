@@ -1,8 +1,5 @@
 #include "ServerC.hpp"
 
-#define TTL_SEC 5
-#define TTL_USEC 0
-
 void http::ServerC::wait_for_connection()
 {
 	int max_sd, sd, activity;
@@ -50,18 +47,19 @@ void http::ServerC::wait_for_connection()
 			std::cout << "New connection at server " << i << "!" << std::endl;
 #endif
 
-			if ((int)this->_clients.size() > MAX_CLIENTS)
+			if ((int)this->_clients.size() >= MAX_CLIENTS)
 				this->reject_connection(_servers[i], _server_socket[i]);
 			else
 				this->accept_connection(_servers[i], _server_socket[i]);
 		}
 	}
 	std::vector<http::Client>::iterator client = this->_clients.begin();
-	std::vector<http::Client>::iterator client_end = this->_clients.end();
 
+#ifdef DEBUG_MODE
 	std::cout << "Actual clients " << this->_clients.size() << std::endl;
+#endif 
 
-	for (; client != client_end; client++)
+	for (; client != this->_clients.end(); client++)
 	{
 		sd = client->getFd();
 		if (FD_ISSET(sd, &readfds))
@@ -73,6 +71,7 @@ void http::ServerC::wait_for_connection()
 			if ((valread = read(sd, buffer, BUFFER_SIZE)) <= 0)
 			{
 				client = this->remove_client(client);
+				client--;
 				continue;
 			}
 			else
@@ -88,43 +87,45 @@ void http::ServerC::wait_for_connection()
 
 			if ((valwrite = send(sd, client->getSendMessage() + client->getSended(), client->getSendLeft(), 0)) < 0)
 			{
-				std::cout << "Libera por fallo del send" << std::endl;
 				client->setSending(false);
-				if (client->getSendMessage() != NULL)
-					free(client->getSendMessage());
+				client->freeSendMessage();
 				client->reset_send();
 				client = this->remove_client(client);
+				client--;
 				continue;
 			}
 			else if (valwrite < client->getSendLeft())
 			{
-				std::cout << "No Libera" << std::endl;
 				client->setSended(client->getSended() + valwrite);
 				client->setSendLeft(client->getSendLeft() - valwrite);
+#ifdef DEBUG_MODE
+				std::cout << "Sended " << valwrite + client->getSended() << " bytes to " << sd << ", " << client->getSendLeft() - valwrite << " left" << std::endl;
+#endif
 			}
 			else
 			{
+#ifdef DEBUG_MODE
+				std::cout << "Sended " << valwrite + client->getSended() << " bytes to " << sd << ", " << client->getSendLeft() - valwrite << " left" << std::endl;
+#endif				
 				client->setSending(false);
-				std::cout << "Libera" << std::endl;
-				if (client->getSendMessage() != NULL)
-					free(client->getSendMessage());
+				client->freeSendMessage();
 				client->reset_send();
 				FD_CLR(sd, &_master_write);
 			}
-			std::cout << "Sended " << valwrite + client->getSended() << " bytes to " << sd << ", " << client->getSendLeft() - valwrite << " left" << std::endl;
 		}
 		else
 		{
-			std::cout << "Se mete al else" << std::endl;
 			struct timeval time_sleeping = client->get_time_sleeping(now);
-			if(time_sleeping.tv_sec > TTL_SEC || (time_sleeping.tv_sec == TTL_SEC && time_sleeping.tv_usec > TTL_USEC))
+			if ((time_sleeping.tv_sec > TTL_SEC || (time_sleeping.tv_sec == TTL_SEC && time_sleeping.tv_usec > TTL_USEC)) && this->_clients.size() > 0)
 			{
-				std::cout << "Hace TIMEOUT" << std::endl;
 				client = this->remove_client(client);
+				client--;
+				continue;
 			}
 		}
 	}
 
+/*
 #ifdef DEBUG_MODE
 			std::cout << "Actual tmp clients " << this->_tmp_clients.size() << std::endl;
 #endif
@@ -153,7 +154,7 @@ void http::ServerC::wait_for_connection()
 				this->remove_tmp_client(tmp_client);
 				continue;
 			}
-			if (valwrite < tmp_client.getSendLeft())
+			else if (valwrite < tmp_client.getSendLeft())
 			{
 				tmp_client.setSended(tmp_client.getSended() + valwrite);
 				tmp_client.setSendLeft(tmp_client.getSendLeft() - valwrite);
@@ -173,4 +174,5 @@ void http::ServerC::wait_for_connection()
 		}
 		this->_tmp_clients.pop();
 	}
+*/
 }

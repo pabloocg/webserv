@@ -1,5 +1,5 @@
 #ifndef SERVERC_HPP
-#define SERVERC_HPP
+# define SERVERC_HPP
 
 # include <stdio.h>
 # include <unistd.h>
@@ -15,16 +15,16 @@
 # include <string>
 # include <fcntl.h>
 # include <queue>
-# include "../config/Logger.hpp"
 # include "../request/Request.hpp"
 # include "../utils/utils.hpp"
 # include "../config/ServerConf.hpp"
 # include "../client/Client.hpp"
 
-#define TRUE 1
-#define FALSE 0
-#define MAX_CLIENTS 200
-#define MAX_TMP_CLIENTS 20
+# define TRUE 1
+# define FALSE 0
+# define MAX_CLIENTS 200
+# define TTL_SEC 5
+# define TTL_USEC 0
 
 namespace http
 {
@@ -73,7 +73,6 @@ public:
 	{
 		private:
 			std::string		_error;
-			const Logger	_log;
 
 		public:
 			ServerError(void);

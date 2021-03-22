@@ -26,7 +26,6 @@ SRCS =	main.cpp\
 		${addprefix ${NETWORK_PATH}, ServerRequest.cpp}\
 		${addprefix ${NETWORK_PATH}, ServerC.cpp}\
 		${addprefix ${CLIENT_PATH}, Client.cpp}\
-		${addprefix ${CONFIG_PATH}, Logger.cpp}\
 		${addprefix ${REQUEST_PATH}, Request.cpp}\
 		${addprefix ${REQUEST_PATH}, RequestAuth.cpp}\
 		${addprefix ${REQUEST_PATH}, RequestCGI.cpp}\

@@ -1,8 +1,3 @@
-<?php
-header("Status: 301 Moved Permanently");
-header("Location: http://localhost:8081/");
-exit;
-?>
 <!DOCTYPE html>
 <html>
     <head lang="en">

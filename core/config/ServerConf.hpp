@@ -60,7 +60,7 @@ private:
 public:
     ServerConf():
         _port(DEFAULT_PORT), _server_addr(DEFAULT_SERVER_ADDR),
-        _server_name(DEFAULT_SERVER_NAME), _body_size(DEFAULT_BODY_SIZE_MEGABYTES)
+        _server_name(DEFAULT_SERVER_NAME), _body_size(DEFAULT_BODY_SIZE_BYTES)
     {
 		this->_err_pages[400] = DEFAULT_ERROR_PAGE_400;
         this->_err_pages[401] = DEFAULT_ERROR_PAGE_401;

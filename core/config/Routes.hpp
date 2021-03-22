@@ -518,10 +518,8 @@ public:
             {
 				for (int j = 0; j < (int)this->_languages.size() && !language_setted; j++)
                 {
-					//std::cout << "compara " << this->_languages[j] << this->_languages[j].length() << " con " << languages[i] << languages[i].length() << std::endl; 
 					if (this->_languages[j].find(languages[i]) != std::string::npos)
                     {
-						//std::cout << "son los mismos" << std::endl;
 						language_path = this->_languages[j];
 						language_setted = true;
 					}
@@ -544,23 +542,19 @@ public:
             if (this->getVirtualLocation().back() == '/' && tmp.back() != '/')
                 tmp += "/";
             path_requested.replace(0, this->getVirtualLocation().size(), tmp + language_path);
-			//std::cout << "cambia por " << path_requested << std::endl;
             if (type == POST && !this->_is_cgi)
                 return (path_requested);
             if (path_requested.find(".") == std::string::npos && type != PUT)
             {
                 for (std::vector<std::string>::iterator it = this->_index_file.begin(); it != this->_index_file.end(); it++)
                 {
-                    //std::cout << path_requested << ", IT: "<< *it << std::endl;
                     if (it->front() == '/' && path_requested.back() == '/')
                         path_requested.erase(path_requested.begin());
                     else if (path_requested.back() != '/' && it->front() != '/')
                         path_requested += '/';
                     path_requested += *it;
-                    //std::cout << path_requested << std::endl;
                     if (!http::file_exists(path_requested))
                     {
-						//std::cout << "exists " << path_requested << std::endl;
                         break ;
                     }
 					path_requested = path_requested.substr(0, path_requested.length() - (*it).length());
@@ -582,6 +576,7 @@ inline std::ostream &operator<<(std::ostream &out, http::Routes &route)
     out << "Location isCGI: " << ((route.isCgi()) ? "on": "off") << std::endl;
     out << "Location CGI EXEC: " << route.getCgiExec() << std::endl;
     out << "Location Extension: " << route.getExtension() << std::endl;
+    out << "Location BodySize: " << route.getBodySize() << std::endl;
     out << "Location isRedirect: " << ((route.isRedirect()) ? "on": "off") << std::endl;
     out << "Location Redirect Code: " << route.getCodeRedirect() << std::endl;
     out << "Location Redirect Path: " << route.getPathRedirect() << std::endl;

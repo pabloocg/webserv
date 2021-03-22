@@ -12,8 +12,7 @@ const std::string http::Conf::_http_methods[9] = {
     "PATCH"
 };
 
-http::Conf::Conf(const std::string &conf_file) : _filename(conf_file),
-                                                 _log(DEFAULT_ACCESS_LOG, DEFAULT_ERROR_LOG)
+http::Conf::Conf(const std::string &conf_file) : _filename(conf_file)
 {
     if (!file_exists())
         throw ConfError("The configuration file entered does not exist");

@@ -144,7 +144,7 @@ void http::Request::get_charset(void)
 		std::vector<std::string> charsets_accepted = http::split(this->_charset_header, ',');
 		for (int i = 0; i < (int)charsets_accepted.size(); i++)
 		{
-			std::cout << "va a comparar " << this->_charset << " con " << charsets_accepted[i] << std::endl;
+			//std::cout << "va a comparar " << this->_charset << " con " << charsets_accepted[i] << std::endl;
 			if (charsets_accepted[i].find(this->_charset) != std::string::npos)
 			{
 				accepted = true;

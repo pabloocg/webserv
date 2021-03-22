@@ -4,7 +4,6 @@
 #include "ServerConf.hpp"
 #include "../utils/utils.hpp"
 #include "Routes.hpp"
-#include "Logger.hpp"
 #include <vector>
 #include <map>
 #include <iostream>
@@ -22,7 +21,6 @@ private:
     Conf(void);
 
     std::string                         _filename;
-    http::Logger                        _log;
     std::ifstream                       _file;
     std::vector<http::ServerConf>       _servers;
     std::map<std::string, bool>         _mandatory_conf;
