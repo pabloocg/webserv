@@ -1,13 +1,3 @@
-@font-face{
-	font-family: "robotoregular";
-	src: url(roboto_regular/Roboto-Regular-webfont.woff);
-}
-
-@font-face{
-	font-family: "robotobold";
-	src: url(roboto_bold/Roboto-Bold-webfont.woff);
-}
-
 a {
 	color: #245F5F;
 	text-decoration: none;
@@ -27,14 +17,12 @@ blockquote {
 }
 
 body {
-	font-family: "robotoregular";
 	color: #009097;
 }
 
 
 h1, h2 {
 	font-weight: normal;
-	font-family: "robotobold";
 	margin: 3px;
 	padding: 0px;
 }
